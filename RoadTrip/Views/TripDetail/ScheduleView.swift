@@ -88,33 +88,66 @@ struct TimelineItemView: View {
                 }
             }
             .frame(width: 50, alignment: .trailing)
+            .foregroundStyle(.secondary)
             
-            // Timeline dot
-            Circle()
-                .fill(categoryColor)
-                .frame(width: 12, height: 12)
-                .overlay {
-                    Circle()
-                        .stroke(.white, lineWidth: 2)
-                }
+            // Timeline dot and line
+            VStack(alignment: .center, spacing: 0) {
+                Circle()
+                    .fill(categoryColor)
+                    .frame(width: 14, height: 14)
+                    .overlay {
+                        Circle()
+                            .stroke(.white, lineWidth: 2)
+                    }
+            }
             
             // Activity details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(activity.name)
-                    .font(.headline)
-                Text(activity.location)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text(activity.name)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Text(activity.category)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(categoryColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(categoryColor.opacity(0.1))
+                        .cornerRadius(4)
+                }
                 
-                if let duration = activity.duration {
-                    Text("\(Int(duration * 60)) min")
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(categoryColor.opacity(0.6))
+                    
+                    Text(activity.location)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                
+                if let duration = activity.duration {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange.opacity(0.6))
+                        
+                        Text("\(Int(duration * 60)) minutes")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             
             Spacer()
         }
+        .padding(12)
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
     }
     
     private var categoryColor: Color {

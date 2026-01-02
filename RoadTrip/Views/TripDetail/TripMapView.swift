@@ -1,44 +1,28 @@
+// Views/TripDetail/TripMapView.swift
 import SwiftUI
 import MapKit
 
-struct IdentifiableMapItem: Identifiable {
-    let id = UUID()
-    let mapItem: MKMapItem
-    let activity: Activity
-}
-
-struct ActivityAnnotation: NSObject, MKAnnotation {
-    dynamic var coordinate: CLLocationCoordinate2D
-    let activity: Activity
-    
-    init(activity: Activity, coordinate: CLLocationCoordinate2D) {
-        self.activity = activity
-        self.coordinate = coordinate
-        super.init()
-    }
-}
-
-struct ActivitiesMapView: View {
-    let activities: [Activity]
+struct TripMapView: View {
+    let trip: Trip
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795), // Center of USA
+        center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795),
         span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
     )
-    @State private var annotations: [ActivityAnnotation] = []
-    @State private var selectedAnnotation: ActivityAnnotation?
+    @State private var annotations: [TripLocationAnnotation] = []
+    @State private var selectedAnnotation: TripLocationAnnotation?
     @State private var isLoading = true
     @State private var hasError = false
-    @State private var showingActivityDetail: Activity?
+    @State private var showingLocationDetail: TripLocation?
 
     var body: some View {
         ZStack {
             Map(position: .constant(.region(region)), selection: $selectedAnnotation) {
                 ForEach(annotations, id: \.id) { annotation in
                     Annotation("", coordinate: annotation.coordinate) {
-                        ActivityMapMarker(activity: annotation.activity, isSelected: selectedAnnotation?.id == annotation.id)
+                        LocationMapMarker(location: annotation.location, isSelected: selectedAnnotation?.id == annotation.id)
                             .onTapGesture {
                                 selectedAnnotation = annotation
-                                showingActivityDetail = annotation.activity
+                                showingLocationDetail = annotation.location
                             }
                     }
                 }
@@ -47,7 +31,7 @@ struct ActivitiesMapView: View {
             
             VStack {
                 HStack {
-                    Text("Activities Map")
+                    Text("Trip Route")
                         .font(.headline)
                         .padding()
                     
@@ -78,12 +62,12 @@ struct ActivitiesMapView: View {
                 
                 if !annotations.isEmpty {
                     VStack(spacing: 8) {
-                        Text("\(annotations.count) activities on map")
+                        Text("\(annotations.count) locations on map")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         
-                        Button(action: zoomToFitAllActivities) {
-                            Label("Fit All Activities", systemImage: "rectangle.portrait.arrowtriangle.2.outward")
+                        Button(action: zoomToFitAllLocations) {
+                            Label("Fit All Locations", systemImage: "rectangle.portrait.arrowtriangle.2.outward")
                                 .font(.caption)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -98,25 +82,55 @@ struct ActivitiesMapView: View {
             }
         }
         .onAppear {
-            fetchMapItems()
+            fetchLocations()
         }
-        .sheet(item: $showingActivityDetail) { activity in
-            ActivityDetailSheet(activity: activity)
+        .sheet(item: $showingLocationDetail) { location in
+            LocationDetailSheet(location: location)
         }
     }
 
-    private func fetchMapItems() {
+    private func fetchLocations() {
         isLoading = true
         hasError = false
         annotations.removeAll()
         
-        let group = DispatchGroup()
-        var coordinates: [CLLocationCoordinate2D] = []
+        var locations: [TripLocation] = []
         
-        for activity in activities {
+        // Collect all unique locations from trip days
+        for (index, day) in trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).enumerated() {
+            locations.append(TripLocation(
+                title: day.startLocation,
+                subtitle: "Day \(day.dayNumber) - Start",
+                type: .dayStart,
+                dayNumber: day.dayNumber
+            ))
+            
+            if index == trip.days.count - 1 {
+                locations.append(TripLocation(
+                    title: day.endLocation,
+                    subtitle: "Day \(day.dayNumber) - End",
+                    type: .dayEnd,
+                    dayNumber: day.dayNumber
+                ))
+            }
+            
+            // Add hotel if available
+            if let hotelName = day.hotelName {
+                locations.append(TripLocation(
+                    title: hotelName,
+                    subtitle: "Day \(day.dayNumber) - Hotel",
+                    type: .hotel,
+                    dayNumber: day.dayNumber
+                ))
+            }
+        }
+        
+        let group = DispatchGroup()
+        
+        for location in locations {
             group.enter()
             let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = activity.location
+            request.naturalLanguageQuery = location.title
             let search = MKLocalSearch(request: request)
             
             search.start { response, error in
@@ -124,8 +138,7 @@ struct ActivitiesMapView: View {
                 
                 if let item = response?.mapItems.first {
                     let coordinate = item.placemark.coordinate
-                    coordinates.append(coordinate)
-                    let annotation = ActivityAnnotation(activity: activity, coordinate: coordinate)
+                    let annotation = TripLocationAnnotation(location: location, coordinate: coordinate)
                     annotations.append(annotation)
                 }
             }
@@ -137,12 +150,12 @@ struct ActivitiesMapView: View {
             if annotations.isEmpty {
                 hasError = true
             } else {
-                zoomToFitAllActivities()
+                zoomToFitAllLocations()
             }
         }
     }
     
-    private func zoomToFitAllActivities() {
+    private func zoomToFitAllLocations() {
         guard !annotations.isEmpty else { return }
         
         let coordinates = annotations.map { $0.coordinate }
@@ -168,25 +181,43 @@ struct ActivitiesMapView: View {
     }
 }
 
-struct ActivityMapMarker: View {
-    let activity: Activity
+struct TripLocation: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let type: LocationType
+    let dayNumber: Int
+    
+    enum LocationType {
+        case dayStart
+        case dayEnd
+        case hotel
+    }
+}
+
+struct TripLocationAnnotation: Identifiable {
+    let id = UUID()
+    let location: TripLocation
+    let coordinate: CLLocationCoordinate2D
+}
+
+struct LocationMapMarker: View {
+    let location: TripLocation
     let isSelected: Bool
     
-    var categoryColor: Color {
-        switch activity.category {
-        case "Food": return .orange
-        case "Attraction": return .blue
-        case "Hotel": return .purple
-        default: return .gray
+    var markerColor: Color {
+        switch location.type {
+        case .dayStart: return .green
+        case .dayEnd: return .red
+        case .hotel: return .purple
         }
     }
     
-    var categoryIcon: String {
-        switch activity.category {
-        case "Food": return "fork.knife"
-        case "Attraction": return "star.fill"
-        case "Hotel": return "bed.double.fill"
-        default: return "mappin.circle.fill"
+    var markerIcon: String {
+        switch location.type {
+        case .dayStart: return "location.circle"
+        case .dayEnd: return "mappin.circle"
+        case .hotel: return "bed.double"
         }
     }
     
@@ -194,25 +225,25 @@ struct ActivityMapMarker: View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
-                    .fill(categoryColor)
+                    .fill(markerColor)
                     .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
                 
                 Circle()
                     .stroke(.white, lineWidth: 3)
                     .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
                 
-                Image(systemName: categoryIcon)
+                Image(systemName: markerIcon)
                     .font(.system(size: isSelected ? 18 : 14, weight: .semibold))
                     .foregroundStyle(.white)
             }
             
             if isSelected {
                 VStack(spacing: 2) {
-                    Text(activity.name)
+                    Text(location.title)
                         .font(.caption)
                         .fontWeight(.semibold)
                     
-                    Text(activity.location)
+                    Text(location.subtitle)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -226,32 +257,38 @@ struct ActivityMapMarker: View {
     }
 }
 
-struct ActivityDetailSheet: View {
+struct LocationDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
-    let activity: Activity
+    let location: TripLocation
     
-    var categoryColor: Color {
-        switch activity.category {
-        case "Food": return .orange
-        case "Attraction": return .blue
-        case "Hotel": return .purple
-        default: return .gray
+    var markerColor: Color {
+        switch location.type {
+        case .dayStart: return .green
+        case .dayEnd: return .red
+        case .hotel: return .purple
         }
     }
     
-    var categoryIcon: String {
-        switch activity.category {
-        case "Food": return "fork.knife"
-        case "Attraction": return "star.fill"
-        case "Hotel": return "bed.double.fill"
-        default: return "mappin.circle.fill"
+    var markerIcon: String {
+        switch location.type {
+        case .dayStart: return "location.circle"
+        case .dayEnd: return "mappin.circle"
+        case .hotel: return "bed.double"
+        }
+    }
+    
+    var typeLabel: String {
+        switch location.type {
+        case .dayStart: return "Day Start"
+        case .dayEnd: return "Day End"
+        case .hotel: return "Hotel"
         }
     }
     
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Activity Details")
+                Text("Location Details")
                     .font(.headline)
                 
                 Spacer()
@@ -270,20 +307,20 @@ struct ActivityDetailSheet: View {
                     HStack(spacing: 12) {
                         ZStack {
                             Circle()
-                                .fill(categoryColor.opacity(0.2))
+                                .fill(markerColor.opacity(0.2))
                             
-                            Image(systemName: categoryIcon)
+                            Image(systemName: markerIcon)
                                 .font(.title2)
-                                .foregroundStyle(categoryColor)
+                                .foregroundStyle(markerColor)
                         }
                         .frame(width: 50, height: 50)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(activity.name)
+                            Text(location.title)
                                 .font(.title3)
                                 .fontWeight(.semibold)
                             
-                            Text(activity.category)
+                            Text(typeLabel)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -293,37 +330,13 @@ struct ActivityDetailSheet: View {
                     
                     Divider()
                     
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(activity.location, systemImage: "mappin.circle")
+                    HStack(spacing: 12) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(markerColor)
+                            .frame(width: 30)
+                        
+                        Text("Day \(location.dayNumber)")
                             .font(.subheadline)
-                    }
-                    
-                    if let time = activity.scheduledTime {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(time.formatted(date: .omitted, time: .shortened), systemImage: "clock")
-                                .font(.subheadline)
-                            
-                            if let duration = activity.duration {
-                                Label("\(Int(duration * 60)) minutes", systemImage: "hourglass")
-                                    .font(.subheadline)
-                            }
-                        }
-                    }
-                    
-                    if let notes = activity.notes, !notes.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Notes")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-                            
-                            Text(notes)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
                     }
                     
                     HStack(spacing: 12) {
@@ -332,8 +345,8 @@ struct ActivityDetailSheet: View {
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(categoryColor.opacity(0.2))
-                                .foregroundStyle(categoryColor)
+                                .background(markerColor.opacity(0.2))
+                                .foregroundStyle(markerColor)
                                 .cornerRadius(8)
                         }
                     }
@@ -344,7 +357,7 @@ struct ActivityDetailSheet: View {
     }
     
     private func openInMaps() {
-        let query = activity.location.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ""
+        let query = location.title.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ""
         if let url = URL(string: "http://maps.apple.com/?q=\(query)") {
             UIApplication.shared.open(url)
         }

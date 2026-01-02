@@ -8,59 +8,89 @@ struct ActivitiesView: View {
     @State private var showingAddActivity = false
     @State private var selectedDay: TripDay?
     @State private var showingMap = false
+    @State private var editingActivity: Activity?
+    @State private var activityToDelete: Activity?
 
     
     var body: some View {
-        Button {
-            showingMap = true
-        } label: {
-            Label("Show Activities on Map", systemImage: "map")
-        }
-        .sheet(isPresented: $showingMap) {
-            let allActivities = trip.days.flatMap { $0.activities }
-            ActivitiesMapView(activities: allActivities)
-        }
-        List {
-            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
-                Section {
-                    if day.activities.isEmpty {
-                        Text("No activities yet")
-                            .foregroundStyle(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(day.activities) { activity in
-                            ActivityRowView(activity: activity)
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        deleteActivity(activity)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+        VStack {
+            Button {
+                showingMap = true
+            } label: {
+                Label("Show Activities on Map", systemImage: "map")
+            }
+            .sheet(isPresented: $showingMap) {
+                let allActivities = trip.days.flatMap { $0.activities }
+                ActivitiesMapView(activities: allActivities)
+            }
+            List {
+                ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+                    Section {
+                        if day.activities.isEmpty {
+                            Text("No activities yet")
+                                .foregroundStyle(.secondary)
+                                .italic()
+                        } else {
+                            ForEach(day.activities) { activity in
+                                ActivityRowView(activity: activity)
+                                    .contextMenu {
+                                        Button {
+                                            editingActivity = activity
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        
+                                        Button(role: .destructive) {
+                                            activityToDelete = activity
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
-                                }
+                            }
                         }
-                    }
-                    
-                    Button {
-                        selectedDay = day
-                        showingAddActivity = true
-                    } label: {
-                        Label("Add Activity", systemImage: "plus.circle")
-                    }
-                } header: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Day \(day.dayNumber)")
-                            .font(.headline)
-                        Text("\(day.startLocation) → \(day.endLocation)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        
+                        Button {
+                            selectedDay = day
+                            showingAddActivity = true
+                        } label: {
+                            Label("Add Activity", systemImage: "plus.circle")
+                        }
+                    } header: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Day \(day.dayNumber)")
+                                .font(.headline)
+                            Text("\(day.startLocation) → \(day.endLocation)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
-        }
-        .listStyle(.insetGrouped)
-        .sheet(isPresented: $showingAddActivity) {
-            if let day = selectedDay {
-                AddActivityView(day: day)
+            .listStyle(.insetGrouped)
+            .sheet(isPresented: $showingAddActivity) {
+                if let day = selectedDay {
+                    AddActivityView(day: day)
+                }
+            }
+            .sheet(item: $editingActivity) { activity in
+                if let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) {
+                    EditActivityView(activity: activity, day: day)
+                }
+            }
+            .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
+                Button(role: .destructive) {
+                    deleteActivity(activity)
+                    activityToDelete = nil
+                } label: {
+                    Text("Delete")
+                }
+                Button(role: .cancel) {
+                    activityToDelete = nil
+                } label: {
+                    Text("Cancel")
+                }
+            } message: { activity in
+                Text("Are you sure you want to delete \"\(activity.name)\"?")
             }
         }
     }
@@ -83,25 +113,54 @@ struct ActivityRowView: View {
     }
     
     var body: some View {
-        HStack {
-            Image(systemName: categoryIcon)
-                .foregroundStyle(categoryColor)
-                .frame(width: 30)
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(categoryColor.opacity(0.2))
+                
+                Image(systemName: categoryIcon)
+                    .font(.caption)
+                    .foregroundStyle(categoryColor)
+            }
+            .frame(width: 40, height: 40)
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(activity.name)
-                    .font(.headline)
-                Text(activity.location)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            if let time = activity.scheduledTime {
-                Text(time.formatted(date: .omitted, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text(activity.name)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    if let time = activity.scheduledTime {
+                        Text(time.formatted(date: .omitted, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.red.opacity(0.6))
+                    
+                    Text(activity.location)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                
+                if let duration = activity.duration {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.orange.opacity(0.6))
+                        
+                        Text("\(Int(duration * 60)) min")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             
             // Add the "Open in Maps" button here
@@ -111,10 +170,12 @@ struct ActivityRowView: View {
                     UIApplication.shared.open(url)
                 }
             } label: {
-                Image(systemName: "map")
+                Image(systemName: "map.circle.fill")
+                    .foregroundStyle(.blue)
             }
             .buttonStyle(.borderless)
         }
+        .padding(.vertical, 4)
     }
     
     private var categoryIcon: String {
@@ -141,6 +202,11 @@ struct AddActivityView: View {
     @State private var notes = ""
     
     let categories = ["Food", "Attraction", "Hotel", "Other"]
+    
+    var isFormValid: Bool {
+        !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !location.trimmingCharacters(in: .whitespaces).isEmpty
+    }
     
     var body: some View {
         NavigationStack {
@@ -180,14 +246,16 @@ struct AddActivityView: View {
                     Button("Add") {
                         addActivity()
                     }
-                    .disabled(activityName.isEmpty || location.isEmpty)
+                    .disabled(!isFormValid)
                 }
             }
         }
     }
     
     private func addActivity() {
-        let activity = Activity(name: activityName, location: location, category: category)
+        let activity = Activity(name: activityName.trimmingCharacters(in: .whitespaces), 
+                               location: location.trimmingCharacters(in: .whitespaces), 
+                               category: category)
         
         if includeTime {
             // Combine day's date with selected time
@@ -200,7 +268,7 @@ struct AddActivityView: View {
             activity.duration = duration
         }
         
-        activity.notes = notes.isEmpty ? nil : notes
+        activity.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
         day.activities.append(activity)
         dismiss()
     }

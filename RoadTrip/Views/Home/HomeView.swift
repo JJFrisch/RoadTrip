@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @State private var showingNewTripSheet = false
+    @State private var tripToDelete: Trip?
     
     var body: some View {
         NavigationStack {
@@ -29,6 +30,21 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingNewTripSheet) {
                 NewTripView()
+            }
+            .alert("Delete Trip", isPresented: .constant(tripToDelete != nil), presenting: tripToDelete) { trip in
+                Button(role: .destructive) {
+                    deleteTrip(trip)
+                    tripToDelete = nil
+                } label: {
+                    Text("Delete")
+                }
+                Button(role: .cancel) {
+                    tripToDelete = nil
+                } label: {
+                    Text("Cancel")
+                }
+            } message: { trip in
+                Text("Are you sure you want to delete \"\(trip.name)\"? This action cannot be undone.")
             }
         }
     }
@@ -70,7 +86,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button(role: .destructive) {
-                            deleteTrip(trip)
+                            tripToDelete = trip
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -97,8 +113,9 @@ struct TripCardView: View {
                     Text(trip.name)
                         .font(.title3)
                         .fontWeight(.bold)
+                        .lineLimit(1)
                     
-                    Text("\(trip.numberOfNights) nights")
+                    Text("\(trip.numberOfNights) night\(trip.numberOfNights == 1 ? "" : "s")")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -106,24 +123,63 @@ struct TripCardView: View {
                 Spacer()
                 
                 Image(systemName: trip.coverImage ?? "car.fill")
-                    .font(.largeTitle)
+                    .font(.system(size: 32))
                     .foregroundStyle(.blue.gradient)
             }
             
             Divider()
             
-            HStack {
-                Label("\(trip.startDate.formatted(date: .abbreviated, time: .omitted))", systemImage: "calendar")
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Text(trip.startDate.formatted(date: .abbreviated, time: .omitted))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                
                 Spacer()
-                Label("\(Int(trip.totalDistance)) mi", systemImage: "location.fill")
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("End")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Text(trip.endDate.formatted(date: .abbreviated, time: .omitted))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            
+            if trip.totalDistance > 0 {
+                HStack(spacing: 8) {
+                    Image(systemName: "location.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    
+                    Text(String(format: "%.0f miles", trip.totalDistance))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    
+                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
+            }
         }
         .padding()
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
     }
 }
 
@@ -135,6 +191,22 @@ struct NewTripView: View {
     @State private var tripName = ""
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(86400 * 3) // 3 days later
+    @State private var showValidationError = false
+    @State private var validationError = ""
+    
+    var isFormValid: Bool {
+        !tripName.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate
+    }
+    
+    var validationErrorMessage: String? {
+        if tripName.trimmingCharacters(in: .whitespaces).isEmpty {
+            return "Trip name cannot be empty"
+        }
+        if endDate < startDate {
+            return "End date must be after or equal to start date"
+        }
+        return nil
+    }
     
     var body: some View {
         NavigationStack {
@@ -143,6 +215,14 @@ struct NewTripView: View {
                     TextField("Trip Name", text: $tripName)
                     DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
                     DatePicker("End Date", selection: $endDate, displayedComponents: .date)
+                }
+                
+                if let error = validationErrorMessage {
+                    Section {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    }
                 }
             }
             .navigationTitle("New Trip")
@@ -155,14 +235,14 @@ struct NewTripView: View {
                     Button("Create") {
                         createTrip()
                     }
-                    .disabled(tripName.isEmpty)
+                    .disabled(!isFormValid)
                 }
             }
         }
     }
     
     private func createTrip() {
-        let newTrip = Trip(name: tripName, startDate: startDate, endDate: endDate)
+        let newTrip = Trip(name: tripName.trimmingCharacters(in: .whitespaces), startDate: startDate, endDate: endDate)
         modelContext.insert(newTrip)
         dismiss()
     }
