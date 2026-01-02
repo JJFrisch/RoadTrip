@@ -196,9 +196,23 @@ struct TripLocation: Identifiable {
 }
 
 struct TripLocationAnnotation: Identifiable {
-    let id = UUID()
+    let id: UUID
     let location: TripLocation
     let coordinate: CLLocationCoordinate2D
+    
+    init(location: TripLocation, coordinate: CLLocationCoordinate2D) {
+        self.id = UUID()
+        self.location = location
+        self.coordinate = coordinate
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: TripLocationAnnotation, rhs: TripLocationAnnotation) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
 struct LocationMapMarker: View {

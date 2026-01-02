@@ -40,14 +40,22 @@
 				Models/Activity.swift,
 				Models/Trip.swift,
 				Models/TripDay.swift,
+				Theme/AppTheme.swift,
+				Utilities/AnimationModifiers.swift,
+				Utilities/LoadingView.swift,
+				Utilities/ResponsiveLayout.swift,
 				ViewModels/TripDetailViewModel.swift,
 				ViewModels/TripsViewModel.swift,
+				Views/Home/EditTripView.swift,
 				Views/Home/HomeView.swift,
 				Views/TripDetail/ActivitiesMapView.swift,
 				Views/TripDetail/ActivitiesView.swift,
+				Views/TripDetail/EditActivityView.swift,
 				Views/TripDetail/OverviewView.swift,
+				Views/TripDetail/RouteInfoView.swift,
 				Views/TripDetail/ScheduleView.swift,
 				Views/TripDetail/TripDetailView.swift,
+				Views/TripDetail/TripMapView.swift,
 			);
 			target = DB63B9F92F0770D4001B1FDD /* RoadTrip */;
 		};
