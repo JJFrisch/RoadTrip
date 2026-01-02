@@ -29,12 +29,51 @@
 		DB63BA132F0770D5001B1FDD /* RoadTripUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoadTripUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		DB63B9FC2F0770D4001B1FDD /* RoadTrip */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RoadTrip;
-			sourceTree = "<group>";
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/RoadTripApp.swift,
+				Assets.xcassets,
+				ContentView.swift,
+				Item.swift,
+				Models/Activity.swift,
+				Models/Trip.swift,
+				Models/TripDay.swift,
+				ViewModels/TripDetailViewModel.swift,
+				ViewModels/TripsViewModel.swift,
+				Views/Home/HomeView.swift,
+				Views/TripDetail/ActivitiesMapView.swift,
+				Views/TripDetail/ActivitiesView.swift,
+				Views/TripDetail/OverviewView.swift,
+				Views/TripDetail/ScheduleView.swift,
+				Views/TripDetail/TripDetailView.swift,
+			);
+			target = DB63B9F92F0770D4001B1FDD /* RoadTrip */;
 		};
+		DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				ContentView.swift,
+				Info.plist,
+				Item.swift,
+			);
+			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
+		};
+		DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Activity.swift,
+				ViewModels/TripDetailViewModel.swift,
+				ViewModels/TripsViewModel.swift,
+				Views/TripDetail/TripDetailView.swift,
+			);
+			target = DB63BA122F0770D5001B1FDD /* RoadTripUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB63BA0C2F0770D5001B1FDD /* RoadTripTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = RoadTripTests;
@@ -43,6 +82,16 @@
 		DB63BA162F0770D5001B1FDD /* RoadTripUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = RoadTripUITests;
+			sourceTree = "<group>";
+		};
+		DB63BA402F07714E001B1FDD /* RoadTrip */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
+				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
+				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,
+			);
+			path = RoadTrip;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,7 +124,7 @@
 		DB63B9F12F0770D4001B1FDD = {
 			isa = PBXGroup;
 			children = (
-				DB63B9FC2F0770D4001B1FDD /* RoadTrip */,
+				DB63BA402F07714E001B1FDD /* RoadTrip */,
 				DB63BA0C2F0770D5001B1FDD /* RoadTripTests */,
 				DB63BA162F0770D5001B1FDD /* RoadTripUITests */,
 				DB63B9FB2F0770D4001B1FDD /* Products */,
@@ -107,9 +156,6 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				DB63B9FC2F0770D4001B1FDD /* RoadTrip */,
-			);
 			name = RoadTrip;
 			packageProductDependencies = (
 			);
@@ -132,6 +178,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DB63BA0C2F0770D5001B1FDD /* RoadTripTests */,
+				DB63BA402F07714E001B1FDD /* RoadTrip */,
 			);
 			name = RoadTripTests;
 			packageProductDependencies = (
@@ -400,6 +447,7 @@
 				DEVELOPMENT_TEAM = M2ZV7F454Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoadTrip/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +476,7 @@
 				DEVELOPMENT_TEAM = M2ZV7F454Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoadTrip/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
