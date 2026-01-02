@@ -196,9 +196,15 @@ struct TripLocation: Identifiable {
 }
 
 struct TripLocationAnnotation: Identifiable {
-    let id = UUID()
+    let id: UUID
     let location: TripLocation
     let coordinate: CLLocationCoordinate2D
+    
+    init(location: TripLocation, coordinate: CLLocationCoordinate2D) {
+        self.id = UUID()
+        self.location = location
+        self.coordinate = coordinate
+    }
 }
 
 struct LocationMapMarker: View {
