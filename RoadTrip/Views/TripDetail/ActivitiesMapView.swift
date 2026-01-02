@@ -7,8 +7,9 @@ struct IdentifiableMapItem: Identifiable {
     let activity: Activity
 }
 
-struct ActivityAnnotation: NSObject, MKAnnotation {
-    dynamic var coordinate: CLLocationCoordinate2D
+class ActivityAnnotation: NSObject, MKAnnotation {
+    @objc dynamic var coordinate: CLLocationCoordinate2D
+    let id = UUID()
     let activity: Activity
     
     init(activity: Activity, coordinate: CLLocationCoordinate2D) {
