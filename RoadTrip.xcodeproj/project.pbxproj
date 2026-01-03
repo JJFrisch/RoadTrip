@@ -84,6 +84,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
+				Info.plist,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
 		};
@@ -99,6 +100,16 @@
 			target = DB63BA122F0770D5001B1FDD /* RoadTripUITests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		DB18043B2F09D54500253A35 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = DB63BA072F0770D5001B1FDD /* Resources */;
+			membershipExceptions = (
+				Info.plist,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB63BA0C2F0770D5001B1FDD /* RoadTripTests */ = {
@@ -116,8 +127,12 @@
 			exceptions = (
 				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
 				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
+				DB18043B2F09D54500253A35 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */,
 				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,
 			);
+			explicitFileTypes = {
+				Info.plist = sourcecode.c.objc.preprocessed;
+			};
 			path = RoadTrip;
 			sourceTree = "<group>";
 		};

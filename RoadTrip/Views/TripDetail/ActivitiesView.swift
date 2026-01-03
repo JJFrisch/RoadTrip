@@ -96,6 +96,8 @@ struct ActivitiesView: View {
                 }
             }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemGroupedBackground))
         .environment(\.editMode, $editMode)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -110,6 +112,9 @@ struct ActivitiesView: View {
             if let day = selectedDay {
                 AddActivityView(day: day)
                     .environment(\.modelContext, modelContext)
+                    .presentationBackground(.white)
+                    .presentationDragIndicator(.hidden)
+                    .interactiveDismissDisabled(false)
             }
         }
         .sheet(isPresented: $showingImportActivity) {
@@ -265,6 +270,10 @@ struct AddActivityView: View {
     var isFormValid: Bool {
         !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !location.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    init(day: TripDay) {
+        self.day = day
     }
     
     var body: some View {

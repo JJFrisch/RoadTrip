@@ -82,9 +82,9 @@ struct TripDetailView: View {
                 alignment: .top
             )
         }
-        .ignoresSafeArea(.all, edges: .bottom)
+        .background(Color(.systemBackground))
         .navigationTitle(trip.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
