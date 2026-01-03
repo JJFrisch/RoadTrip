@@ -6,6 +6,7 @@ struct ActivitiesView: View {
     @Environment(\.modelContext) private var modelContext
     let trip: Trip
     @State private var showingAddActivity = false
+    @State private var showingImportActivity = false
     @State private var selectedDay: TripDay?
     @State private var showingMap = false
     @State private var editingActivity: Activity?
@@ -64,13 +65,24 @@ struct ActivitiesView: View {
                         .onMove { indices, newOffset in
                             moveActivity(in: day, from: indices, to: newOffset)
                         }
-                    }                        Button {
+                    }
+                    
+                    HStack(spacing: 12) {
+                        Button {
                             selectedDay = day
                             showingAddActivity = true
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
-                    } header: {
+                        
+                        Button {
+                            selectedDay = day
+                            showingImportActivity = true
+                        } label: {
+                            Label("Import Activities", systemImage: "arrow.down.circle")
+                        }
+                    }
+                } header: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Day \(day.dayNumber)")
                                 .font(.headline)
@@ -96,6 +108,11 @@ struct ActivitiesView: View {
         .sheet(isPresented: $showingAddActivity) {
             if let day = selectedDay {
                 AddActivityView(day: day)
+            }
+        }
+        .sheet(isPresented: $showingImportActivity) {
+            if let day = selectedDay {
+                ActivityImportSheet(day: day)
             }
         }
         .sheet(item: $editingActivity) { activity in

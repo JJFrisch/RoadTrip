@@ -10,6 +10,7 @@ struct DayDetailScheduleView: View {
     @State private var transportMode: TransportMode = .driving
     @State private var activityDistances: [UUID: Double] = [:] // in miles
     @State private var isCalculatingDistances = false
+    @State private var showingImportActivity = false
     
     enum TransportMode: String, CaseIterable {
         case walking = "Walking"
@@ -160,11 +161,22 @@ struct DayDetailScheduleView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingImportActivity = true
+                    } label: {
+                        Label("Import", systemImage: "arrow.down.circle")
+                    }
+                }
+                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
                 }
+            }
+            .sheet(isPresented: $showingImportActivity) {
+                ActivityImportSheet(day: day)
             }
         }
     }
