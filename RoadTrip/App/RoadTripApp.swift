@@ -35,11 +35,10 @@ struct RoadTripperApp: App {
             // In development, reset the database if migration fails
             print("⚠️ Migration failed in DEBUG mode, resetting database: \(error)")
             
-            if let storeURL = modelConfiguration.url {
-                try? FileManager.default.removeItem(at: storeURL)
-                try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-shm"))
-                try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-wal"))
-            }
+            let storeURL = modelConfiguration.url
+            try? FileManager.default.removeItem(at: storeURL)
+            try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-shm"))
+            try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-wal"))
             
             do {
                 return try ModelContainer(

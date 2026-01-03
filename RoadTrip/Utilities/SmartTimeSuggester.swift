@@ -42,7 +42,7 @@ struct SmartTimeSuggester {
         }
 
         // Default: schedule right after travel, but if typical duration suggests spacing, adjust for short activities
-        if let duration = typicalDurationHours {
+        if typicalDurationHours != nil {
             // If previous end + travel falls into a meal window and activity is not meal, bump a bit
             return calendar.date(from: components) ?? base
         }

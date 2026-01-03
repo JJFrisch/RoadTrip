@@ -11,7 +11,6 @@ struct TimeHelper {
         activityCategory: String
     ) -> Date {
         let now = Date()
-        let calendar = Calendar.current
         
         // If there's a previous activity, calculate based on that
         if let prevTime = previousActivityTime {
@@ -137,7 +136,7 @@ struct TimeHelper {
            let lastTime = lastActivity.scheduledTime {
             
             // Try to calculate travel time from last activity to new activity's typical location
-            var travelTime: Double = 0.25 // Default 15 min buffer
+            let travelTime: Double = 0.25 // Default 15 min buffer
             
             // Use the suggested time
             let suggestedTime = suggestNextActivityTime(

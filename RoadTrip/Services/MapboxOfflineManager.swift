@@ -173,8 +173,9 @@ final class MapboxOfflineManager: ObservableObject {
         completedRegion.isComplete = true
         completedRegion.sizeInBytes = Int64.random(in: 5_000_000...50_000_000) // Placeholder size
         
+        let regionToAdd = completedRegion
         await MainActor.run {
-            downloadedRegions.append(completedRegion)
+            downloadedRegions.append(regionToAdd)
             saveRegions()
             isDownloading = false
             currentDownload = nil
