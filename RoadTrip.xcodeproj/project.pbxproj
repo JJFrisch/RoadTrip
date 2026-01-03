@@ -86,7 +86,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
-				ContentView.swift,`r`n				Item.swift,
+				ContentView.swift,
+				Item.swift,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
 		};
