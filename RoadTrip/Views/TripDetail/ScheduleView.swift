@@ -10,15 +10,23 @@ import SwiftUI
 
 struct ScheduleView: View {
     let trip: Trip
+    @State private var selectedDay: TripDay?
     
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
                 ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
                     DayScheduleSection(day: day)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedDay = day
+                        }
                 }
             }
             .padding()
+        }
+        .sheet(item: $selectedDay) { day in
+            DayDetailScheduleView(day: day)
         }
     }
 }
@@ -26,8 +34,8 @@ struct ScheduleView: View {
 struct DayScheduleSection: View {
     let day: TripDay
     
-    var sortedActivities: [Activity] {
-        day.activities.sorted { a, b in
+    var completedActivities: [Activity] {
+        day.activities.filter { $0.isCompleted }.sorted { a, b in
             guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
                 return a.scheduledTime != nil
             }
@@ -52,13 +60,13 @@ struct DayScheduleSection: View {
             .padding(.bottom, 8)
             
             // Timeline
-            if sortedActivities.isEmpty {
+            if completedActivities.isEmpty {
                 Text("No scheduled activities")
                     .foregroundStyle(.secondary)
                     .italic()
                     .padding(.vertical)
             } else {
-                ForEach(sortedActivities) { activity in
+                ForEach(completedActivities) { activity in
                     TimelineItemView(activity: activity)
                 }
             }

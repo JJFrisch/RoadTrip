@@ -8,6 +8,7 @@ struct LocationSearchField: View {
     let icon: String
     let iconColor: Color
     var placeholder: String = "Enter location"
+    var searchRegion: MKCoordinateRegion? = nil
     
     @State private var searchResults: [MKLocalSearchCompletion] = []
     @State private var isSearching = false
@@ -24,7 +25,7 @@ struct LocationSearchField: View {
                     .focused($isFocused)
                     .onChange(of: location) { oldValue, newValue in
                         if isFocused && !newValue.isEmpty {
-                            searchCompleter.search(query: newValue)
+                            searchCompleter.search(query: newValue, region: searchRegion)
                             isSearching = true
                         } else {
                             isSearching = false
@@ -33,6 +34,11 @@ struct LocationSearchField: View {
                     .onChange(of: isFocused) { oldValue, newValue in
                         if !newValue {
                             isSearching = false
+                        }
+                    }
+                    .onAppear {
+                        if let region = searchRegion {
+                            searchCompleter.setRegion(region)
                         }
                     }
                     .textInputAutocapitalization(.words)
@@ -102,7 +108,14 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
         completer.resultTypes = [.address, .pointOfInterest]
     }
     
-    func search(query: String) {
+    func setRegion(_ region: MKCoordinateRegion) {
+        completer.region = region
+    }
+    
+    func search(query: String, region: MKCoordinateRegion? = nil) {
+        if let region = region {
+            completer.region = region
+        }
         completer.queryFragment = query
     }
     

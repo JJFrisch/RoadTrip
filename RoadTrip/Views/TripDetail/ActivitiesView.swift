@@ -10,46 +10,61 @@ struct ActivitiesView: View {
     @State private var showingMap = false
     @State private var editingActivity: Activity?
     @State private var activityToDelete: Activity?
+    @State private var editMode: EditMode = .inactive
 
     
     var body: some View {
-        VStack {
-            Button {
-                showingMap = true
-            } label: {
-                Label("Show Activities on Map", systemImage: "map")
+        List {
+            Section {
+                Button {
+                    showingMap = true
+                } label: {
+                    Label("Show Activities on Map", systemImage: "map")
+                }
             }
-            .sheet(isPresented: $showingMap) {
-                let allActivities = trip.days.flatMap { $0.activities }
-                ActivitiesMapView(activities: allActivities)
-            }
-            List {
-                ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
-                    Section {
-                        if day.activities.isEmpty {
-                            Text("No activities yet")
-                                .foregroundStyle(.secondary)
-                                .italic()
-                        } else {
-                            ForEach(day.activities) { activity in
+            
+            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+                Section {
+                    if day.activities.isEmpty {
+                        Text("No activities yet")
+                            .foregroundStyle(.secondary)
+                            .italic()
+                    } else {
+                        ForEach(day.activities.sorted(by: { $0.order < $1.order })) { activity in
+                            HStack(spacing: 12) {
+                                Button {
+                                    activity.isCompleted.toggle()
+                                } label: {
+                                    Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(activity.isCompleted ? .green : .gray)
+                                        .font(.title3)
+                                }
+                                .buttonStyle(.plain)
+                                
                                 ActivityRowView(activity: activity)
-                                    .contextMenu {
-                                        Button {
-                                            editingActivity = activity
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                        }
-                                        
-                                        Button(role: .destructive) {
-                                            activityToDelete = activity
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        editingActivity = activity
                                     }
                             }
+                            .contextMenu {
+                                Button {
+                                    editingActivity = activity
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                
+                                Button(role: .destructive) {
+                                    activityToDelete = activity
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
-                        
-                        Button {
+                        .onMove { indices, newOffset in
+                            moveActivity(in: day, from: indices, to: newOffset)
+                        }
+                    }                        Button {
                             selectedDay = day
                             showingAddActivity = true
                         } label: {
@@ -66,37 +81,57 @@ struct ActivitiesView: View {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
-            .sheet(isPresented: $showingAddActivity) {
-                if let day = selectedDay {
-                    AddActivityView(day: day)
-                }
+        }
+        .listStyle(.insetGrouped)
+        .environment(\.editMode, $editMode)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                EditButton()
             }
-            .sheet(item: $editingActivity) { activity in
-                if let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) {
-                    EditActivityView(activity: activity, day: day)
-                }
+        }
+        .sheet(isPresented: $showingMap) {
+            let allActivities = trip.days.flatMap { $0.activities }
+            ActivitiesMapView(activities: allActivities)
+        }
+        .sheet(isPresented: $showingAddActivity) {
+            if let day = selectedDay {
+                AddActivityView(day: day)
             }
-            .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
-                Button(role: .destructive) {
-                    deleteActivity(activity)
-                    activityToDelete = nil
-                } label: {
-                    Text("Delete")
-                }
-                Button(role: .cancel) {
-                    activityToDelete = nil
-                } label: {
-                    Text("Cancel")
-                }
-            } message: { activity in
-                Text("Are you sure you want to delete \"\(activity.name)\"?")
+        }
+        .sheet(item: $editingActivity) { activity in
+            if let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) {
+                EditActivityView(activity: activity, day: day)
             }
+        }
+        .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
+            Button(role: .destructive) {
+                deleteActivity(activity)
+                activityToDelete = nil
+            } label: {
+                Text("Delete")
+            }
+            Button(role: .cancel) {
+                activityToDelete = nil
+            } label: {
+                Text("Cancel")
+            }
+        } message: { activity in
+            Text("Are you sure you want to delete \"\(activity.name)\"?")
         }
     }
     
     private func deleteActivity(_ activity: Activity) {
         modelContext.delete(activity)
+    }
+    
+    private func moveActivity(in day: TripDay, from source: IndexSet, to destination: Int) {
+        var sortedActivities = day.activities.sorted(by: { $0.order < $1.order })
+        sortedActivities.move(fromOffsets: source, toOffset: destination)
+        
+        // Update order property for all activities in this day
+        for (index, activity) in sortedActivities.enumerated() {
+            activity.order = index
+        }
     }
 }
 
@@ -263,6 +298,9 @@ struct AddActivityView: View {
         let activity = Activity(name: activityName.trimmingCharacters(in: .whitespaces), 
                                location: location.trimmingCharacters(in: .whitespaces), 
                                category: category)
+        
+        // Set order to be at the end
+        activity.order = day.activities.count
         
         if includeTime {
             // Combine day's date with selected time

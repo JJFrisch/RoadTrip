@@ -1,6 +1,7 @@
 // Views/TripDetail/OverviewView.swift
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct OverviewView: View {
     @Environment(\.modelContext) private var modelContext
@@ -281,6 +282,8 @@ struct AddDayView: View {
     @State private var hotelName = ""
     @State private var distance: Double = 0
     @State private var drivingTime: Double = 0
+    @State private var isCalculatingRoute = false
+    @State private var endLocationRegion: MKCoordinateRegion?
     
     var isFormValid: Bool {
         !startLocation.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -315,6 +318,11 @@ struct AddDayView: View {
                         icon: "location.circle.fill",
                         iconColor: .green
                     )
+                    .onChange(of: startLocation) { oldValue, newValue in
+                        if !newValue.isEmpty && !endLocation.isEmpty {
+                            calculateRoute()
+                        }
+                    }
                     
                     LocationSearchField(
                         title: "End Location",
@@ -322,25 +330,43 @@ struct AddDayView: View {
                         icon: "mappin.circle.fill",
                         iconColor: .red
                     )
+                    .onChange(of: endLocation) { oldValue, newValue in
+                        if !newValue.isEmpty {
+                            if !startLocation.isEmpty {
+                                calculateRoute()
+                            }
+                            updateEndLocationRegion()
+                        }
+                    }
                 }
                 
                 Section("Route Details") {
                     HStack {
                         Text("Distance (miles)")
                         Spacer()
-                        TextField("0", value: $distance, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
+                        if isCalculatingRoute {
+                            ProgressView()
+                                .frame(width: 80)
+                        } else {
+                            TextField("0", value: $distance, format: .number)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                        }
                     }
                     
                     HStack {
                         Text("Driving Time (hours)")
                         Spacer()
-                        TextField("0", value: $drivingTime, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
+                        if isCalculatingRoute {
+                            ProgressView()
+                                .frame(width: 80)
+                        } else {
+                            TextField("0", value: $drivingTime, format: .number)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                        }
                     }
                 }
                 
@@ -350,7 +376,8 @@ struct AddDayView: View {
                         location: $hotelName,
                         icon: "bed.double.circle.fill",
                         iconColor: .purple,
-                        placeholder: "Hotel (optional)"
+                        placeholder: "Hotel (optional)",
+                        searchRegion: endLocationRegion
                     )
                 }
                 
@@ -391,5 +418,72 @@ struct AddDayView: View {
         trip.days.append(newDay)
         
         dismiss()
+    }
+    
+    private func calculateRoute() {
+        isCalculatingRoute = true
+        
+        let startRequest = MKLocalSearch.Request()
+        startRequest.naturalLanguageQuery = startLocation
+        let startSearch = MKLocalSearch(request: startRequest)
+        
+        let endRequest = MKLocalSearch.Request()
+        endRequest.naturalLanguageQuery = endLocation
+        let endSearch = MKLocalSearch(request: endRequest)
+        
+        Task {
+            do {
+                let startResult = try await startSearch.start()
+                let endResult = try await endSearch.start()
+                
+                guard let startPlacemark = startResult.mapItems.first?.placemark,
+                      let endPlacemark = endResult.mapItems.first?.placemark else {
+                    await MainActor.run { isCalculatingRoute = false }
+                    return
+                }
+                
+                let request = MKDirections.Request()
+                request.source = MKMapItem(placemark: startPlacemark)
+                request.destination = MKMapItem(placemark: endPlacemark)
+                request.transportType = .automobile
+                
+                let directions = MKDirections(request: request)
+                let response = try await directions.calculate()
+                
+                if let route = response.routes.first {
+                    await MainActor.run {
+                        distance = route.distance / 1609.34 // Convert meters to miles
+                        drivingTime = route.expectedTravelTime / 3600.0 // Convert seconds to hours
+                        isCalculatingRoute = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isCalculatingRoute = false
+                }
+            }
+        }
+    }
+    
+    private func updateEndLocationRegion() {
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = endLocation
+        let search = MKLocalSearch(request: request)
+        
+        Task {
+            do {
+                let result = try await search.start()
+                if let mapItem = result.mapItems.first {
+                    await MainActor.run {
+                        endLocationRegion = MKCoordinateRegion(
+                            center: mapItem.placemark.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+                        )
+                    }
+                }
+            } catch {
+                // Silently fail - region will remain nil
+            }
+        }
     }
 }
