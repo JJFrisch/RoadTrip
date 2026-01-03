@@ -41,6 +41,7 @@ struct TripDetailView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea(.container, edges: .bottom)
         }
         .navigationTitle(trip.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -93,6 +94,9 @@ struct TripDetailView: View {
                     }
                     return timeA < timeB
                 }
+                
+                // Only create routes if we have at least 2 completed activities
+                guard completedActivities.count > 1 else { continue }
                 
                 for i in 0..<(completedActivities.count - 1) {
                     routes.append((
