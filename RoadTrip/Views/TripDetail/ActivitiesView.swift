@@ -109,7 +109,7 @@ struct ActivitiesView: View {
         .sheet(isPresented: $showingAddActivity) {
             if let day = selectedDay {
                 AddActivityView(day: day)
-                    .presentationDetents([.large])
+                    .environment(\.modelContext, modelContext)
             }
         }
         .sheet(isPresented: $showingImportActivity) {
@@ -285,9 +285,7 @@ struct AddActivityView: View {
                         title: "Location",
                         location: $location,
                         icon: "mappin.circle.fill",
-                        iconColor: .blue,
-                        searchQuery: category == "Food" ? "\(location) restaurant" : location,
-                        searchRegionAddress: day.startLocation.isEmpty ? nil : day.startLocation
+                        iconColor: .blue
                     )
                     
                     Picker("Category", selection: $category) {
@@ -328,9 +326,6 @@ struct AddActivityView: View {
                     TextEditor(text: $notes)
                         .frame(height: 80)
                 }
-            }
-            .onAppear {
-                updateSuggestedTime()
             }
             .navigationTitle("Add Activity")
             .navigationBarTitleDisplayMode(.inline)
@@ -381,15 +376,23 @@ struct AddActivityView: View {
         guard useSuggestedTime && includeTime else { return }
         
         Task {
-            let (suggestedTime, suggestedDuration) = await TimeHelper.calculateSmartTimeForNewActivity(
-                day: day,
-                newActivityCategory: category,
-                newActivityName: activityName
-            )
-            
-            await MainActor.run {
-                scheduledTime = suggestedTime
-                duration = suggestedDuration
+            do {
+                let (suggestedTime, suggestedDuration) = await TimeHelper.calculateSmartTimeForNewActivity(
+                    day: day,
+                    newActivityCategory: category,
+                    newActivityName: activityName
+                )
+                
+                await MainActor.run {
+                    scheduledTime = suggestedTime
+                    duration = suggestedDuration
+                }
+            } catch {
+                // If suggestion fails, use defaults
+                await MainActor.run {
+                    scheduledTime = Date()
+                    duration = 1.0
+                }
             }
         }
     }
