@@ -186,22 +186,6 @@ struct OverviewView: View {
                 }
                 .buttonStyle(.plain)
             }
-                        .foregroundStyle(.red)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("To")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        
-                        Text(day.endLocation)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
-                }
-            }
             
             if day.distance > 0 || day.drivingTime > 0 {
                 Divider()
