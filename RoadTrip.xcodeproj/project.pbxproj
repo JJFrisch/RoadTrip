@@ -30,16 +30,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-	DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */ = {
-		isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-		membershipExceptions = (
-			App/RoadTripApp.swift,
-			Assets.xcassets,
-			Config.swift,
-			ContentView.swift,
-			Info.plist,
-			"Info.plist.template",
-			Item.swift,
+		DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/RoadTripApp.swift,
+				Assets.xcassets,
+				Config.swift,
+				ContentView.swift,
+				Info.plist,
+				Item.swift,
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
 				Models/Trip.swift,
