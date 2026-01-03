@@ -1,6 +1,7 @@
 // Views/TripDetail/ActivitiesView.swift
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct ActivitiesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -12,6 +13,7 @@ struct ActivitiesView: View {
     @State private var editingActivity: Activity?
     @State private var activityToDelete: Activity?
     @State private var editMode: EditMode = .inactive
+    @State private var draggedActivity: Activity?
 
     
     var body: some View {
@@ -27,9 +29,15 @@ struct ActivitiesView: View {
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
                 Section {
                     if day.activities.isEmpty {
+                        // Drop zone for empty days
                         Text("No activities yet")
                             .foregroundStyle(.secondary)
                             .italic()
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .contentShape(Rectangle())
+                            .onDrop(of: [.text], isTargeted: nil) { providers in
+                                handleDrop(providers: providers, targetDay: day, targetIndex: 0)
+                            }
                     } else {
                         ForEach(day.activities.sorted(by: { $0.order < $1.order })) { activity in
                             HStack(spacing: 12) {
@@ -48,7 +56,29 @@ struct ActivitiesView: View {
                                         editingActivity = activity
                                     }
                             }
+                            .onDrag {
+                                draggedActivity = activity
+                                return NSItemProvider(object: activity.id.uuidString as NSString)
+                            }
+                            .onDrop(of: [.text], isTargeted: nil) { providers in
+                                handleDrop(providers: providers, targetDay: day, targetIndex: activity.order)
+                            }
                             .contextMenu {
+                                // Move to day submenu
+                                Menu {
+                                    ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
+                                        if targetDay.id != day.id {
+                                            Button {
+                                                moveActivityToDay(activity, from: day, to: targetDay)
+                                            } label: {
+                                                Label("Day \(targetDay.dayNumber)", systemImage: "calendar")
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    Label("Move to Day", systemImage: "arrow.right.circle")
+                                }
+                                
                                 Button {
                                     editingActivity = activity
                                 } label: {
@@ -70,18 +100,14 @@ struct ActivitiesView: View {
                     HStack(spacing: 12) {
                         Button {
                             selectedDay = day
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showingAddActivity = true
-                            }
+                            showingAddActivity = true
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
                         
                         Button {
                             selectedDay = day
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showingImportActivity = true
-                            }
+                            showingImportActivity = true
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
@@ -110,24 +136,14 @@ struct ActivitiesView: View {
             let allActivities = trip.days.flatMap { $0.activities }
             ActivitiesMapView(activities: allActivities)
         }
-        .sheet(isPresented: $showingAddActivity) {
+        .sheet(isPresented: $showingAddActivity, onDismiss: { selectedDay = nil }) {
             if let day = selectedDay {
                 AddActivityView(day: day)
-            } else {
-                Text("Error: No day selected")
-                    .onAppear {
-                        showingAddActivity = false
-                    }
             }
         }
-        .sheet(isPresented: $showingImportActivity) {
+        .sheet(isPresented: $showingImportActivity, onDismiss: { selectedDay = nil }) {
             if let day = selectedDay {
                 ActivityImportSheet(day: day)
-            } else {
-                Text("Error: No day selected")
-                    .onAppear {
-                        showingImportActivity = false
-                    }
             }
         }
         .sheet(item: $editingActivity) { activity in
@@ -163,6 +179,67 @@ struct ActivitiesView: View {
         // Update order property for all activities in this day
         for (index, activity) in sortedActivities.enumerated() {
             activity.order = index
+        }
+    }
+    
+    // MARK: - Cross-Day Drag & Drop
+    
+    private func handleDrop(providers: [NSItemProvider], targetDay: TripDay, targetIndex: Int) -> Bool {
+        guard let draggedActivity = draggedActivity else { return false }
+        
+        // Find source day
+        guard let sourceDay = trip.days.first(where: { $0.activities.contains(where: { $0.id == draggedActivity.id }) }) else {
+            return false
+        }
+        
+        // If dropping in same day, just reorder
+        if sourceDay.id == targetDay.id {
+            reorderActivityInDay(draggedActivity, in: sourceDay, to: targetIndex)
+        } else {
+            // Move to different day
+            moveActivityToDay(draggedActivity, from: sourceDay, to: targetDay, atIndex: targetIndex)
+        }
+        
+        self.draggedActivity = nil
+        return true
+    }
+    
+    private func reorderActivityInDay(_ activity: Activity, in day: TripDay, to newIndex: Int) {
+        var sortedActivities = day.activities.sorted(by: { $0.order < $1.order })
+        
+        // Find current index
+        guard let currentIndex = sortedActivities.firstIndex(where: { $0.id == activity.id }) else { return }
+        
+        // Remove and reinsert
+        sortedActivities.remove(at: currentIndex)
+        let insertIndex = min(newIndex, sortedActivities.count)
+        sortedActivities.insert(activity, at: insertIndex)
+        
+        // Update order for all
+        for (index, act) in sortedActivities.enumerated() {
+            act.order = index
+        }
+    }
+    
+    private func moveActivityToDay(_ activity: Activity, from sourceDay: TripDay, to targetDay: TripDay, atIndex: Int? = nil) {
+        // Remove from source day
+        sourceDay.activities.removeAll { $0.id == activity.id }
+        
+        // Update order in source day
+        let sourceSorted = sourceDay.activities.sorted(by: { $0.order < $1.order })
+        for (index, act) in sourceSorted.enumerated() {
+            act.order = index
+        }
+        
+        // Add to target day
+        let targetIndex = atIndex ?? targetDay.activities.count
+        activity.order = targetIndex
+        targetDay.activities.append(activity)
+        
+        // Update order in target day
+        var targetSorted = targetDay.activities.sorted(by: { $0.order < $1.order })
+        for (index, act) in targetSorted.enumerated() {
+            act.order = index
         }
     }
 }
@@ -274,6 +351,11 @@ struct AddActivityView: View {
     @State private var searchNearLocation = ""
     @State private var useSearchNear = false
     
+    // Budget tracking
+    @State private var includeCost = false
+    @State private var estimatedCost: Double = 0
+    @State private var costCategory = "Other"
+    
     // Track which field was last edited to handle auto-adjustments
     @State private var lastEditedTimeField: TimeField = .startTime
     
@@ -284,6 +366,7 @@ struct AddActivityView: View {
     @Query private var templates: [ActivityTemplate]
     
     let categories = ["Food", "Attraction", "Hotel", "Other"]
+    let costCategories = ["Gas", "Food", "Lodging", "Attractions", "Other"]
     
     var isFormValid: Bool {
         !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -457,6 +540,46 @@ struct AddActivityView: View {
                     TextEditor(text: $notes)
                         .frame(height: 80)
                 }
+                
+                Section("Budget") {
+                    Toggle("Add Estimated Cost", isOn: $includeCost)
+                    
+                    if includeCost {
+                        HStack {
+                            Text("$")
+                                .foregroundStyle(.secondary)
+                            TextField("0.00", value: $estimatedCost, format: .number.precision(.fractionLength(2)))
+                                .keyboardType(.decimalPad)
+                        }
+                        
+                        Picker("Cost Category", selection: $costCategory) {
+                            ForEach(costCategories, id: \.self) { cat in
+                                HStack {
+                                    Image(systemName: iconForCostCategory(cat))
+                                    Text(cat)
+                                }.tag(cat)
+                            }
+                        }
+                        
+                        // Quick cost buttons
+                        HStack(spacing: 8) {
+                            ForEach([10, 25, 50, 100, 200], id: \.self) { amount in
+                                Button {
+                                    estimatedCost = Double(amount)
+                                } label: {
+                                    Text("$\(amount)")
+                                        .font(.caption)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Int(estimatedCost) == amount ? Color.green : Color.gray.opacity(0.2))
+                                        .foregroundStyle(Int(estimatedCost) == amount ? .white : .primary)
+                                        .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("Add Activity")
             .navigationBarTitleDisplayMode(.inline)
@@ -535,9 +658,25 @@ struct AddActivityView: View {
             activity.duration = duration
         }
         
+        // Budget tracking
+        if includeCost && estimatedCost > 0 {
+            activity.estimatedCost = estimatedCost
+            activity.costCategory = costCategory
+        }
+        
         activity.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
         day.activities.append(activity)
         dismiss()
+    }
+    
+    private func iconForCostCategory(_ category: String) -> String {
+        switch category {
+        case "Gas": return "fuelpump.fill"
+        case "Food": return "fork.knife"
+        case "Lodging": return "bed.double.fill"
+        case "Attractions": return "star.fill"
+        default: return "dollarsign.circle"
+        }
     }
     
     private func updateSuggestedTime() {

@@ -8,7 +8,11 @@ struct TripDetailView: View {
     @State private var selectedTab = 0
     @State private var showingEditSheet = false
     @State private var showingOfflineMapSheet = false
+    @State private var showingShareSheet = false
+    @State private var showingMoreOptions = false
     @State private var isPrefetchingRoutes = false
+    @State private var pdfData: Data?
+    @State private var notificationsEnabled = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -17,13 +21,13 @@ struct TripDetailView: View {
                 OverviewView(trip: trip)
                     .tag(0)
                 
-                ActivitiesView(trip: trip)
+                BudgetView(trip: trip)
                     .tag(1)
                 
-                ScheduleView(trip: trip)
+                ActivitiesView(trip: trip)
                     .tag(2)
                 
-                RouteInfoView(trip: trip)
+                ScheduleView(trip: trip)
                     .tag(3)
                 
                 TripMapView(trip: trip)
@@ -42,31 +46,31 @@ struct TripDetailView: View {
                 }
                 
                 TabBarButton(
-                    icon: "star.fill",
-                    title: "Activities",
+                    icon: "dollarsign.circle.fill",
+                    title: "Budget",
                     isSelected: selectedTab == 1
                 ) {
                     selectedTab = 1
                 }
                 
                 TabBarButton(
-                    icon: "calendar",
-                    title: "Schedule",
+                    icon: "star.fill",
+                    title: "Activities",
                     isSelected: selectedTab == 2
                 ) {
                     selectedTab = 2
                 }
                 
                 TabBarButton(
-                    icon: "map",
-                    title: "Route",
+                    icon: "calendar",
+                    title: "Schedule",
                     isSelected: selectedTab == 3
                 ) {
                     selectedTab = 3
                 }
                 
                 TabBarButton(
-                    icon: "location.fill",
+                    icon: "map.fill",
                     title: "Map",
                     isSelected: selectedTab == 4
                 ) {
@@ -87,10 +91,27 @@ struct TripDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingOfflineMapSheet = true
+                Menu {
+                    Button {
+                        exportToPDF()
+                    } label: {
+                        Label("Export to PDF", systemImage: "doc.fill")
+                    }
+                    
+                    Button {
+                        toggleNotifications()
+                    } label: {
+                        Label(notificationsEnabled ? "Disable Notifications" : "Enable Notifications", 
+                              systemImage: notificationsEnabled ? "bell.slash.fill" : "bell.fill")
+                    }
+                    
+                    Button {
+                        showingOfflineMapSheet = true
+                    } label: {
+                        Label("Offline Maps", systemImage: "arrow.down.circle")
+                    }
                 } label: {
-                    Label("Offline Maps", systemImage: "arrow.down.circle")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -100,8 +121,36 @@ struct TripDetailView: View {
         .sheet(isPresented: $showingOfflineMapSheet) {
             OfflineMapDownloadSheet(trip: trip)
         }
+        .sheet(isPresented: $showingShareSheet) {
+            if let pdfData = pdfData {
+                ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
+            }
+        }
         .onAppear {
             prefetchRoutes()
+        }
+    }
+    
+    private func exportToPDF() {
+        if let data = PDFExportService.shared.generateTripPDF(trip: trip) {
+            pdfData = data
+            showingShareSheet = true
+        }
+    }
+    
+    private func toggleNotifications() {
+        Task {
+            if notificationsEnabled {
+                NotificationService.shared.cancelAllNotifications(for: trip)
+                await MainActor.run {
+                    notificationsEnabled = false
+                }
+            } else {
+                await NotificationService.shared.scheduleAllNotifications(for: trip)
+                await MainActor.run {
+                    notificationsEnabled = true
+                }
+            }
         }
     }
     
