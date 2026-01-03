@@ -31,7 +31,28 @@ struct RoadTripperApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            #if DEBUG
+            // In development, reset the database if migration fails
+            print("⚠️ Migration failed in DEBUG mode, resetting database: \(error)")
+            
+            if let storeURL = modelConfiguration.url {
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-shm"))
+                try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-wal"))
+            }
+            
+            do {
+                return try ModelContainer(
+                    for: schema,
+                    configurations: [modelConfiguration]
+                )
+            } catch {
+                fatalError("Could not create ModelContainer even after reset: \(error)")
+            }
+            #else
+            // In production, crash with detailed error for user support
+            fatalError("Could not create ModelContainer. Migration failed: \(error)")
+            #endif
         }
     }()
     

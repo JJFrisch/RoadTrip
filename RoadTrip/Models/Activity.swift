@@ -18,8 +18,8 @@ class Activity {
     var duration: Double? // in hours
     var category: String // "Food", "Attraction", "Hotel", "Other"
     var notes: String?
-    var isCompleted: Bool
-    var order: Int // For custom ordering within a day
+    var isCompleted: Bool = false
+    var order: Int = 0 // For custom ordering within a day
     
     // Enhanced location data
     var latitude: Double?
