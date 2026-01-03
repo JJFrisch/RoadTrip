@@ -51,6 +51,8 @@
 				Views/TripDetail/ActivitiesMapView.swift,
 				Views/TripDetail/ActivitiesView.swift,
 				Views/TripDetail/EditActivityView.swift,
+				Views/TripDetail/EditTripDayView.swift,
+				Views/TripDetail/LocationSearchField.swift,
 				Views/TripDetail/OverviewView.swift,
 				Views/TripDetail/RouteInfoView.swift,
 				Views/TripDetail/ScheduleView.swift,
