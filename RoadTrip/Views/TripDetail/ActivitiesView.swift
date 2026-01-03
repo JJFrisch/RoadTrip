@@ -3,17 +3,27 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+// Wrapper to distinguish between add and import sheet presentations
+struct DaySheetItem: Identifiable {
+    let id = UUID()
+    let day: TripDay
+    let sheetType: SheetType
+    
+    enum SheetType {
+        case addActivity
+        case importActivity
+    }
+}
+
 struct ActivitiesView: View {
     @Environment(\.modelContext) private var modelContext
     let trip: Trip
-    @State private var showingAddActivity = false
-    @State private var showingImportActivity = false
-    @State private var selectedDay: TripDay?
     @State private var showingMap = false
     @State private var editingActivity: Activity?
     @State private var activityToDelete: Activity?
     @State private var editMode: EditMode = .inactive
     @State private var draggedActivity: Activity?
+    @State private var daySheetItem: DaySheetItem?
 
     
     var body: some View {
@@ -120,15 +130,13 @@ struct ActivitiesView: View {
                     
                     HStack(spacing: 12) {
                         Button {
-                            selectedDay = day
-                            showingAddActivity = true
+                            daySheetItem = DaySheetItem(day: day, sheetType: .addActivity)
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
                         
                         Button {
-                            selectedDay = day
-                            showingImportActivity = true
+                            daySheetItem = DaySheetItem(day: day, sheetType: .importActivity)
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
@@ -157,20 +165,20 @@ struct ActivitiesView: View {
             let allActivities = trip.days.flatMap { $0.activities }
             ActivitiesMapView(activities: allActivities)
         }
-        .sheet(isPresented: $showingAddActivity, onDismiss: { selectedDay = nil }) {
-            if let day = selectedDay {
-                AddActivityView(day: day)
-            }
-        }
-        .sheet(isPresented: $showingImportActivity, onDismiss: { selectedDay = nil }) {
-            if let day = selectedDay {
-                ActivityImportSheet(day: day)
+        .sheet(item: $daySheetItem) { item in
+            switch item.sheetType {
+            case .addActivity:
+                AddActivityView(day: item.day)
+                    .interactiveDismissDisabled(false)
+            case .importActivity:
+                ActivityImportSheet(day: item.day)
+                    .interactiveDismissDisabled(false)
             }
         }
         .sheet(item: $editingActivity) { activity in
-            if let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) {
-                EditActivityView(activity: activity, day: day)
-            }
+            // Find day once and pass directly - avoid optional binding in sheet content
+            let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) ?? trip.days.first!
+            EditActivityView(activity: activity, day: day)
         }
         .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
             Button(role: .destructive) {
@@ -744,6 +752,6 @@ struct AddActivityView: View {
         template.lastUsed = Date()
         
         updateSuggestedTime()
-        showingTemplates = false
+        // Template picker dismisses itself, no need to set showingTemplates = false
     }
 }

@@ -33,6 +33,7 @@ struct TemplatePickerView: View {
                         ForEach(sortedTemplates) { template in
                             Button {
                                 onSelect(template)
+                                dismiss()
                             } label: {
                                 TemplateRow(template: template)
                             }
@@ -59,6 +60,7 @@ struct TemplatePickerView: View {
                             )
                             modelContext.insert(newTemplate)
                             onSelect(newTemplate)
+                            dismiss()
                         } label: {
                             TemplateRow(template: template)
                         }
