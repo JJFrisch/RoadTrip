@@ -93,7 +93,6 @@ struct ActivitiesView: View {
                     }
                 }
             }
-        }
         .listStyle(.insetGrouped)
         .environment(\.editMode, $editMode)
         .toolbar {
@@ -407,5 +406,4 @@ struct AddActivityView: View {
         updateSuggestedTime()
         showingTemplates = false
     }
-}
 }
