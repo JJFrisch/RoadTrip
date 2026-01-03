@@ -80,6 +80,7 @@
 				Assets.xcassets,
 				ContentView.swift,
 				Info.plist,
+				"Info.plist.template",
 				Item.swift,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;

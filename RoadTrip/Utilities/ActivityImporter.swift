@@ -209,7 +209,7 @@ final class ActivityImporter {
         var results: [ImportedPlace] = []
 
         // Try to extract titles inside <a ...>...</a> with `ui_header` like classes
-        let regex = try? NSRegularExpression(pattern: "<a[^>]*>([A-Za-z0-9\s'\-:,\.\&]+)</a>", options: [.caseInsensitive])
+        let regex = try? NSRegularExpression(pattern: #"<a[^>]*>([A-Za-z0-9\s'\-:,\.\&]+)</a>"#, options: [.caseInsensitive])
         if let regex = regex {
             let ns = html as NSString
             let matches = regex.matches(in: html, range: NSRange(location: 0, length: ns.length))
@@ -235,7 +235,7 @@ final class ActivityImporter {
     private func parseGoogleMaps(html: String) -> [ImportedPlace] {
         // Google serves data in JS – this is best-effort parsing for small lists; real integration should use Places API.
         var results: [ImportedPlace] = []
-        let regex = try? NSRegularExpression(pattern: "\\\"(.*?)\\\",\\\[\\\d\\\]", options: [])
+        let regex = try? NSRegularExpression(pattern: #"\"(.*?)\",\[\d\]"#, options: [])
         if let regex = regex {
             let ns = html as NSString
             let matches = regex.matches(in: html, range: NSRange(location: 0, length: ns.length))
@@ -251,7 +251,7 @@ final class ActivityImporter {
 
         // fallback: simple <span> tags
         if results.isEmpty {
-            let spanRegex = try? NSRegularExpression(pattern: "<span[^>]*>([A-Za-z0-9\s'\-:,\.\&]+)</span>", options: [.caseInsensitive])
+            let spanRegex = try? NSRegularExpression(pattern: #"<span[^>]*>([A-Za-z0-9\s'\-:,\.\&]+)</span>"#, options: [.caseInsensitive])
             if let sr = spanRegex {
                 let ns = html as NSString
                 let matches = sr.matches(in: html, range: NSRange(location: 0, length: ns.length))
