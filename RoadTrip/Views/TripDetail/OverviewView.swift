@@ -82,7 +82,8 @@ struct OverviewView: View {
                                 dayRowCard(day)
                             }
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                 }
             }
@@ -107,16 +108,13 @@ struct OverviewView: View {
     private func dayRowCard(_ day: TripDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                // Map thumbnail for quick preview
-                MapThumbnailView(address: day.endLocation)
-
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Day \(day.dayNumber)")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                        .font(.title3)
+                        .fontWeight(.bold)
 
                     Text(day.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
@@ -250,8 +248,13 @@ struct OverviewView: View {
         }
         .padding()
         .background(Color(.systemBackground))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+        )
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .padding(.bottom, 12)
     }
     
     private var emptyDaysView: some View {
