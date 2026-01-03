@@ -121,11 +121,6 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
 
 // Make MKLocalSearchCompletion Hashable for ForEach
 extension MKLocalSearchCompletion: @retroactive Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(title)
-        hasher.combine(subtitle)
-    }
-    
     public static func == (lhs: MKLocalSearchCompletion, rhs: MKLocalSearchCompletion) -> Bool {
         lhs.title == rhs.title && lhs.subtitle == rhs.subtitle
     }
