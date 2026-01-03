@@ -134,12 +134,16 @@ struct ActivitiesView: View {
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
+                        .buttonStyle(.borderless)
+                        
+                        Spacer()
                         
                         Button {
                             daySheetItem = DaySheetItem(day: day, sheetType: .importActivity)
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
+                        .buttonStyle(.borderless)
                     }
                 } header: {
                         VStack(alignment: .leading, spacing: 4) {
