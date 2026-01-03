@@ -44,6 +44,21 @@ struct DayScheduleSection: View {
         }
     }
     
+    private func formatDrivingTime(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h) hr"
+            } else {
+                return "\(h) hr \(m) min"
+            }
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Day Header with gradient
@@ -82,15 +97,50 @@ struct DayScheduleSection: View {
                         }
                     }
                     
+                    // Route info: start → end with distance and time
+                    if !day.startLocation.isEmpty && !day.endLocation.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "car.fill")
+                                .font(.caption)
+                            Text("\(day.startLocation) → \(day.endLocation)")
+                                .font(.caption)
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                        
+                        HStack(spacing: 12) {
+                            if day.distance > 0 {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "road.lanes")
+                                        .font(.caption)
+                                    Text(String(format: "%.0f mi", day.distance))
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            
+                            if day.drivingTime > 0 {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "clock.fill")
+                                        .font(.caption)
+                                    Text(formatDrivingTime(day.drivingTime))
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                        }
+                        .foregroundStyle(.white)
+                    }
+                    
                     if let firstTime = completedActivities.first?.scheduledTime,
                        let lastTime = completedActivities.last?.scheduledTime,
                        let lastDuration = completedActivities.last?.duration {
                         let endTime = Calendar.current.date(byAdding: .minute, value: Int(lastDuration * 60), to: lastTime)!
                         
                         HStack(spacing: 4) {
-                            Image(systemName: "clock.fill")
+                            Image(systemName: "calendar.badge.clock")
                                 .font(.caption)
-                            Text("\(firstTime.formatted(date: .omitted, time: .shortened)) - \(endTime.formatted(date: .omitted, time: .shortened))")
+                            Text("Activities: \(firstTime.formatted(date: .omitted, time: .shortened)) - \(endTime.formatted(date: .omitted, time: .shortened))")
                                 .font(.caption)
                         }
                         .foregroundStyle(.white.opacity(0.9))
@@ -98,7 +148,7 @@ struct DayScheduleSection: View {
                 }
                 .padding()
             }
-            .frame(height: 100)
+            .frame(minHeight: 120)
             
             // Timeline View
             if completedActivities.isEmpty {

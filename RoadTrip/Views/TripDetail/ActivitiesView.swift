@@ -266,10 +266,20 @@ struct AddActivityView: View {
     @State private var category = "Attraction"
     @State private var includeTime = false
     @State private var scheduledTime = Date()
+    @State private var endTime = Date()
     @State private var duration: Double = 1.0
     @State private var notes = ""
     @State private var showingTemplates = false
     @State private var useSuggestedTime = true
+    @State private var searchNearLocation = ""
+    @State private var useSearchNear = false
+    
+    // Track which field was last edited to handle auto-adjustments
+    @State private var lastEditedTimeField: TimeField = .startTime
+    
+    enum TimeField {
+        case startTime, endTime, duration
+    }
     
     @Query private var templates: [ActivityTemplate]
     
@@ -280,8 +290,18 @@ struct AddActivityView: View {
         !location.trimmingCharacters(in: .whitespaces).isEmpty
     }
     
+    // Computed search region based on searchNearLocation
+    var searchRegionAddress: String? {
+        if useSearchNear && !searchNearLocation.isEmpty {
+            return searchNearLocation
+        }
+        return day.startLocation.isEmpty ? nil : day.startLocation
+    }
+    
     init(day: TripDay) {
         self.day = day
+        // Initialize searchNearLocation with day's start location
+        _searchNearLocation = State(initialValue: day.startLocation)
     }
     
     var body: some View {
@@ -295,6 +315,28 @@ struct AddActivityView: View {
                     }
                 }
                 
+                Section("Search Near Location") {
+                    Toggle("Search near specific location", isOn: $useSearchNear)
+                    
+                    if useSearchNear {
+                        LocationSearchField(
+                            title: "Search Near",
+                            location: $searchNearLocation,
+                            icon: "location.magnifyingglass",
+                            iconColor: .orange,
+                            placeholder: "Enter city or address"
+                        )
+                    } else {
+                        HStack {
+                            Image(systemName: "location.circle")
+                                .foregroundStyle(.secondary)
+                            Text("Searching near: \(day.startLocation.isEmpty ? "No location set" : day.startLocation)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
                 Section("Activity Details") {
                     TextField("Activity Name", text: $activityName)
                     
@@ -302,7 +344,8 @@ struct AddActivityView: View {
                         title: "Location",
                         location: $location,
                         icon: "mappin.circle.fill",
-                        iconColor: .blue
+                        iconColor: .blue,
+                        searchRegionAddress: searchRegionAddress
                     )
                     
                     Picker("Category", selection: $category) {
@@ -326,10 +369,81 @@ struct AddActivityView: View {
                                 }
                             }
                         
-                        DatePicker("Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        DatePicker("Start Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
                             .disabled(useSuggestedTime)
+                            .onChange(of: scheduledTime) { _, newValue in
+                                if lastEditedTimeField != .startTime { return }
+                                // Keep duration fixed, adjust end time
+                                endTime = Calendar.current.date(byAdding: .minute, value: Int(duration * 60), to: newValue) ?? newValue
+                            }
                         
-                        Stepper("Duration: \(Int(duration * 60)) min", value: $duration, in: 0.25...8, step: 0.25)
+                        DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
+                            .disabled(useSuggestedTime)
+                            .onChange(of: endTime) { _, newValue in
+                                if lastEditedTimeField != .endTime { return }
+                                // Adjust duration based on start and end time
+                                let diff = newValue.timeIntervalSince(scheduledTime)
+                                if diff > 0 {
+                                    duration = diff / 3600.0 // Convert seconds to hours
+                                }
+                            }
+                        
+                        // Duration with finer control
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Duration")
+                                Spacer()
+                                Text(formatDuration(duration))
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Button {
+                                    adjustDuration(by: -5)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(duration <= 5.0/60.0)
+                                
+                                Slider(value: $duration, in: 0.0833...8, step: 0.0833) // 5-minute steps (5/60 = 0.0833)
+                                    .onChange(of: duration) { _, newValue in
+                                        if lastEditedTimeField != .duration { return }
+                                        // Adjust end time based on duration
+                                        endTime = Calendar.current.date(byAdding: .minute, value: Int(newValue * 60), to: scheduledTime) ?? scheduledTime
+                                    }
+                                
+                                Button {
+                                    adjustDuration(by: 5)
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(duration >= 8)
+                            }
+                            
+                            // Quick duration buttons
+                            HStack(spacing: 8) {
+                                ForEach([15, 30, 45, 60, 90, 120], id: \.self) { minutes in
+                                    Button {
+                                        setDuration(minutes: minutes)
+                                    } label: {
+                                        Text(minutes < 60 ? "\(minutes)m" : "\(minutes/60)h\(minutes % 60 > 0 ? "\(minutes % 60)m" : "")")
+                                            .font(.caption)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Int(duration * 60) == minutes ? Color.blue : Color.gray.opacity(0.2))
+                                            .foregroundStyle(Int(duration * 60) == minutes ? .white : .primary)
+                                            .cornerRadius(6)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
                         
                         if useSuggestedTime {
                             Text("Time suggested based on previous activities")
@@ -362,7 +476,44 @@ struct AddActivityView: View {
                     applyTemplate(template)
                 })
             }
+            .onAppear {
+                // Initialize end time based on default duration
+                endTime = Calendar.current.date(byAdding: .minute, value: Int(duration * 60), to: scheduledTime) ?? scheduledTime
+            }
+            // Track which time field is being edited
+            .onChange(of: scheduledTime) { _, _ in lastEditedTimeField = .startTime }
+            .onChange(of: endTime) { _, _ in lastEditedTimeField = .endTime }
         }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h) hr"
+            } else {
+                return "\(h) hr \(m) min"
+            }
+        }
+    }
+    
+    private func adjustDuration(by minutes: Int) {
+        lastEditedTimeField = .duration
+        let newDuration = duration + Double(minutes) / 60.0
+        if newDuration >= 5.0/60.0 && newDuration <= 8 {
+            duration = newDuration
+            endTime = Calendar.current.date(byAdding: .minute, value: Int(duration * 60), to: scheduledTime) ?? scheduledTime
+        }
+    }
+    
+    private func setDuration(minutes: Int) {
+        lastEditedTimeField = .duration
+        duration = Double(minutes) / 60.0
+        endTime = Calendar.current.date(byAdding: .minute, value: minutes, to: scheduledTime) ?? scheduledTime
     }
     
     private func addActivity() {
@@ -393,23 +544,16 @@ struct AddActivityView: View {
         guard useSuggestedTime && includeTime else { return }
         
         Task {
-            do {
-                let (suggestedTime, suggestedDuration) = await TimeHelper.calculateSmartTimeForNewActivity(
-                    day: day,
-                    newActivityCategory: category,
-                    newActivityName: activityName
-                )
-                
-                await MainActor.run {
-                    scheduledTime = suggestedTime
-                    duration = suggestedDuration
-                }
-            } catch {
-                // If suggestion fails, use defaults
-                await MainActor.run {
-                    scheduledTime = Date()
-                    duration = 1.0
-                }
+            let (suggestedTime, suggestedDuration) = await TimeHelper.calculateSmartTimeForNewActivity(
+                day: day,
+                newActivityCategory: category,
+                newActivityName: activityName
+            )
+            
+            await MainActor.run {
+                scheduledTime = suggestedTime
+                duration = suggestedDuration
+                endTime = Calendar.current.date(byAdding: .minute, value: Int(suggestedDuration * 60), to: suggestedTime) ?? suggestedTime
             }
         }
     }
@@ -419,6 +563,7 @@ struct AddActivityView: View {
         category = template.category
         if let suggestedDuration = template.suggestedDuration {
             duration = suggestedDuration
+            endTime = Calendar.current.date(byAdding: .minute, value: Int(suggestedDuration * 60), to: scheduledTime) ?? scheduledTime
         }
         if let templateNotes = template.notes {
             notes = templateNotes

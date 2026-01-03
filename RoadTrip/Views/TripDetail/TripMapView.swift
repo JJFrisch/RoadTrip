@@ -4,11 +4,12 @@ import MapKit
 
 struct TripMapView: View {
     let trip: Trip
-    @State private var region = MKCoordinateRegion(
+    @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795),
         span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
-    )
+    ))
     @State private var annotations: [TripLocationAnnotation] = []
+    @State private var routeCoordinates: [CLLocationCoordinate2D] = []
     @State private var selectedAnnotation: TripLocationAnnotation?
     @State private var isLoading = true
     @State private var hasError = false
@@ -16,7 +17,13 @@ struct TripMapView: View {
 
     var body: some View {
         ZStack {
-            Map(position: .constant(.region(region)), selection: $selectedAnnotation) {
+            Map(position: $position, selection: $selectedAnnotation) {
+                // Draw blue route line connecting all locations in order
+                if routeCoordinates.count >= 2 {
+                    MapPolyline(coordinates: routeCoordinates)
+                        .stroke(.blue, lineWidth: 4)
+                }
+                
                 ForEach(annotations, id: \.id) { annotation in
                     Annotation("", coordinate: annotation.coordinate) {
                         LocationMapMarker(location: annotation.location, isSelected: selectedAnnotation?.id == annotation.id)
@@ -93,41 +100,59 @@ struct TripMapView: View {
         isLoading = true
         hasError = false
         annotations.removeAll()
+        routeCoordinates.removeAll()
         
         var locations: [TripLocation] = []
         
-        // Collect all unique locations from trip days
-        for (index, day) in trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).enumerated() {
+        // Collect all unique locations from trip days in order for the route
+        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        
+        for (index, day) in sortedDays.enumerated() {
+            // Add start location
             locations.append(TripLocation(
                 title: day.startLocation,
                 subtitle: "Day \(day.dayNumber) - Start",
                 type: .dayStart,
-                dayNumber: day.dayNumber
+                dayNumber: day.dayNumber,
+                orderIndex: index * 3 // For route ordering
             ))
             
-            if index == trip.days.count - 1 {
-                locations.append(TripLocation(
-                    title: day.endLocation,
-                    subtitle: "Day \(day.dayNumber) - End",
-                    type: .dayEnd,
-                    dayNumber: day.dayNumber
-                ))
-            }
-            
-            // Add hotel if available
-            if let hotelName = day.hotelName {
+            // Add hotel if available (in between start and end)
+            if let hotelName = day.hotelName, !hotelName.isEmpty {
                 locations.append(TripLocation(
                     title: hotelName,
                     subtitle: "Day \(day.dayNumber) - Hotel",
                     type: .hotel,
-                    dayNumber: day.dayNumber
+                    dayNumber: day.dayNumber,
+                    orderIndex: index * 3 + 1
                 ))
+            }
+            
+            // Add end location for each day
+            locations.append(TripLocation(
+                title: day.endLocation,
+                subtitle: "Day \(day.dayNumber) - End",
+                type: .dayEnd,
+                dayNumber: day.dayNumber,
+                orderIndex: index * 3 + 2
+            ))
+        }
+        
+        // Remove duplicate consecutive locations (e.g., Day 1 end = Day 2 start)
+        var uniqueLocations: [TripLocation] = []
+        for location in locations {
+            if uniqueLocations.last?.title.lowercased() != location.title.lowercased() {
+                uniqueLocations.append(location)
             }
         }
         
         let group = DispatchGroup()
+        var tempAnnotations: [(TripLocation, CLLocationCoordinate2D)] = []
+        let lock = NSLock()
         
-        for location in locations {
+        for location in uniqueLocations {
+            guard !location.title.isEmpty else { continue }
+            
             group.enter()
             let request = MKLocalSearch.Request()
             request.naturalLanguageQuery = location.title
@@ -138,8 +163,9 @@ struct TripMapView: View {
                 
                 if let item = response?.mapItems.first {
                     let coordinate = item.placemark.coordinate
-                    let annotation = TripLocationAnnotation(location: location, coordinate: coordinate)
-                    annotations.append(annotation)
+                    lock.lock()
+                    tempAnnotations.append((location, coordinate))
+                    lock.unlock()
                 }
             }
         }
@@ -147,9 +173,18 @@ struct TripMapView: View {
         group.notify(queue: .main) {
             isLoading = false
             
-            if annotations.isEmpty {
+            if tempAnnotations.isEmpty {
                 hasError = true
             } else {
+                // Sort by order index to maintain route order
+                let sorted = tempAnnotations.sorted { $0.0.orderIndex < $1.0.orderIndex }
+                
+                // Create annotations
+                annotations = sorted.map { TripLocationAnnotation(location: $0.0, coordinate: $0.1) }
+                
+                // Create route coordinates in order
+                routeCoordinates = sorted.map { $0.1 }
+                
                 zoomToFitAllLocations()
             }
         }
@@ -171,12 +206,12 @@ struct TripMapView: View {
         )
         
         let span = MKCoordinateSpan(
-            latitudeDelta: max((maxLat - minLat) * 1.3, 0.5),
-            longitudeDelta: max((maxLon - minLon) * 1.3, 0.5)
+            latitudeDelta: max((maxLat - minLat) * 1.5, 0.5),
+            longitudeDelta: max((maxLon - minLon) * 1.5, 0.5)
         )
         
-        withAnimation {
-            region = MKCoordinateRegion(center: center, span: span)
+        withAnimation(.easeInOut(duration: 0.5)) {
+            position = .region(MKCoordinateRegion(center: center, span: span))
         }
     }
 }
@@ -187,6 +222,7 @@ struct TripLocation: Identifiable {
     let subtitle: String
     let type: LocationType
     let dayNumber: Int
+    let orderIndex: Int // For maintaining route order
     
     enum LocationType {
         case dayStart
