@@ -21,6 +21,35 @@ struct AppTheme {
         static let background = Color(.systemBackground)
         static let secondaryBackground = Color(.secondarySystemBackground)
         static let divider = Color(.separator)
+        
+        // MARK: - Dark Mode Optimized Colors
+        
+        // Map marker colors - adaptive for dark mode
+        static let mapMarkerStart = AdaptiveColor(light: .green, dark: Color(red: 0.4, green: 0.9, blue: 0.5))
+        static let mapMarkerEnd = AdaptiveColor(light: .red, dark: Color(red: 1.0, green: 0.4, blue: 0.4))
+        static let mapMarkerHotel = AdaptiveColor(light: .purple, dark: Color(red: 0.7, green: 0.5, blue: 1.0))
+        static let mapRoute = AdaptiveColor(light: Color.blue, dark: Color(red: 0.4, green: 0.7, blue: 1.0))
+        
+        // Gradient colors - adaptive
+        static let gradientStart = AdaptiveColor(light: Color.blue.opacity(0.6), dark: Color.blue.opacity(0.4))
+        static let gradientEnd = AdaptiveColor(light: Color.purple.opacity(0.4), dark: Color.purple.opacity(0.3))
+        
+        // Card background
+        static let cardBackground = AdaptiveColor(light: Color.white, dark: Color(.secondarySystemBackground))
+        
+        // Text colors
+        static let primaryText = AdaptiveColor(light: Color.primary, dark: Color.white)
+        static let secondaryText = AdaptiveColor(light: Color.secondary, dark: Color(.systemGray))
+    }
+    
+    // Helper for adaptive colors
+    struct AdaptiveColor {
+        let light: Color
+        let dark: Color
+        
+        func color(for scheme: ColorScheme) -> Color {
+            scheme == .dark ? dark : light
+        }
     }
     
     // MARK: - Typography

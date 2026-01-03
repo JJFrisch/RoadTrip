@@ -4,6 +4,7 @@ import MapKit
 
 struct TripMapView: View {
     let trip: Trip
+    @Environment(\.colorScheme) private var colorScheme
     @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795),
         span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
@@ -14,6 +15,14 @@ struct TripMapView: View {
     @State private var isLoading = true
     @State private var hasError = false
     @State private var showingLocationDetail: TripLocation?
+    @State private var isRefreshing = false
+
+    // Dark mode adaptive route color
+    private var routeColor: Color {
+        colorScheme == .dark 
+            ? Color(red: 0.4, green: 0.7, blue: 1.0) 
+            : Color.blue
+    }
 
     var body: some View {
         ZStack {
@@ -21,12 +30,12 @@ struct TripMapView: View {
                 // Draw blue route line connecting all locations in order
                 if routeCoordinates.count >= 2 {
                     MapPolyline(coordinates: routeCoordinates)
-                        .stroke(.blue, lineWidth: 4)
+                        .stroke(routeColor, lineWidth: 4)
                 }
                 
                 ForEach(annotations, id: \.id) { annotation in
                     Annotation("", coordinate: annotation.coordinate) {
-                        LocationMapMarker(location: annotation.location, isSelected: selectedAnnotation?.id == annotation.id)
+                        LocationMapMarker(location: annotation.location, isSelected: selectedAnnotation?.id == annotation.id, colorScheme: colorScheme)
                             .onTapGesture {
                                 selectedAnnotation = annotation
                                 showingLocationDetail = annotation.location
@@ -44,10 +53,21 @@ struct TripMapView: View {
                     
                     Spacer()
                     
-                    if isLoading {
+                    if isLoading || isRefreshing {
                         ProgressView()
                             .padding()
                     }
+                    
+                    // Pull-to-refresh button
+                    Button {
+                        refreshRoutes()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.title3)
+                            .foregroundStyle(colorScheme == .dark ? .white : .blue)
+                    }
+                    .disabled(isRefreshing)
+                    .padding(.trailing)
                 }
                 .background(.ultraThinMaterial)
                 
@@ -59,6 +79,10 @@ struct TripMapView: View {
                             .font(.title2)
                         Text("Unable to load map locations")
                             .font(.caption)
+                        Button("Retry") {
+                            refreshRoutes()
+                        }
+                        .buttonStyle(.bordered)
                     }
                     .foregroundStyle(.secondary)
                     .padding()
@@ -94,6 +118,22 @@ struct TripMapView: View {
         .sheet(item: $showingLocationDetail) { location in
             LocationDetailSheet(location: location)
         }
+        .refreshable {
+            await refreshRoutesAsync()
+        }
+    }
+    
+    private func refreshRoutes() {
+        isRefreshing = true
+        fetchLocations()
+    }
+    
+    @MainActor
+    private func refreshRoutesAsync() async {
+        isRefreshing = true
+        // Wait a bit for visual feedback
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        fetchLocations()
     }
 
     private func fetchLocations() {
@@ -172,6 +212,7 @@ struct TripMapView: View {
         
         group.notify(queue: .main) {
             isLoading = false
+            isRefreshing = false
             
             if tempAnnotations.isEmpty {
                 hasError = true
@@ -254,12 +295,22 @@ struct TripLocationAnnotation: Identifiable, Hashable {
 struct LocationMapMarker: View {
     let location: TripLocation
     let isSelected: Bool
+    var colorScheme: ColorScheme = .light
     
     var markerColor: Color {
         switch location.type {
-        case .dayStart: return .green
-        case .dayEnd: return .red
-        case .hotel: return .purple
+        case .dayStart: 
+            return colorScheme == .dark 
+                ? Color(red: 0.4, green: 0.9, blue: 0.5) 
+                : .green
+        case .dayEnd: 
+            return colorScheme == .dark 
+                ? Color(red: 1.0, green: 0.4, blue: 0.4) 
+                : .red
+        case .hotel: 
+            return colorScheme == .dark 
+                ? Color(red: 0.7, green: 0.5, blue: 1.0) 
+                : .purple
         }
     }
     
@@ -277,6 +328,7 @@ struct LocationMapMarker: View {
                 Circle()
                     .fill(markerColor)
                     .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
+                    .shadow(color: markerColor.opacity(0.5), radius: colorScheme == .dark ? 6 : 0)
                 
                 Circle()
                     .stroke(.white, lineWidth: 3)

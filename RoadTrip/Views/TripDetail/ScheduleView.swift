@@ -7,33 +7,155 @@
 
 // Views/TripDetail/ScheduleView.swift
 import SwiftUI
+import MapKit
+import CoreLocation
 
 struct ScheduleView: View {
     let trip: Trip
     @State private var selectedDay: TripDay?
+    @State private var isRefreshing = false
+    @State private var dayToCopy: TripDay?
+    @State private var showingCopyOptions = false
     
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
-                    DayScheduleSection(day: day)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedDay = day
+        List {
+            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+                DayScheduleSection(day: day)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedDay = day
+                    }
+                    // MARK: - Day Swipe Actions
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button {
+                            dayToCopy = day
+                            showingCopyOptions = true
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
                         }
-                }
+                        .tint(.blue)
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            duplicateDay(day)
+                        } label: {
+                            Label("Duplicate", systemImage: "plus.square.on.square")
+                        }
+                        .tint(.green)
+                    }
             }
-            .padding()
         }
+        .listStyle(.plain)
         .background(Color(.systemGroupedBackground))
+        .refreshable {
+            await refreshDrivingTimes()
+        }
         .sheet(item: $selectedDay) { day in
             DayDetailScheduleView(day: day)
+        }
+        .confirmationDialog("Copy Day Activities", isPresented: $showingCopyOptions, presenting: dayToCopy) { day in
+            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
+                if targetDay.id != day.id {
+                    Button("Copy to Day \(targetDay.dayNumber)") {
+                        copyActivities(from: day, to: targetDay)
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { day in
+            Text("Copy activities from Day \(day.dayNumber) to another day")
+        }
+    }
+    
+    private func duplicateDay(_ day: TripDay) {
+        // Create a copy of all activities and add to the same day
+        for activity in day.activities {
+            let copy = Activity(name: "\(activity.name) (Copy)", location: activity.location, category: activity.category)
+            copy.duration = activity.duration
+            copy.notes = activity.notes
+            copy.scheduledTime = activity.scheduledTime
+            copy.isCompleted = false
+            copy.order = day.activities.count
+            copy.estimatedCost = activity.estimatedCost
+            copy.costCategory = activity.costCategory
+            day.activities.append(copy)
+        }
+    }
+    
+    private func copyActivities(from sourceDay: TripDay, to targetDay: TripDay) {
+        let startOrder = targetDay.activities.count
+        for (index, activity) in sourceDay.activities.enumerated() {
+            let copy = Activity(name: activity.name, location: activity.location, category: activity.category)
+            copy.duration = activity.duration
+            copy.notes = activity.notes
+            // Adjust time to target day
+            if let sourceTime = activity.scheduledTime {
+                let calendar = Calendar.current
+                let components = calendar.dateComponents([.hour, .minute], from: sourceTime)
+                copy.scheduledTime = calendar.date(bySettingHour: components.hour ?? 9, minute: components.minute ?? 0, second: 0, of: targetDay.date)
+            }
+            copy.isCompleted = false
+            copy.order = startOrder + index
+            copy.estimatedCost = activity.estimatedCost
+            copy.costCategory = activity.costCategory
+            targetDay.activities.append(copy)
+        }
+    }
+    
+    @MainActor
+    private func refreshDrivingTimes() async {
+        isRefreshing = true
+        
+        // Recalculate driving times for all days
+        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        
+        for day in sortedDays {
+            guard !day.startLocation.isEmpty && !day.endLocation.isEmpty else { continue }
+            
+            // Calculate route
+            await calculateRoute(for: day)
+        }
+        
+        isRefreshing = false
+    }
+    
+    @MainActor
+    private func calculateRoute(for day: TripDay) async {
+        let request = MKDirections.Request()
+        
+        // Geocode start and end locations
+        let geocoder = CLGeocoder()
+        
+        do {
+            let startPlacemarks = try await geocoder.geocodeAddressString(day.startLocation)
+            let endPlacemarks = try await geocoder.geocodeAddressString(day.endLocation)
+            
+            guard let startLocation = startPlacemarks.first?.location,
+                  let endLocation = endPlacemarks.first?.location else { return }
+            
+            request.source = MKMapItem(placemark: MKPlacemark(coordinate: startLocation.coordinate))
+            request.destination = MKMapItem(placemark: MKPlacemark(coordinate: endLocation.coordinate))
+            request.transportType = .automobile
+            
+            let directions = MKDirections(request: request)
+            let response = try await directions.calculate()
+            
+            if let route = response.routes.first {
+                day.distance = route.distance / 1609.34 // Convert to miles
+                day.drivingTime = route.expectedTravelTime / 3600 // Convert to hours
+            }
+        } catch {
+            print("Route calculation failed: \(error)")
         }
     }
 }
 
 struct DayScheduleSection: View {
     let day: TripDay
+    @Environment(\.colorScheme) private var colorScheme
     
     var completedActivities: [Activity] {
         day.activities.filter { $0.isCompleted }.sorted { a, b in
@@ -42,6 +164,13 @@ struct DayScheduleSection: View {
             }
             return timeA < timeB
         }
+    }
+    
+    // Dark mode adaptive gradient colors
+    private var gradientColors: [Color] {
+        colorScheme == .dark 
+            ? [Color.blue.opacity(0.4), Color.purple.opacity(0.3)]
+            : [Color.blue.opacity(0.6), Color.purple.opacity(0.4)]
     }
     
     private func formatDrivingTime(_ hours: Double) -> String {
@@ -64,7 +193,7 @@ struct DayScheduleSection: View {
             // Day Header with gradient
             ZStack(alignment: .leading) {
                 LinearGradient(
-                    colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)],
+                    colors: gradientColors,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -185,24 +314,45 @@ struct CalendarTimelineView: View {
     private let hourHeight: CGFloat = 80
     private let timeColumnWidth: CGFloat = 60
     
-    var timeRange: (start: Int, end: Int) {
-        guard !activities.isEmpty,
-              let firstTime = activities.first?.scheduledTime,
-              let lastActivity = activities.last,
-              let lastTime = lastActivity.scheduledTime,
-              let lastDuration = lastActivity.duration,
-              !lastDuration.isNaN && !lastDuration.isInfinite && lastDuration >= 0 else {
+    // Dynamically calculate time range based on current activities
+    private var timeRange: (start: Int, end: Int) {
+        // Filter activities with valid scheduled times
+        let scheduledActivities = activities.filter { activity in
+            guard let time = activity.scheduledTime,
+                  let duration = activity.duration,
+                  !duration.isNaN && !duration.isInfinite && duration >= 0 else {
+                return false
+            }
+            return true
+        }
+        
+        guard !scheduledActivities.isEmpty else {
             return (8, 20) // Default 8 AM to 8 PM
         }
         
         let calendar = Calendar.current
-        let firstHour = calendar.component(.hour, from: firstTime)
-        let lastHour = calendar.component(.hour, from: lastTime)
-        let endHour = lastHour + Int(ceil(lastDuration))
+        
+        // Find earliest and latest times from all activities
+        var earliestHour = 23
+        var latestEndHour = 0
+        
+        for activity in scheduledActivities {
+            guard let time = activity.scheduledTime,
+                  let duration = activity.duration else { continue }
+            
+            let startHour = calendar.component(.hour, from: time)
+            let startMinute = calendar.component(.minute, from: time)
+            
+            // Calculate end hour considering duration
+            let endHour = startHour + Int(ceil(duration + Double(startMinute) / 60.0))
+            
+            earliestHour = min(earliestHour, startHour)
+            latestEndHour = max(latestEndHour, endHour)
+        }
         
         // Add padding and validate
-        let startHour = max(0, firstHour - 1)
-        let finalEndHour = min(24, max(startHour + 1, endHour + 1))
+        let startHour = max(0, earliestHour - 1)
+        let finalEndHour = min(24, max(startHour + 2, latestEndHour + 1))
         
         return (startHour, finalEndHour)
     }
