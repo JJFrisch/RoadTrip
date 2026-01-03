@@ -36,8 +36,6 @@
 				App/RoadTripApp.swift,
 				Assets.xcassets,
 				Config.swift,
-				ContentView.swift,
-				Item.swift,
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
 				Models/Trip.swift,
@@ -86,8 +84,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
-				ContentView.swift,
-				Item.swift,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
 		};
