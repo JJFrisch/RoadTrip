@@ -12,6 +12,15 @@ struct RouteInfo: Identifiable {
     let displayDistance: String
     let displayTime: String
     
+    // Computed properties for convenience
+    var distanceInMiles: Double {
+        distance * 0.000621371 // Convert meters to miles
+    }
+    
+    var durationInHours: Double {
+        estimatedTime / 3600 // Convert seconds to hours
+    }
+    
     init(dayNumber: Int, from: String, to: String, distance: Double, estimatedTime: TimeInterval) {
         self.dayNumber = dayNumber
         self.from = from
@@ -22,6 +31,26 @@ struct RouteInfo: Identifiable {
         
         let hours = Int(estimatedTime / 3600)
         let minutes = Int((estimatedTime.truncatingRemainder(dividingBy: 3600)) / 60)
+        
+        if hours > 0 {
+            self.displayTime = "\(hours)h \(minutes)m"
+        } else {
+            self.displayTime = "\(minutes)m"
+        }
+    }
+    
+    // Simpler initializer for RouteCalculator
+    init(distance: Double, expectedTravelTime: TimeInterval) {
+        self.id = UUID()
+        self.dayNumber = 0
+        self.from = ""
+        self.to = ""
+        self.distance = distance
+        self.estimatedTime = expectedTravelTime
+        self.displayDistance = String(format: "%.1f mi", distance * 0.000621371)
+        
+        let hours = Int(expectedTravelTime / 3600)
+        let minutes = Int((expectedTravelTime.truncatingRemainder(dividingBy: 3600)) / 60)
         
         if hours > 0 {
             self.displayTime = "\(hours)h \(minutes)m"
