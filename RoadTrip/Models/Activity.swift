@@ -21,6 +21,10 @@ class Activity {
     var isCompleted: Bool = false
     var order: Int = 0 // For custom ordering within a day
     
+    // Budget tracking
+    var estimatedCost: Double? // in dollars
+    var costCategory: String? // "Gas", "Food", "Lodging", "Attractions", "Other"
+    
     // Enhanced location data
     var latitude: Double?
     var longitude: Double?

@@ -74,4 +74,27 @@ class Trip {
     var validDays: [TripDay] {
         days.filter { $0.dayNumber > 0 }
     }
+    
+    // MARK: - Budget Tracking
+    
+    var totalBudget: Double {
+        days.reduce(0) { total, day in
+            total + day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+        }
+    }
+    
+    func budgetByCategory(_ category: String) -> Double {
+        days.reduce(0) { total, day in
+            total + day.activities
+                .filter { $0.costCategory == category }
+                .reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+        }
+    }
+    
+    var budgetBreakdown: [(category: String, amount: Double)] {
+        let categories = ["Gas", "Food", "Lodging", "Attractions", "Other"]
+        return categories.map { category in
+            (category: category, amount: budgetByCategory(category))
+        }.filter { $0.amount > 0 }
+    }
 }
