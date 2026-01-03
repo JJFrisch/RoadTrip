@@ -195,7 +195,7 @@ struct TripLocation: Identifiable {
     }
 }
 
-struct TripLocationAnnotation: Identifiable {
+struct TripLocationAnnotation: Identifiable, Hashable {
     let id: UUID
     let location: TripLocation
     let coordinate: CLLocationCoordinate2D
