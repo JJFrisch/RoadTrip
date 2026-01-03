@@ -44,6 +44,7 @@
 				Theme/AppTheme.swift,
 				Utilities/ActivityImporter.swift,
 				Utilities/AnimationModifiers.swift,
+				Utilities/AppError.swift,
 				Utilities/DayCopier.swift,
 				Utilities/LoadingView.swift,
 				Utilities/LocationCache.swift,
@@ -79,7 +80,6 @@
 			membershipExceptions = (
 				Assets.xcassets,
 				ContentView.swift,
-				Info.plist,
 				Item.swift,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;

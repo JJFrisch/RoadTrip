@@ -20,13 +20,24 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 **Important:** Never commit API keys to version control!
 
 **Option 1: Info.plist (Recommended)**
-1. Open `RoadTrip/Info.plist`
-2. Add a new key:
-   ```xml
-   <key>GOOGLE_PLACES_API_KEY</key>
-   <string>YOUR_API_KEY_HERE</string>
+
+**First Time Setup:**
+1. Copy `RoadTrip/Info.plist.template` to `RoadTrip/Info.plist`
+   ```bash
+   cp RoadTrip/Info.plist.template RoadTrip/Info.plist
    ```
-3. Add `Info.plist` to `.gitignore` if not already there
+2. Open `RoadTrip/Info.plist` in Xcode or a text editor
+3. Replace `YOUR_GOOGLE_PLACES_API_KEY_HERE` with your actual API key
+4. **Note:** `Info.plist` is already in `.gitignore` and won't be committed to GitHub
+
+**Setting Up on Another Machine (e.g., Your Mac):**
+1. Pull the latest code from GitHub
+2. Copy the template file:
+   ```bash
+   cp RoadTrip/Info.plist.template RoadTrip/Info.plist
+   ```
+3. Open `RoadTrip/Info.plist` and add your API key
+4. Build and run the project
 
 **Option 2: Environment Variable**
 1. In Xcode, go to Product → Scheme → Edit Scheme
@@ -72,13 +83,15 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 ### Add Token to Project
 
 **Option 1: Info.plist (Recommended)**
+
+Add to your `RoadTrip/Info.plist` file (not the template):
 ```xml
 <key>MAPBOX_ACCESS_TOKEN</key>
 <string>pk.YOUR_TOKEN_HERE</string>
 ```
 
 **Option 2: Config.swift**
-Replace `YOUR_MAPBOX_TOKEN_HERE` in `Config.swift`
+Replace `YOUR_MAPBOX_TOKEN_HERE` in `Config.swift` (also in `.gitignore`)
 
 ### Install Mapbox SDK (When Ready for Production)
 
