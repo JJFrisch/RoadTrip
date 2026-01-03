@@ -47,7 +47,7 @@ struct LocationSearchField: View {
                             searchCompleter.setRegion(region)
                         } else if let address = searchRegionAddress, !address.isEmpty {
                             // Geocode the address to get search region
-                            geocodeAddress(address)
+                            searchCompleter.geocodeAddress(address)
                         }
                     }
                     .textInputAutocapitalization(.words)
@@ -155,7 +155,7 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
         }
     }
     
-    private func geocodeAddress(_ address: String) {
+    func geocodeAddress(_ address: String) {
         let geocoder = CLGeocoder()
         geocoder.geocodeAddressString(address) { placemarks, error in
             if let placemark = placemarks?.first, let location = placemark.location {
@@ -164,7 +164,7 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
                     span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                 )
                 DispatchQueue.main.async {
-                    searchCompleter.setRegion(region)
+                    self.setRegion(region)
                 }
             }
         }

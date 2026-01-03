@@ -36,7 +36,6 @@
 				App/RoadTripApp.swift,
 				Assets.xcassets,
 				Config.swift,
-				Info.plist,
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
 				Models/Trip.swift,
