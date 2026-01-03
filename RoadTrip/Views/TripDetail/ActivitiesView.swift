@@ -111,10 +111,6 @@ struct ActivitiesView: View {
         .sheet(isPresented: $showingAddActivity) {
             if let day = selectedDay {
                 AddActivityView(day: day)
-                    .environment(\.modelContext, modelContext)
-                    .presentationBackground(.white)
-                    .presentationDragIndicator(.hidden)
-                    .interactiveDismissDisabled(false)
             }
         }
         .sheet(isPresented: $showingImportActivity) {
