@@ -22,9 +22,9 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 **Option 1: Info.plist (Recommended)**
 
 **First Time Setup:**
-1. Copy `RoadTrip/Info.plist.template` to `RoadTrip/Info.plist`
+1. Copy `Info.plist.template` to `RoadTrip/Info.plist`
    ```bash
-   cp RoadTrip/Info.plist.template RoadTrip/Info.plist
+   cp Info.plist.template RoadTrip/Info.plist
    ```
 2. Open `RoadTrip/Info.plist` in Xcode or a text editor
 3. Replace `YOUR_GOOGLE_PLACES_API_KEY_HERE` with your actual API key
@@ -34,7 +34,7 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 1. Pull the latest code from GitHub
 2. Copy the template file:
    ```bash
-   cp RoadTrip/Info.plist.template RoadTrip/Info.plist
+   cp Info.plist.template RoadTrip/Info.plist
    ```
 3. Open `RoadTrip/Info.plist` and add your API key
 4. Build and run the project
