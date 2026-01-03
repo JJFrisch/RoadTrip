@@ -1,6 +1,7 @@
 // Views/TripDetail/LocationSearchField.swift
 import SwiftUI
 import MapKit
+import CoreLocation
 
 struct LocationSearchField: View {
     let title: String
@@ -9,11 +10,14 @@ struct LocationSearchField: View {
     let iconColor: Color
     var placeholder: String = "Enter location"
     var searchRegion: MKCoordinateRegion? = nil
+    var searchQuery: String = ""
+    var searchRegionAddress: String? = nil
     
     @State private var searchResults: [MKLocalSearchCompletion] = []
     @State private var isSearching = false
     @StateObject private var searchCompleter = LocationSearchCompleter()
     @FocusState private var isFocused: Bool
+    @State private var searchRegionCoordinate: CLLocationCoordinate2D? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -25,7 +29,9 @@ struct LocationSearchField: View {
                     .focused($isFocused)
                     .onChange(of: location) { oldValue, newValue in
                         if isFocused && !newValue.isEmpty {
-                            searchCompleter.search(query: newValue, region: searchRegion)
+                            // Use category-specific search query if provided
+                            let query = searchQuery.isEmpty ? newValue : newValue
+                            searchCompleter.search(query: query, region: searchRegion)
                             isSearching = true
                         } else {
                             isSearching = false
@@ -39,6 +45,9 @@ struct LocationSearchField: View {
                     .onAppear {
                         if let region = searchRegion {
                             searchCompleter.setRegion(region)
+                        } else if let address = searchRegionAddress, !address.isEmpty {
+                            // Geocode the address to get search region
+                            geocodeAddress(address)
                         }
                     }
                     .textInputAutocapitalization(.words)
@@ -143,6 +152,21 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
         DispatchQueue.main.async {
             self.results = []
+        }
+    }
+    
+    private func geocodeAddress(_ address: String) {
+        let geocoder = CLGeocoder()
+        geocoder.geocodeAddressString(address) { placemarks, error in
+            if let placemark = placemarks?.first, let location = placemark.location {
+                let region = MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                )
+                DispatchQueue.main.async {
+                    searchCompleter.setRegion(region)
+                }
+            }
         }
     }
 }

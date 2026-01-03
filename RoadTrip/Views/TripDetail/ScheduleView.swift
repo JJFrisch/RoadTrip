@@ -25,6 +25,7 @@ struct ScheduleView: View {
             }
             .padding()
         }
+        .background(Color(.systemGroupedBackground))
         .sheet(item: $selectedDay) { day in
             DayDetailScheduleView(day: day)
         }
@@ -44,37 +45,260 @@ struct DayScheduleSection: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Day Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Day \(day.dayNumber)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text(day.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Day Header with gradient
+            ZStack(alignment: .leading) {
+                LinearGradient(
+                    colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Day \(day.dayNumber)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                            
+                            Text(day.date.formatted(date: .complete, time: .omitted))
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        
+                        Spacer()
+                        
+                        if !completedActivities.isEmpty {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("\(completedActivities.count)")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                Text(completedActivities.count == 1 ? "activity" : "activities")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                        }
+                    }
+                    
+                    if let firstTime = completedActivities.first?.scheduledTime,
+                       let lastTime = completedActivities.last?.scheduledTime,
+                       let lastDuration = completedActivities.last?.duration {
+                        let endTime = Calendar.current.date(byAdding: .minute, value: Int(lastDuration * 60), to: lastTime)!
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock.fill")
+                                .font(.caption)
+                            Text("\(firstTime.formatted(date: .omitted, time: .shortened)) - \(endTime.formatted(date: .omitted, time: .shortened))")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                    }
                 }
-                Spacer()
+                .padding()
             }
-            .padding(.bottom, 8)
+            .frame(height: 100)
             
-            // Timeline
+            // Timeline View
             if completedActivities.isEmpty {
-                Text("No scheduled activities")
-                    .foregroundStyle(.secondary)
-                    .italic()
-                    .padding(.vertical)
-            } else {
-                ForEach(completedActivities) { activity in
-                    TimelineItemView(activity: activity)
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
+                    
+                    Text("No scheduled activities")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("Tap on activities and set times to see them here")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+            } else {
+                CalendarTimelineView(activities: completedActivities)
+                    .padding(.vertical, 16)
             }
         }
-        .padding()
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+    }
+}
+
+struct CalendarTimelineView: View {
+    let activities: [Activity]
+    
+    private let hourHeight: CGFloat = 80
+    private let timeColumnWidth: CGFloat = 60
+    
+    var timeRange: (start: Int, end: Int) {
+        guard let firstTime = activities.first?.scheduledTime,
+              let lastActivity = activities.last,
+              let lastTime = lastActivity.scheduledTime,
+              let lastDuration = lastActivity.duration else {
+            return (8, 20) // Default 8 AM to 8 PM
+        }
+        
+        let calendar = Calendar.current
+        let firstHour = calendar.component(.hour, from: firstTime)
+        let lastHour = calendar.component(.hour, from: lastTime)
+        let endHour = lastHour + Int(ceil(lastDuration))
+        
+        // Add padding
+        let startHour = max(0, firstHour - 1)
+        let finalEndHour = min(24, endHour + 1)
+        
+        return (startHour, finalEndHour)
+    }
+    
+    var body: some View {
+        ScrollView {
+            ZStack(alignment: .topLeading) {
+                // Hour grid background
+                VStack(spacing: 0) {
+                    ForEach(timeRange.start..<timeRange.end, id: \.self) { hour in
+                        HStack(spacing: 0) {
+                            // Time label
+                            Text(formatHour(hour))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(width: timeColumnWidth, alignment: .trailing)
+                                .padding(.trailing, 8)
+                            
+                            // Hour line
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 1)
+                        }
+                        .frame(height: hourHeight)
+                    }
+                }
+                .padding(.leading, 8)
+                
+                // Activity blocks
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(activities) { activity in
+                        if let startTime = activity.scheduledTime,
+                           let duration = activity.duration {
+                            ActivityBlock(activity: activity, startTime: startTime, duration: duration)
+                                .offset(y: calculateOffset(for: startTime))
+                                .padding(.leading, timeColumnWidth + 16)
+                        }
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+    
+    private func formatHour(_ hour: Int) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h a"
+        let date = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date())!
+        return formatter.string(from: date)
+    }
+    
+    private func calculateOffset(for time: Date) -> CGFloat {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: time)
+        let minute = calendar.component(.minute, from: time)
+        
+        let hoursFromStart = Double(hour - timeRange.start)
+        let minuteFraction = Double(minute) / 60.0
+        
+        return CGFloat(hoursFromStart + minuteFraction) * hourHeight
+    }
+}
+
+struct ActivityBlock: View {
+    let activity: Activity
+    let startTime: Date
+    let duration: Double
+    
+    private let hourHeight: CGFloat = 80
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Color indicator
+            RoundedRectangle(cornerRadius: 4)
+                .fill(categoryColor)
+                .frame(width: 4)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(startTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(categoryColor)
+                    
+                    Spacer()
+                    
+                    Text(activity.category)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(categoryColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(categoryColor.opacity(0.15))
+                        .cornerRadius(4)
+                }
+                
+                Text(activity.name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                
+                HStack(spacing: 8) {
+                    Label(activity.location, systemImage: "mappin.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Label("\(formatDuration(duration))", systemImage: "clock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(12)
+        }
+        .frame(height: CGFloat(duration) * hourHeight)
+        .background(categoryColor.opacity(0.1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(categoryColor.opacity(0.3), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: categoryColor.opacity(0.2), radius: 4, y: 2)
+    }
+    
+    private var categoryColor: Color {
+        switch activity.category {
+        case "Food": return .orange
+        case "Attraction": return .blue
+        case "Hotel": return .purple
+        default: return .gray
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes)m"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h)h"
+            } else {
+                return "\(h)h \(m)m"
+            }
+        }
     }
 }
 
