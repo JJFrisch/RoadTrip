@@ -12,17 +12,6 @@ struct TripDetailView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Custom Tab Picker
-            Picker("View", selection: $selectedTab) {
-                Text("Overview").tag(0)
-                Text("Activities").tag(1)
-                Text("Schedule").tag(2)
-                Text("Route").tag(3)
-                Text("Map").tag(4)
-            }
-            .pickerStyle(.segmented)
-            .padding()
-            
             // Tab Content
             TabView(selection: $selectedTab) {
                 OverviewView(trip: trip)
@@ -41,7 +30,57 @@ struct TripDetailView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea(.container, edges: .bottom)
+            
+            // Custom Tab Bar at Bottom
+            HStack(spacing: 0) {
+                TabBarButton(
+                    icon: "list.bullet.clipboard",
+                    title: "Overview",
+                    isSelected: selectedTab == 0
+                ) {
+                    selectedTab = 0
+                }
+                
+                TabBarButton(
+                    icon: "star.fill",
+                    title: "Activities",
+                    isSelected: selectedTab == 1
+                ) {
+                    selectedTab = 1
+                }
+                
+                TabBarButton(
+                    icon: "calendar",
+                    title: "Schedule",
+                    isSelected: selectedTab == 2
+                ) {
+                    selectedTab = 2
+                }
+                
+                TabBarButton(
+                    icon: "map",
+                    title: "Route",
+                    isSelected: selectedTab == 3
+                ) {
+                    selectedTab = 3
+                }
+                
+                TabBarButton(
+                    icon: "location.fill",
+                    title: "Map",
+                    isSelected: selectedTab == 4
+                ) {
+                    selectedTab = 4
+                }
+            }
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial)
+            .overlay(
+                Rectangle()
+                    .frame(height: 0.5)
+                    .foregroundStyle(Color.gray.opacity(0.3)),
+                alignment: .top
+            )
         }
         .navigationTitle(trip.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -113,5 +152,30 @@ struct TripDetailView: View {
                 isPrefetchingRoutes = false
             }
         }
+    }
+}
+
+// Custom Tab Bar Button
+struct TabBarButton: View {
+    let icon: String
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundStyle(isSelected ? .blue : .secondary)
+                
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .blue : .secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
     }
 }

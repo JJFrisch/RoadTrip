@@ -346,6 +346,7 @@ struct AddActivityView: View {
                 })
             }
         }
+        .presentationDetents([.large])
     }
     
     private func addActivity() {
