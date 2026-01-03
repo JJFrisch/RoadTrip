@@ -16,7 +16,8 @@ struct RoadTripperApp: App {
         let schema = Schema([
             Trip.self,
             TripDay.self,
-            Activity.self
+            Activity.self,
+            ActivityTemplate.self
         ])
         
         let modelConfiguration = ModelConfiguration(

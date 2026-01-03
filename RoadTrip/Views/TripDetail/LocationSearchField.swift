@@ -100,6 +100,8 @@ struct LocationSearchField: View {
 class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
     @Published var results: [MKLocalSearchCompletion] = []
     private let completer: MKLocalSearchCompleter
+    private let cache = LocationCache.shared
+    private var currentQuery: String = ""
     
     override init() {
         completer = MKLocalSearchCompleter()
@@ -113,6 +115,17 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
     }
     
     func search(query: String, region: MKCoordinateRegion? = nil) {
+        currentQuery = query
+        
+        // Check cache first
+        if let cachedResults = cache.getCachedSearchResults(for: query) {
+            DispatchQueue.main.async {
+                self.results = cachedResults
+            }
+            return
+        }
+        
+        // If not in cache, perform search
         if let region = region {
             completer.region = region
         }
@@ -122,6 +135,8 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         DispatchQueue.main.async {
             self.results = completer.results
+            // Cache the results
+            self.cache.cacheSearchResults(completer.results, for: self.currentQuery)
         }
     }
     

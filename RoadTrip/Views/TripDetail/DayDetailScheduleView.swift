@@ -177,42 +177,24 @@ struct DayDetailScheduleView: View {
         
         Task {
             var distances: [UUID: Double] = [:]
+            let transportType: MKDirectionsTransportType = self.transportMode == .driving ? .automobile : .walking
             
+            // Build route pairs
+            var routes: [(from: String, to: String, activityId: UUID)] = []
             for (index, activity) in completedActivities.enumerated() {
                 guard index < completedActivities.count - 1 else { break }
-                
                 let nextActivity = completedActivities[index + 1]
-                
-                let fromRequest = MKLocalSearch.Request()
-                fromRequest.naturalLanguageQuery = activity.location
-                let fromSearch = MKLocalSearch(request: fromRequest)
-                
-                let toRequest = MKLocalSearch.Request()
-                toRequest.naturalLanguageQuery = nextActivity.location
-                let toSearch = MKLocalSearch(request: toRequest)
-                
-                do {
-                    let fromResult = try await fromSearch.start()
-                    let toResult = try await toSearch.start()
-                    
-                    guard let fromPlacemark = fromResult.mapItems.first?.placemark,
-                          let toPlacemark = toResult.mapItems.first?.placemark else {
-                        continue
-                    }
-                    
-                    let request = MKDirections.Request()
-                    request.source = MKMapItem(placemark: fromPlacemark)
-                    request.destination = MKMapItem(placemark: toPlacemark)
-                    request.transportType = transportMode == .driving ? .automobile : .walking
-                    
-                    let directions = MKDirections(request: request)
-                    let response = try await directions.calculate()
-                    
-                    if let route = response.routes.first {
-                        distances[activity.id] = route.distance / 1609.34 // Convert to miles
-                    }
-                } catch {
-                    // Silently continue
+                routes.append((from: activity.location, to: nextActivity.location, activityId: activity.id))
+            }
+            
+            // Calculate all routes in parallel using RouteCalculator
+            for route in routes {
+                if let routeInfo = try? await RouteCalculator.shared.calculateRoute(
+                    from: route.from,
+                    to: route.to,
+                    transportType: transportType
+                ) {
+                    distances[route.activityId] = routeInfo.distanceInMiles
                 }
             }
             

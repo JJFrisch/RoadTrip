@@ -7,6 +7,7 @@ struct TripDetailView: View {
     let trip: Trip
     @State private var selectedTab = 0
     @State private var showingEditSheet = false
+    @State private var isPrefetchingRoutes = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -53,6 +54,46 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             EditTripView(trip: trip)
+        }
+        .onAppear {
+            prefetchRoutes()
+        }
+    }
+    
+    private func prefetchRoutes() {
+        guard !isPrefetchingRoutes else { return }
+        isPrefetchingRoutes = true
+        
+        Task {
+            // Collect all route pairs from the trip
+            var routes: [(from: String, to: String)] = []
+            
+            for day in trip.days {
+                // Add day route
+                routes.append((from: day.startLocation, to: day.endLocation))
+                
+                // Add activity-to-activity routes for completed activities
+                let completedActivities = day.activities.filter { $0.isCompleted }.sorted { a, b in
+                    guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
+                        return a.scheduledTime != nil
+                    }
+                    return timeA < timeB
+                }
+                
+                for i in 0..<(completedActivities.count - 1) {
+                    routes.append((
+                        from: completedActivities[i].location,
+                        to: completedActivities[i + 1].location
+                    ))
+                }
+            }
+            
+            // Pre-fetch all routes in parallel (this will cache them)
+            _ = await RouteCalculator.shared.calculateMultipleRoutes(routes: routes)
+            
+            await MainActor.run {
+                isPrefetchingRoutes = false
+            }
         }
     }
 }

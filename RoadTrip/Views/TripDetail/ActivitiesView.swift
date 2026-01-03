@@ -226,6 +226,7 @@ struct ActivityRowView: View {
 
 struct AddActivityView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     let day: TripDay
     
     @State private var activityName = ""
@@ -235,6 +236,10 @@ struct AddActivityView: View {
     @State private var scheduledTime = Date()
     @State private var duration: Double = 1.0
     @State private var notes = ""
+    @State private var showingTemplates = false
+    @State private var useSuggestedTime = true
+    
+    @Query private var templates: [ActivityTemplate]
     
     let categories = ["Food", "Attraction", "Hotel", "Other"]
     
@@ -246,6 +251,14 @@ struct AddActivityView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        showingTemplates = true
+                    } label: {
+                        Label("Use Template", systemImage: "doc.on.doc")
+                    }
+                }
+                
                 Section("Activity Details") {
                     TextField("Activity Name", text: $activityName)
                     
@@ -261,15 +274,32 @@ struct AddActivityView: View {
                             Text(cat).tag(cat)
                         }
                     }
+                    .onChange(of: category) { _, newValue in
+                        updateSuggestedTime()
+                    }
                 }
                 
                 Section("Schedule") {
                     Toggle("Set Time", isOn: $includeTime)
                     
                     if includeTime {
+                        Toggle("Use Smart Suggestion", isOn: $useSuggestedTime)
+                            .onChange(of: useSuggestedTime) { _, newValue in
+                                if newValue {
+                                    updateSuggestedTime()
+                                }
+                            }
+                        
                         DatePicker("Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                            .disabled(useSuggestedTime)
                         
                         Stepper("Duration: \(Int(duration * 60)) min", value: $duration, in: 0.25...8, step: 0.25)
+                        
+                        if useSuggestedTime {
+                            Text("Time suggested based on previous activities")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
@@ -277,6 +307,9 @@ struct AddActivityView: View {
                     TextEditor(text: $notes)
                         .frame(height: 80)
                 }
+            }
+            .onAppear {
+                updateSuggestedTime()
             }
             .navigationTitle("Add Activity")
             .navigationBarTitleDisplayMode(.inline)
@@ -290,6 +323,11 @@ struct AddActivityView: View {
                     }
                     .disabled(!isFormValid)
                 }
+            }
+            .sheet(isPresented: $showingTemplates) {
+                TemplatePickerView(templates: templates, onSelect: { template in
+                    applyTemplate(template)
+                })
             }
         }
     }
@@ -316,5 +354,40 @@ struct AddActivityView: View {
         activity.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
         day.activities.append(activity)
         dismiss()
+    }
+    
+    private func updateSuggestedTime() {
+        guard useSuggestedTime && includeTime else { return }
+        
+        Task {
+            let (suggestedTime, suggestedDuration) = await TimeHelper.calculateSmartTimeForNewActivity(
+                day: day,
+                newActivityCategory: category,
+                newActivityName: activityName
+            )
+            
+            await MainActor.run {
+                scheduledTime = suggestedTime
+                duration = suggestedDuration
+            }
+        }
+    }
+    
+    private func applyTemplate(_ template: ActivityTemplate) {
+        activityName = template.name
+        category = template.category
+        if let suggestedDuration = template.suggestedDuration {
+            duration = suggestedDuration
+        }
+        if let templateNotes = template.notes {
+            notes = templateNotes
+        }
+        
+        // Update use count
+        template.useCount += 1
+        template.lastUsed = Date()
+        
+        updateSuggestedTime()
+        showingTemplates = false
     }
 }
