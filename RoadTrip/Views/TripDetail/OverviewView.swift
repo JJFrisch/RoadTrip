@@ -6,6 +6,7 @@ struct OverviewView: View {
     @Environment(\.modelContext) private var modelContext
     let trip: Trip
     @State private var showingAddDay = false
+    @State private var editingDay: TripDay?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -97,6 +98,9 @@ struct OverviewView: View {
         .sheet(isPresented: $showingAddDay) {
             AddDayView(trip: trip)
         }
+        .sheet(item: $editingDay) { day in
+            EditTripDayView(day: day)
+        }
     }
     
     private func dayRowCard(_ day: TripDay) -> some View {
@@ -126,28 +130,62 @@ struct OverviewView: View {
             Divider()
             
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "location.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("From")
+                Button {
+                    editingDay = day
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "location.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.green)
                         
-                        Text(day.startLocation)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("From")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            Text(day.startLocation)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.blue.opacity(0.6))
                     }
-                    
-                    Spacer()
                 }
+                .buttonStyle(.plain)
                 
-                HStack(spacing: 8) {
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.caption)
+                Button {
+                    editingDay = day
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "mappin.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("To")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            Text(day.endLocation)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.blue.opacity(0.6))
+                    }
+                }
+                .buttonStyle(.plain)
+            }
                         .foregroundStyle(.red)
                     
                     VStack(alignment: .leading, spacing: 2) {
@@ -287,10 +325,19 @@ struct AddDayView: View {
         NavigationStack {
             Form {
                 Section("Locations") {
-                    TextField("Start Location", text: $startLocation)
-                        .textInputAutocapitalization(.words)
-                    TextField("End Location", text: $endLocation)
-                        .textInputAutocapitalization(.words)
+                    LocationSearchField(
+                        title: "Start Location",
+                        location: $startLocation,
+                        icon: "location.circle.fill",
+                        iconColor: .green
+                    )
+                    
+                    LocationSearchField(
+                        title: "End Location",
+                        location: $endLocation,
+                        icon: "mappin.circle.fill",
+                        iconColor: .red
+                    )
                 }
                 
                 Section("Route Details") {
@@ -314,7 +361,13 @@ struct AddDayView: View {
                 }
                 
                 Section("Accommodation") {
-                    TextField("Hotel (optional)", text: $hotelName)
+                    LocationSearchField(
+                        title: "Hotel",
+                        location: $hotelName,
+                        icon: "bed.double.circle.fill",
+                        iconColor: .purple,
+                        placeholder: "Hotel (optional)"
+                    )
                 }
                 
                 if let error = validationError {

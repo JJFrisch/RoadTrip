@@ -21,7 +21,14 @@ struct EditActivityView: View {
             Form {
                 Section("Activity Details") {
                     TextField("Activity Name", text: $activityName)
-                    TextField("Location", text: $location)
+                    
+                    LocationSearchField(
+                        title: "Location",
+                        location: $location,
+                        icon: "mappin.circle.fill",
+                        iconColor: .blue
+                    )
+                    
                     Picker("Category", selection: $category) {
                         ForEach(categories, id: \.self) { cat in
                             Text(cat).tag(cat)
