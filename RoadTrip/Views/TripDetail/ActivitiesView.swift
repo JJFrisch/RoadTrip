@@ -56,6 +56,27 @@ struct ActivitiesView: View {
                                         editingActivity = activity
                                     }
                             }
+                            // MARK: - Swipe Actions
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    withAnimation {
+                                        activity.isCompleted.toggle()
+                                    }
+                                } label: {
+                                    Label(
+                                        activity.isCompleted ? "Unmark" : "Complete",
+                                        systemImage: activity.isCompleted ? "xmark.circle" : "checkmark.circle"
+                                    )
+                                }
+                                .tint(activity.isCompleted ? .orange : .green)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    activityToDelete = activity
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                             .onDrag {
                                 draggedActivity = activity
                                 return NSItemProvider(object: activity.id.uuidString as NSString)
@@ -409,6 +430,16 @@ struct AddActivityView: View {
                             iconColor: .orange,
                             placeholder: "Enter city or address"
                         )
+                        
+                        if !searchNearLocation.isEmpty {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text("Location searches will be near: \(searchNearLocation)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     } else {
                         HStack {
                             Image(systemName: "location.circle")
@@ -428,7 +459,7 @@ struct AddActivityView: View {
                         location: $location,
                         icon: "mappin.circle.fill",
                         iconColor: .blue,
-                        searchRegionAddress: searchRegionAddress
+                        searchRegionAddress: useSearchNear ? searchNearLocation : day.startLocation
                     )
                     
                     Picker("Category", selection: $category) {

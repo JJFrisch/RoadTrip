@@ -50,6 +50,12 @@ struct LocationSearchField: View {
                             searchCompleter.geocodeAddress(address)
                         }
                     }
+                    .onChange(of: searchRegionAddress) { _, newAddress in
+                        // Re-geocode when search region address changes
+                        if let address = newAddress, !address.isEmpty {
+                            searchCompleter.geocodeAddress(address)
+                        }
+                    }
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                 
@@ -108,9 +114,11 @@ struct LocationSearchField: View {
 
 class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
     @Published var results: [MKLocalSearchCompletion] = []
+    @Published var isGeocodingRegion = false
     private let completer: MKLocalSearchCompleter
     private let cache = LocationCache.shared
     private var currentQuery: String = ""
+    private var currentRegionAddress: String = ""
     
     override init() {
         completer = MKLocalSearchCompleter()
@@ -156,15 +164,33 @@ class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchComplete
     }
     
     func geocodeAddress(_ address: String) {
+        // Don't re-geocode if it's the same address
+        guard address != currentRegionAddress else { return }
+        currentRegionAddress = address
+        
+        DispatchQueue.main.async {
+            self.isGeocodingRegion = true
+        }
+        
         let geocoder = CLGeocoder()
-        geocoder.geocodeAddressString(address) { placemarks, error in
+        geocoder.geocodeAddressString(address) { [weak self] placemarks, error in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isGeocodingRegion = false
+            }
+            
             if let placemark = placemarks?.first, let location = placemark.location {
                 let region = MKCoordinateRegion(
                     center: location.coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1) // Wider search area
                 )
                 DispatchQueue.main.async {
                     self.setRegion(region)
+                    // Re-run the current query with the new region if there is one
+                    if !self.currentQuery.isEmpty {
+                        self.completer.queryFragment = self.currentQuery
+                    }
                 }
             }
         }
