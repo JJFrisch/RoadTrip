@@ -70,16 +70,18 @@ struct ActivitiesView: View {
                     HStack(spacing: 12) {
                         Button {
                             selectedDay = day
-                            showingImportActivity = false
-                            showingAddActivity = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingAddActivity = true
+                            }
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
                         
                         Button {
                             selectedDay = day
-                            showingAddActivity = false
-                            showingImportActivity = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingImportActivity = true
+                            }
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
@@ -111,11 +113,21 @@ struct ActivitiesView: View {
         .sheet(isPresented: $showingAddActivity) {
             if let day = selectedDay {
                 AddActivityView(day: day)
+            } else {
+                Text("Error: No day selected")
+                    .onAppear {
+                        showingAddActivity = false
+                    }
             }
         }
         .sheet(isPresented: $showingImportActivity) {
             if let day = selectedDay {
                 ActivityImportSheet(day: day)
+            } else {
+                Text("Error: No day selected")
+                    .onAppear {
+                        showingImportActivity = false
+                    }
             }
         }
         .sheet(item: $editingActivity) { activity in
