@@ -106,19 +106,22 @@ struct OverviewView: View {
     
     private func dayRowCard(_ day: TripDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(alignment: .top, spacing: 12) {
+                // Map thumbnail for quick preview
+                MapThumbnailView(address: day.endLocation)
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Day \(day.dayNumber)")
                         .font(.headline)
                         .fontWeight(.semibold)
-                    
+
                     Text(day.date.formatted(date: .abbreviated, time: .omitted))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Button(role: .destructive) {
                     deleteDay(day)
                 } label: {
