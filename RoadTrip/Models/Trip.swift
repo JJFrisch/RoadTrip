@@ -28,6 +28,23 @@ class Trip {
         // Generate TripDays for each day between startDate and endDate (inclusive)
         let calendar = Calendar.current
         let numberOfDays = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        
+        // Ensure we have a valid range (handle case where endDate is before startDate)
+        guard numberOfDays >= 0 else {
+            // If dates are reversed, just create a single day
+            let day = TripDay(
+                dayNumber: 1,
+                date: startDate,
+                startLocation: "",
+                endLocation: "",
+                distance: 0,
+                drivingTime: 0,
+                activities: []
+            )
+            self.days.append(day)
+            return
+        }
+        
         for i in 0...numberOfDays {
             if let date = calendar.date(byAdding: .day, value: i, to: startDate) {
                 let day = TripDay(
