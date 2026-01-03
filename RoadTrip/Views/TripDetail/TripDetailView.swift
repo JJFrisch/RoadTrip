@@ -87,20 +87,10 @@ struct TripDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        showingEditSheet = true
-                    } label: {
-                        Label("Edit Trip", systemImage: "pencil")
-                    }
-                    
-                    Button {
-                        showingOfflineMapSheet = true
-                    } label: {
-                        Label("Offline Maps", systemImage: "arrow.down.circle")
-                    }
+                Button {
+                    showingOfflineMapSheet = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Label("Offline Maps", systemImage: "arrow.down.circle")
                 }
             }
         }
