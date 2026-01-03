@@ -71,6 +71,11 @@ struct TripDetailView: View {
             OfflineMapDownloadSheet(trip: trip)
         }
         .onAppear {
+            print("DEBUG: TripDetailView appeared for trip: \(trip.name)")
+            print("DEBUG: Trip has \(trip.days.count) days")
+            for (index, day) in trip.days.enumerated() {
+                print("DEBUG: Day \(index): dayNumber=\(day.dayNumber), activities=\(day.activities.count)")
+            }
             prefetchRoutes()
         }
     }

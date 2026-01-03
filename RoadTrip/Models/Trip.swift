@@ -63,10 +63,15 @@ class Trip {
 
     
     var numberOfNights: Int {
-        Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        max(0, Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0)
     }
     
     var totalDistance: Double {
         days.reduce(0) { $0 + $1.distance }
+    }
+    
+    // Computed property to get valid days (filters out any corrupted data)
+    var validDays: [TripDay] {
+        days.filter { $0.dayNumber > 0 }
     }
 }
