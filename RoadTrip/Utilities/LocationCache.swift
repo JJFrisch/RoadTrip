@@ -142,16 +142,3 @@ class CachedRoute {
         self.timestamp = timestamp
     }
 }
-
-struct RouteInfo {
-    let distance: Double // in meters
-    let expectedTravelTime: TimeInterval // in seconds
-    
-    var distanceInMiles: Double {
-        distance / 1609.34
-    }
-    
-    var durationInHours: Double {
-        expectedTravelTime / 3600.0
-    }
-}

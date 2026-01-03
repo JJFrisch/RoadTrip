@@ -408,3 +408,4 @@ struct AddActivityView: View {
         showingTemplates = false
     }
 }
+}
