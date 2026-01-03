@@ -330,11 +330,12 @@ struct ActivityImportSheet: View {
             do {
                 // Geocode day's end location to get coordinate
                 let geocoder = CLGeocoder()
+                
                 let placemarks = try await geocoder.geocodeAddressString(day.endLocation)
                 
                 guard let coordinate = placemarks.first?.location?.coordinate else {
                     await MainActor.run {
-                        errorMessage = "Could not find location coordinates"
+                        errorMessage = "Could not find location: '\(day.endLocation)'. Please set the destination for this day."
                         isImporting = false
                     }
                     return

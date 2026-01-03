@@ -71,6 +71,7 @@ struct ActivitiesView: View {
                         Button {
                             selectedDay = day
                             showingAddActivity = true
+                            showingImportActivity = false
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
@@ -78,6 +79,7 @@ struct ActivitiesView: View {
                         Button {
                             selectedDay = day
                             showingImportActivity = true
+                            showingAddActivity = false
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
@@ -107,6 +109,7 @@ struct ActivitiesView: View {
         .sheet(isPresented: $showingAddActivity) {
             if let day = selectedDay {
                 AddActivityView(day: day)
+                    .presentationDetents([.large])
             }
         }
         .sheet(isPresented: $showingImportActivity) {
@@ -282,7 +285,9 @@ struct AddActivityView: View {
                         title: "Location",
                         location: $location,
                         icon: "mappin.circle.fill",
-                        iconColor: .blue
+                        iconColor: .blue,
+                        searchQuery: category == "Food" ? "\(location) restaurant" : location,
+                        searchRegionAddress: day.startLocation.isEmpty ? nil : day.startLocation
                     )
                     
                     Picker("Category", selection: $category) {
@@ -346,7 +351,6 @@ struct AddActivityView: View {
                 })
             }
         }
-        .presentationDetents([.large])
     }
     
     private func addActivity() {
