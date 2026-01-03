@@ -136,10 +136,12 @@ struct CalendarTimelineView: View {
     private let timeColumnWidth: CGFloat = 60
     
     var timeRange: (start: Int, end: Int) {
-        guard let firstTime = activities.first?.scheduledTime,
+        guard !activities.isEmpty,
+              let firstTime = activities.first?.scheduledTime,
               let lastActivity = activities.last,
               let lastTime = lastActivity.scheduledTime,
-              let lastDuration = lastActivity.duration else {
+              let lastDuration = lastActivity.duration,
+              !lastDuration.isNaN && !lastDuration.isInfinite && lastDuration >= 0 else {
             return (8, 20) // Default 8 AM to 8 PM
         }
         
@@ -148,9 +150,9 @@ struct CalendarTimelineView: View {
         let lastHour = calendar.component(.hour, from: lastTime)
         let endHour = lastHour + Int(ceil(lastDuration))
         
-        // Add padding
+        // Add padding and validate
         let startHour = max(0, firstHour - 1)
-        let finalEndHour = min(24, endHour + 1)
+        let finalEndHour = min(24, max(startHour + 1, endHour + 1))
         
         return (startHour, finalEndHour)
     }
@@ -209,8 +211,14 @@ struct CalendarTimelineView: View {
         
         let hoursFromStart = Double(hour - timeRange.start)
         let minuteFraction = Double(minute) / 60.0
+        let totalHours = hoursFromStart + minuteFraction
         
-        return CGFloat(hoursFromStart + minuteFraction) * hourHeight
+        // Ensure we don't return NaN or negative values
+        guard !totalHours.isNaN && !totalHours.isInfinite && totalHours >= 0 else {
+            return 0
+        }
+        
+        return CGFloat(totalHours) * hourHeight
     }
 }
 
@@ -267,7 +275,7 @@ struct ActivityBlock: View {
             }
             .padding(12)
         }
-        .frame(height: CGFloat(duration) * hourHeight)
+        .frame(height: max(40, CGFloat(duration.isNaN || duration.isInfinite || duration < 0 ? 1.0 : duration) * hourHeight))
         .background(categoryColor.opacity(0.1))
         .overlay(
             RoundedRectangle(cornerRadius: 8)

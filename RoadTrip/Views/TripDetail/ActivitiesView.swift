@@ -70,16 +70,16 @@ struct ActivitiesView: View {
                     HStack(spacing: 12) {
                         Button {
                             selectedDay = day
-                            showingAddActivity = true
                             showingImportActivity = false
+                            showingAddActivity = true
                         } label: {
                             Label("Add Activity", systemImage: "plus.circle")
                         }
                         
                         Button {
                             selectedDay = day
-                            showingImportActivity = true
                             showingAddActivity = false
+                            showingImportActivity = true
                         } label: {
                             Label("Import Activities", systemImage: "arrow.down.circle")
                         }
