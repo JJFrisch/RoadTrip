@@ -3,21 +3,25 @@
 ## ✅ Implemented Features
 
 ### 1. Activity Import (PRIMARY FOCUS)
+
 **Status:** ✅ Complete with full UI
 
 #### Import from TripAdvisor/Google Maps
+
 - URL-based HTML parsing (best-effort heuristics)
 - Extracts: name, location, category, rating, duration
 - Preview list with checkbox selection
 - Bulk add to any day
 
 #### Nearby POI Search
+
 - MapKit local search integration
 - Configurable search radius (500m-10km)
 - Apple Maps POI database
 - Preview and bulk-add workflow
 
 #### UI Components
+
 - `ActivityImportSheet.swift` - Full-featured import modal
   - Segmented picker for URL vs Nearby mode
   - URL input with validation
@@ -29,7 +33,8 @@
   - `DayDetailScheduleView` (toolbar)
 
 ### 2. Smart Time Suggestions
-**Status:** ✅ Complete
+
+**Status:** Complete
 
 - `SmartTimeSuggester.swift` utility
 - Meal window detection:
@@ -41,25 +46,30 @@
 - Exposed via `TripDetailViewModel`
 
 ### 3. Offline Mode
-**Status:** ✅ Core infrastructure ready
+
+**Status:** Core infrastructure ready
 
 #### Location Search Cache
+
 - `LocationSearchCache.swift` - UserDefaults-backed cache
 - Stores up to 200 recent searches
 - Auto-saves all location queries
 
 #### Offline Map Manager
+
 - `OfflineMapManager.swift` - Region metadata tracker
 - Stores downloaded region info (lat/lon/span)
 - Placeholder for tile-based offline maps
 
 #### Sync Manager
+
 - `SyncManager.swift` - Operation queue for offline work
 - Enqueue/dequeue operations
 - Ready for background sync integration
 
 ### 4. Map Snapshot Preview
-**Status:** ✅ Complete
+
+**Status:** Complete
 
 - `MapThumbnailRenderer.swift` - MKMapSnapshotter wrapper
 - `MapThumbnailView.swift` - SwiftUI component
@@ -69,16 +79,18 @@
 - Integrated into `OverviewView` day cards
 
 ### 5. Day Template/Copy
-**Status:** ✅ Complete
+
+**Status:** Complete
 
 - `DayCopier.swift` - Deep copy utility
 - Copies activities, locations, hotel, route details
 - Maintains activity order
 - Exposed via `TripDetailViewModel.copyDay(_:to:into:)`
 
-## 📁 Files Created (11 new files)
+## Files Created (11 new files)
 
 ### Utilities (7 files)
+
 1. `RoadTrip/Utilities/ActivityImporter.swift` (146 lines)
 2. `RoadTrip/Utilities/SmartTimeSuggester.swift` (58 lines)
 3. `RoadTrip/Utilities/LocationSearchCache.swift` (35 lines)
@@ -88,14 +100,16 @@
 7. `RoadTrip/Utilities/MapThumbnailRenderer.swift` (29 lines)
 
 ### Views (2 files)
+
 1. `RoadTrip/Views/TripDetail/ActivityImportSheet.swift` (396 lines)
 2. `RoadTrip/Views/Shared/MapThumbnailView.swift` (52 lines)
 
 ### Documentation (2 files)
+
 1. `ACTIVITY_IMPORT_GUIDE.md` - User guide
 2. `FEATURE_SUMMARY.md` - This file
 
-## 📝 Files Modified (3 files)
+## Files Modified (3 files)
 
 1. `RoadTrip/ViewModels/TripDetailViewModel.swift`
    - Added `importActivities(from:into:modelContext:)` 
@@ -117,6 +131,7 @@
 ## 🎯 Feature Highlights
 
 ### Activity Import Workflow
+
 ```
 User Flow:
 1. Tap "Import Activities" on any day
@@ -129,6 +144,7 @@ User Flow:
 ```
 
 ### Smart Time Example
+
 ```
 Day 1, 8:00 AM: Breakfast at Cafe (1h)
 ↓ Drive time: 15 min
@@ -140,11 +156,12 @@ Day 1, 8:00 AM: Breakfast at Cafe (1h)
 ```
 
 ### Map Thumbnails
+
 - Visible on every day card in Overview
 - Async rendering with loading state
 - Cached by iOS system
 
-## ⚠️ Known Limitations
+## Known Limitations
 
 1. **HTML Parsing is Fragile**
    - TripAdvisor/Google Maps can change their HTML anytime
@@ -170,12 +187,14 @@ Day 1, 8:00 AM: Breakfast at Cafe (1h)
 ## 🚀 Suggested Next Steps
 
 ### High Priority
+
 1. **Add Google Places API Integration**
    - Replace HTML parsing with official API
    - Requires API key and server-side proxy
    - Better reliability and data quality
 
 2. **Extend Activity Model**
+
    ```swift
    @Model
    class Activity {
@@ -193,6 +212,7 @@ Day 1, 8:00 AM: Breakfast at Cafe (1h)
    - Show import source badge
 
 ### Medium Priority
+
 4. **Implement Offline Tile Download**
    - Integrate Mapbox SDK or similar
    - Download map tiles for trip region
@@ -209,6 +229,7 @@ Day 1, 8:00 AM: Breakfast at Cafe (1h)
    - Conflict resolution
 
 ### Low Priority
+
 7. **Import Analytics**
    - Track import success/failure rates
    - Most imported attractions

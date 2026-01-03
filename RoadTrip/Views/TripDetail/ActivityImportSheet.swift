@@ -327,10 +327,11 @@ struct ActivityImportSheet: View {
         errorMessage = nil
         
         Task {
-            // Geocode day's end location to get coordinate
-            let geocoder = CLGeocoder()
             do {
+                // Geocode day's end location to get coordinate
+                let geocoder = CLGeocoder()
                 let placemarks = try await geocoder.geocodeAddressString(day.endLocation)
+                
                 guard let coordinate = placemarks.first?.location?.coordinate else {
                     await MainActor.run {
                         errorMessage = "Could not find location coordinates"
@@ -339,11 +340,44 @@ struct ActivityImportSheet: View {
                     return
                 }
                 
-                let places = await ActivityImporter.shared.bulkAddPopularAttractions(near: coordinate, radiusMeters: searchRadius)
+                // Use Google Places API for better results
+                let places = try await viewModel.importActivitiesFromGooglePlaces(
+                    near: coordinate,
+                    into: day,
+                    modelContext: modelContext,
+                    radius: searchRadius
+                )
                 
                 await MainActor.run {
-                    importedPlaces = places
+                    // Convert to ImportedPlace for preview
+                    importedPlaces = places.map { activity in
+                        ActivityImporter.ImportedPlace(
+                            name: activity.name,
+                            address: activity.location,
+                            rating: activity.rating,
+                            coordinate: activity.hasCoordinates ? CLLocationCoordinate2D(latitude: activity.latitude!, longitude: activity.longitude!) : nil,
+                            category: activity.category,
+                            typicalDurationHours: activity.duration,
+                            placeId: activity.placeId,
+                            photoURL: activity.photoURL,
+                            website: activity.website,
+                            phoneNumber: activity.phoneNumber,
+                            types: nil
+                        )
+                    }
+                    
                     selectedPlaces = Set(places.map { $0.name })
+                    isImporting = false
+                    
+                    // Remove from day for now - will be re-added if selected
+                    for activity in places {
+                        modelContext.delete(activity)
+                        day.activities.removeAll { $0.id == activity.id }
+                    }
+                }
+            } catch let error as AppError {
+                await MainActor.run {
+                    errorMessage = error.errorDescription ?? "Failed to search nearby"
                     isImporting = false
                 }
             } catch {
@@ -364,9 +398,18 @@ struct ActivityImportSheet: View {
             activity.order = day.activities.count + index
             activity.isCompleted = true
             
+            // Use enhanced fields instead of notes
             if let coord = place.coordinate {
-                activity.notes = "Coordinates: \(coord.latitude),\(coord.longitude)"
+                activity.latitude = coord.latitude
+                activity.longitude = coord.longitude
             }
+            activity.placeId = place.placeId
+            activity.sourceType = "google"
+            activity.importedAt = Date()
+            activity.rating = place.rating
+            activity.photoURL = place.photoURL
+            activity.website = place.website
+            activity.phoneNumber = place.phoneNumber
             
             modelContext.insert(activity)
             day.activities.append(activity)

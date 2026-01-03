@@ -7,6 +7,7 @@ struct TripDetailView: View {
     let trip: Trip
     @State private var selectedTab = 0
     @State private var showingEditSheet = false
+    @State private var showingOfflineMapSheet = false
     @State private var isPrefetchingRoutes = false
     
     var body: some View {
@@ -45,15 +46,28 @@ struct TripDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingEditSheet = true
+                Menu {
+                    Button {
+                        showingEditSheet = true
+                    } label: {
+                        Label("Edit Trip", systemImage: "pencil")
+                    }
+                    
+                    Button {
+                        showingOfflineMapSheet = true
+                    } label: {
+                        Label("Offline Maps", systemImage: "arrow.down.circle")
+                    }
                 } label: {
-                    Image(systemName: "pencil.circle")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
         .sheet(isPresented: $showingEditSheet) {
             EditTripView(trip: trip)
+        }
+        .sheet(isPresented: $showingOfflineMapSheet) {
+            OfflineMapDownloadSheet(trip: trip)
         }
         .onAppear {
             prefetchRoutes()

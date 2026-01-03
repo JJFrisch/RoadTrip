@@ -46,7 +46,7 @@ Or open `RoadTrip.xcodeproj` directly in Xcode.
 
 ## Project Structure
 
-```
+```text
 RoadTrip/
 ├── App/
 │   └── RoadTripApp.swift           # Main app entry point

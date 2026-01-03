@@ -1,11 +1,13 @@
 # Activity Import & Smart Features - Usage Guide
 
 ## Overview
+
 The RoadTrip app now includes powerful features for importing activities, smart time suggestions, offline mode support, and map thumbnails.
 
 ## Activity Import
 
 ### Import from URL (TripAdvisor / Google Maps)
+
 1. Navigate to any day's activities (via ActivitiesView or DayDetailScheduleView)
 2. Tap **"Import Activities"** button
 3. Choose **"From URL"** mode
@@ -20,6 +22,7 @@ The RoadTrip app now includes powerful features for importing activities, smart 
 **Note:** URL-based import uses HTML parsing heuristics and is best-effort. For production use, integrate official APIs (Google Places API, TripAdvisor Partner API).
 
 ### Import Nearby POIs
+
 1. Open the import sheet
 2. Choose **"Nearby POIs"** mode
 3. Adjust search radius (500m - 10,000m)
@@ -31,6 +34,7 @@ The RoadTrip app now includes powerful features for importing activities, smart 
 ## Smart Time Suggestions
 
 When adding a new activity with "Set Time" enabled:
+
 - Toggle **"Use Smart Suggestion"** on
 - The app automatically suggests a start time based on:
   - Previous activity's end time + travel time
@@ -45,6 +49,7 @@ The suggester intelligently schedules meals during appropriate hours and spaces 
 ## Map Thumbnails
 
 Each day card in the Overview tab now shows a small map preview:
+
 - Automatically geocodes the day's end location
 - Renders a thumbnail using MapKit snapshotter
 - Fast preview without opening full map view
@@ -53,16 +58,19 @@ Each day card in the Overview tab now shows a small map preview:
 ## Offline Mode
 
 ### Location Search Cache
+
 - All location searches are automatically cached locally
 - Reuses previously searched locations when offline
 - Cache managed via `LocationSearchCache.shared`
 
 ### Offline Map Regions (Placeholder)
+
 - `OfflineMapManager` tracks downloaded map regions
 - Currently stores metadata only
 - For true offline tiles, integrate Mapbox or HERE SDK
 
 ### Sync Manager
+
 - Queue operations when offline
 - Sync later when internet returns
 - Access via `SyncManager.shared`
@@ -70,6 +78,7 @@ Each day card in the Overview tab now shows a small map preview:
 ## Day Copy Feature
 
 To duplicate a complete day:
+
 ```swift
 let viewModel = TripDetailViewModel()
 viewModel.copyDay(existingDay, to: newDate, into: trip)
@@ -80,6 +89,7 @@ This creates a deep copy of all activities, locations, and settings for multi-ci
 ## Implementation Files
 
 ### Utilities
+
 - `SmartTimeSuggester.swift` - Time suggestion logic
 - `ActivityImporter.swift` - Import from URLs and nearby search
 - `LocationSearchCache.swift` - Offline search cache
@@ -89,13 +99,16 @@ This creates a deep copy of all activities, locations, and settings for multi-ci
 - `MapThumbnailRenderer.swift` - Map snapshot generation
 
 ### Views
+
 - `ActivityImportSheet.swift` - Import UI with URL and nearby modes
 - `MapThumbnailView.swift` - SwiftUI thumbnail component
 
 ### View Models
+
 - `TripDetailViewModel.swift` - Exposes import, suggest, and copy APIs
 
 ### Updated Views
+
 - `ActivitiesView.swift` - Added import button
 - `DayDetailScheduleView.swift` - Added import button
 - `OverviewView.swift` - Shows map thumbnails
