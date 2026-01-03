@@ -3,7 +3,7 @@ import SwiftUI
 import MapKit
 
 struct RouteInfo: Identifiable {
-    let id = UUID()
+    var id = UUID()
     let dayNumber: Int
     let from: String
     let to: String
