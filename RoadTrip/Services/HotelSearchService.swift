@@ -235,16 +235,19 @@ class HotelSearchService: ObservableObject {
                     name: name,
                     address: location, // API doesn't provide detailed address in search results
                     city: location,
+                    state: nil,
                     country: "USA", // Would need geocoding for accurate country
                     latitude: latitude,
                     longitude: longitude,
                     rating: rating,
                     reviewCount: reviewCount,
                     starRating: starRating,
+                    thumbnailURL: property.photoUrls?.first,
+                    imageURLs: property.photoUrls ?? [],
                     pricePerNight: pricePerNight,
                     totalPrice: totalPrice,
+                    currency: "USD",
                     amenities: [], // Full amenities come from detail endpoint
-                    imageURLs: property.photoUrls ?? [],
                     description: nil,
                     bookingURL: "https://www.booking.com/hotel/us/\(hotelId).html?aid=YOUR_AFFILIATE_ID",
                     source: .booking
@@ -380,8 +383,10 @@ class HotelSearchService: ObservableObject {
                 thumbnailURL: "https://example.com/hotel-\(index).jpg",
                 imageURLs: (0..<5).map { "https://example.com/hotel-\(index)-\($0).jpg" },
                 pricePerNight: price,
+                totalPrice: nil,
                 currency: "USD",
                 amenities: amenitiesSets.randomElement() ?? [],
+                description: nil,
                 bookingURL: "https://\(source.rawValue.lowercased()).com/hotel-\(index)",
                 source: source
             )
