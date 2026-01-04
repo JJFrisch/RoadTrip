@@ -2,7 +2,7 @@
 import Foundation
 import CoreLocation
 
-struct WeatherData: Identifiable {
+struct WeatherData: Identifiable, Sendable {
     let id = UUID()
     let date: Date
     let locationName: String
@@ -32,7 +32,7 @@ struct WeatherData: Identifiable {
     }
 }
 
-enum WeatherCondition: String, CaseIterable {
+enum WeatherCondition: String, CaseIterable, Sendable {
     case sunny
     case partlyCloudy
     case cloudy
@@ -147,15 +147,15 @@ class WeatherService: ObservableObject {
     
     // MARK: - Fetch Weather for Trip
     
-    func fetchWeatherForTrip(_ trip: Trip) async -> [TripDay: WeatherData] {
-        var results: [TripDay: WeatherData] = [:]
+    func fetchWeatherForTrip(_ trip: Trip) async -> [UUID: WeatherData] {
+        var results: [UUID: WeatherData] = [:]
         
         for day in trip.days {
             let location = day.startLocation.isEmpty ? day.endLocation : day.startLocation
             guard !location.isEmpty else { continue }
             
             if let weather = await fetchWeather(for: location, date: day.date) {
-                results[day] = weather
+                results[day.id] = weather
             }
         }
         

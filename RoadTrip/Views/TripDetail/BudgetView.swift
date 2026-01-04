@@ -4,7 +4,7 @@ import Charts
 
 struct BudgetView: View {
     let trip: Trip
-    @State private var weatherData: [TripDay: WeatherData] = [:]
+    @State private var weatherData: [UUID: WeatherData] = [:]
     @State private var isLoadingWeather = false
     
     private let costCategories = ["Gas", "Food", "Lodging", "Attractions", "Other"]
@@ -193,7 +193,7 @@ struct BudgetView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
-                            if let weather = weatherData[day] {
+                            if let weather = weatherData[day.id] {
                                 WeatherDayCard(day: day, weather: weather)
                             }
                         }

@@ -270,7 +270,7 @@ struct ActivitiesView: View {
         targetDay.activities.append(activity)
         
         // Update order in target day
-        var targetSorted = targetDay.activities.sorted(by: { $0.order < $1.order })
+        let targetSorted = targetDay.activities.sorted(by: { $0.order < $1.order })
         for (index, act) in targetSorted.enumerated() {
             act.order = index
         }
