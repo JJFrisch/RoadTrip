@@ -230,14 +230,14 @@ struct HotelDetailView: View {
                         
                         Map(initialPosition: .region(MKCoordinateRegion(
                             center: CLLocationCoordinate2D(
-                                latitude: hotel.latitude,
-                                longitude: hotel.longitude
+                                latitude: hotel.latitude ?? 0,
+                                longitude: hotel.longitude ?? 0
                             ),
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         ))) {
                             Marker(hotel.name, coordinate: CLLocationCoordinate2D(
-                                latitude: hotel.latitude,
-                                longitude: hotel.longitude
+                                latitude: hotel.latitude ?? 0,
+                                longitude: hotel.longitude ?? 0
                             ))
                             .tint(.red)
                         }
@@ -284,6 +284,7 @@ struct HotelDetailView: View {
                 }
             }
         }
+    }
     
     private func saveHotelToDay() {
         // Convert search result to Hotel model
