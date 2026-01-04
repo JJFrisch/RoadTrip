@@ -389,8 +389,8 @@ struct DayScheduleSection: View {
                 }
                 .padding()
             }
-            .frame(minHeight: 120)
-            .clipped()
+            .frame(maxWidth: .infinity)
+            .fixedSize(horizontal: false, vertical: true)
             
             if !isCollapsed {
                 // Timeline View
