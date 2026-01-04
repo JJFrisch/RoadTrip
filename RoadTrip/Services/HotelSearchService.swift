@@ -138,6 +138,18 @@ class HotelSearchService: ObservableObject {
             return generateMockResults(source: .booking, location: location, count: 5)
         }
         
+        // Get destination ID using async lookup (with API fallback)
+        let destId = await BookingDestinationService.shared.getDestinationIdAsync(for: location)
+        
+        // Also geocode to verify location exists
+        do {
+            let coordinates = try await GeocodingService.shared.geocode(location: location)
+            print("📍 Using coordinates: \(coordinates.latitude), \(coordinates.longitude)")
+            print("🏨 Using destination ID: \(destId)")
+        } catch {
+            print("⚠️ Geocoding failed: \(error.localizedDescription)")
+        }
+        
         // Format dates for API
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -147,7 +159,7 @@ class HotelSearchService: ObservableObject {
         // Build URL with query parameters
         var components = URLComponents(string: "\(Config.bookingAPIBaseURL)/hotels/searchHotels")!
         components.queryItems = [
-            URLQueryItem(name: "dest_id", value: "-553173"), // This would need to be dynamic based on location
+            URLQueryItem(name: "dest_id", value: destId),
             URLQueryItem(name: "search_type", value: "city"),
             URLQueryItem(name: "arrival_date", value: checkInStr),
             URLQueryItem(name: "departure_date", value: checkOutStr),

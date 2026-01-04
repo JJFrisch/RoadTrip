@@ -26,16 +26,44 @@ struct HotelDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     // Image Carousel
                     TabView(selection: $selectedImageIndex) {
-                        ForEach(0..<3, id: \.self) { index in
-                            Rectangle()
-                                .fill(Color(.systemGray5))
-                                .aspectRatio(4/3, contentMode: .fill)
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .font(.largeTitle)
-                                        .foregroundStyle(.secondary)
+                        ForEach(0..<max(hotel.imageURLs.count, 1), id: \.self) { index in
+                            if !hotel.imageURLs.isEmpty, let url = URL(string: hotel.imageURLs[index]) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        Rectangle()
+                                            .fill(Color(.systemGray5))
+                                            .overlay {
+                                                ProgressView()
+                                            }
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    case .failure:
+                                        Rectangle()
+                                            .fill(Color(.systemGray5))
+                                            .overlay {
+                                                Image(systemName: "photo")
+                                                    .font(.largeTitle)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                    @unknown default:
+                                        Rectangle()
+                                            .fill(Color(.systemGray5))
+                                    }
                                 }
                                 .tag(index)
+                            } else {
+                                Rectangle()
+                                    .fill(Color(.systemGray5))
+                                    .overlay {
+                                        Image(systemName: "photo")
+                                            .font(.largeTitle)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .tag(index)
+                            }
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .always))
