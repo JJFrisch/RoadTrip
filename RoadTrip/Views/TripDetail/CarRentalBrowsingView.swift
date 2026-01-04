@@ -425,17 +425,6 @@ struct CarResultCard: View {
                                 .foregroundStyle(.secondary)
                         }
                 }
-                
-                // Source Badge
-                Text(car.source.rawValue)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.blue)
-                    .cornerRadius(6)
-                    .padding(8)
             }
             .frame(height: 150)
             .clipShape(RoundedRectangle(cornerRadius: 12, corners: [.topLeft, .topRight]))
