@@ -14,8 +14,8 @@ struct TemplatePickerView: View {
     var sortedTemplates: [ActivityTemplate] {
         // Sort by use count (most popular first), then by last used
         templates.sorted { first, second in
-            if first.useCount != second.useCount {
-                return first.useCount > second.useCount
+            if first.usageCount != second.usageCount {
+                return first.usageCount > second.usageCount
             }
             return first.lastUsed > second.lastUsed
         }
@@ -55,7 +55,7 @@ struct TemplatePickerView: View {
                             let newTemplate = ActivityTemplate(
                                 name: template.name,
                                 category: template.category,
-                                suggestedDuration: template.suggestedDuration,
+                                suggestedDuration: template.defaultDuration,
                                 notes: template.notes
                             )
                             modelContext.insert(newTemplate)
@@ -115,7 +115,7 @@ struct TemplateRow: View {
                         .font(.caption)
                         .foregroundStyle(categoryColor)
                     
-                    if let duration = template.suggestedDuration {
+                    if let duration = template.defaultDuration {
                         Text("•")
                             .foregroundStyle(.secondary)
                         Text("\(Int(duration * 60))m")
@@ -123,10 +123,10 @@ struct TemplateRow: View {
                             .foregroundStyle(.secondary)
                     }
                     
-                    if template.useCount > 0 {
+                    if template.usageCount > 0 {
                         Text("•")
                             .foregroundStyle(.secondary)
-                        Text("Used \(template.useCount)×")
+                        Text("Used \(template.usageCount)×")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -196,7 +196,7 @@ struct NewTemplateView: View {
                         let template = ActivityTemplate(
                             name: name,
                             category: category,
-                            suggestedDuration: duration,
+                            defaultDuration: duration,
                             notes: notes.isEmpty ? nil : notes
                         )
                         modelContext.insert(template)
