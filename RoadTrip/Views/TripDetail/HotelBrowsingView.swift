@@ -32,6 +32,7 @@ struct HotelBrowsingView: View {
     @State private var hasSearched = false
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingGuestPicker = false
     
     private var userPreferences: HotelPreferences {
         preferences.first ?? {
@@ -57,119 +58,18 @@ struct HotelBrowsingView: View {
                 // Network Status Banner
                 NetworkStatusBanner()
                 
-                // Search Header
-                VStack(spacing: 16) {
+                // Compact Search Header
+                VStack(spacing: 12) {
                     // Location Search
-                    HStack {
-                        Image(systemName: "location.fill")
-                            .foregroundStyle(.blue)
-                        TextField("Nearby", text: $searchLocation)
-                            .textFieldStyle(.plain)
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    
-                    // Dates and Guests
                     HStack(spacing: 12) {
-                        // Check-in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Check-in")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            DatePicker("", selection: $checkInDate, displayedComponents: .date)
-                                .labelsHidden()
-                                .datePickerStyle(.compact)
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(.red)
+                            TextField("Where are you staying?", text: $searchLocation)
+                                .textFieldStyle(.plain)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        
-                        // Check-out
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Check-out")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            DatePicker("", selection: $checkOutDate, displayedComponents: .date)
-                                .labelsHidden()
-                                .datePickerStyle(.compact)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                    }
-                    
-                    // Guests and Search
-                    HStack(spacing: 12) {
-                        // Guests & Rooms
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "person.2.fill")
-                                    .foregroundStyle(.blue)
-                                Text("Guests")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-
-                            HStack {
-                                Text("Adults")
-                                Spacer()
-                                Stepper(value: $adults, in: 1...10) {
-                                    Text("\(adults)")
-                                        .monospacedDigit()
-                                }
-                                .labelsHidden()
-                            }
-
-                            HStack {
-                                Text("Kids")
-                                Spacer()
-                                Stepper(value: $children, in: 0...10) {
-                                    Text("\(children)")
-                                        .monospacedDigit()
-                                }
-                                .labelsHidden()
-                            }
-
-                            if children > 0 {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Kids Ages")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-
-                                    ForEach(childrenAges.indices, id: \ .self) { index in
-                                        HStack {
-                                            Text("Child \(index + 1)")
-                                            Spacer()
-                                            Stepper(value: Binding(
-                                                get: { childrenAges[index] },
-                                                set: { childrenAges[index] = $0 }
-                                            ), in: 0...17) {
-                                                Text("\(childrenAges[index])")
-                                                    .monospacedDigit()
-                                            }
-                                            .labelsHidden()
-                                        }
-                                    }
-                                }
-                            }
-
-                            HStack {
-                                Text("Rooms")
-                                Spacer()
-                                Stepper(value: $rooms, in: 1...5) {
-                                    Text("\(rooms)")
-                                        .monospacedDigit()
-                                }
-                                .labelsHidden()
-                            }
-                        }
-                        .font(.subheadline)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
                         
@@ -177,80 +77,136 @@ struct HotelBrowsingView: View {
                         Button {
                             performSearch()
                         } label: {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                Text("Search")
-                                    .fontWeight(.semibold)
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(12)
+                            Image(systemName: "magnifyingglass")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(width: 48, height: 48)
+                                .background(Color.blue)
+                                .cornerRadius(12)
                         }
                     }
                     
-                    // Filter and Source Buttons
-                    HStack(spacing: 12) {
+                    // Dates Row
+                    HStack(spacing: 10) {
+                        // Check-in
+                        HStack {
+                            Image(systemName: "calendar")
+                                .foregroundStyle(.blue)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Check-in")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                Text(checkInDate.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .overlay {
+                            DatePicker("", selection: $checkInDate, displayedComponents: .date)
+                                .labelsHidden()
+                                .blendMode(.destinationOver)
+                        }
+                        
+                        Image(systemName: "arrow.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        // Check-out
+                        HStack {
+                            Image(systemName: "calendar")
+                                .foregroundStyle(.orange)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Check-out")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                Text(checkOutDate.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .overlay {
+                            DatePicker("", selection: $checkOutDate, displayedComponents: .date)
+                                .labelsHidden()
+                                .blendMode(.destinationOver)
+                        }
+                    }
+                    
+                    // Guests & Filters Row
+                    HStack(spacing: 10) {
+                        // Guests Summary Button
+                        Button {
+                            showingGuestPicker = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                    .foregroundStyle(.purple)
+                                Text(guestsSummary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Spacer()
+                        
+                        // Quick action buttons
                         Button {
                             showingFilters = true
                         } label: {
-                            HStack {
-                                Image(systemName: "line.3.horizontal.decrease.circle")
-                                Text("Filters")
+                            HStack(spacing: 4) {
+                                Image(systemName: "slider.horizontal.3")
                                 if hasActiveFilters {
                                     Circle()
                                         .fill(Color.red)
-                                        .frame(width: 8, height: 8)
+                                        .frame(width: 6, height: 6)
                                 }
                             }
                             .font(.subheadline)
                             .foregroundStyle(.blue)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(10)
                             .background(Color.blue.opacity(0.1))
-                            .cornerRadius(20)
+                            .cornerRadius(10)
                         }
+                        .buttonStyle(.plain)
                         
-                        Button {
-                            showingSourceSettings = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "globe")
-                                Text("\(userPreferences.enabledSources.count) Sources")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.green.opacity(0.1))
-                            .cornerRadius(20)
-                        }
-                        
-                        Spacer()
-                        
-                        // Sort Picker
                         Menu {
                             Picker("Sort By", selection: $filters.sortBy) {
                                 ForEach(HotelFilters.SortOption.allCases, id: \.self) { option in
-                                    Text(option.rawValue).tag(option)
+                                    Label(option.rawValue, systemImage: sortIcon(for: option))
+                                        .tag(option)
                                 }
                             }
                         } label: {
-                            HStack {
-                                Image(systemName: "arrow.up.arrow.down")
-                                Text("Sort")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.purple)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.purple.opacity(0.1))
-                            .cornerRadius(20)
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.subheadline)
+                                .foregroundStyle(.purple)
+                                .padding(10)
+                                .background(Color.purple.opacity(0.1))
+                                .cornerRadius(10)
                         }
                     }
                 }
-                .padding()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 .background(Color(.systemBackground))
                 
                 Divider()
@@ -401,6 +357,9 @@ struct HotelBrowsingView: View {
             .sheet(isPresented: $showingSourceSettings) {
                 HotelSourceSettingsSheet(preferences: userPreferences)
             }
+            .sheet(isPresented: $showingGuestPicker) {
+                GuestPickerSheet(adults: $adults, children: $children, childrenAges: $childrenAges, rooms: $rooms)
+            }
             .confirmationDialog(
                 "Set as Night's Hotel?",
                 isPresented: Binding(
@@ -496,6 +455,28 @@ struct HotelBrowsingView: View {
         filters.requireBreakfast ||
         filters.requirePool ||
         filters.petFriendly
+    }
+    
+    private var guestsSummary: String {
+        var parts: [String] = []
+        parts.append("\(adults) Adult\(adults == 1 ? "" : "s")")
+        if children > 0 {
+            parts.append("\(children) Kid\(children == 1 ? "" : "s")")
+        }
+        if rooms > 1 {
+            parts.append("\(rooms) Rooms")
+        }
+        return parts.joined(separator: ", ")
+    }
+    
+    private func sortIcon(for option: HotelFilters.SortOption) -> String {
+        switch option {
+        case .recommended: return "star"
+        case .priceLowest: return "arrow.down"
+        case .priceHighest: return "arrow.up"
+        case .rating: return "hand.thumbsup"
+        case .distance: return "location"
+        }
     }
 
     private func syncChildrenAges() {
@@ -802,5 +783,167 @@ struct HotelResultCard: View {
 extension RoundedRectangle {
     init(cornerRadius: CGFloat, corners: UIRectCorner) {
         self.init(cornerRadius: cornerRadius)
+    }
+}
+
+// MARK: - Guest Picker Sheet
+struct GuestPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var adults: Int
+    @Binding var children: Int
+    @Binding var childrenAges: [Int]
+    @Binding var rooms: Int
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    // Adults
+                    HStack {
+                        Label("Adults", systemImage: "person.fill")
+                        Spacer()
+                        HStack(spacing: 16) {
+                            Button {
+                                if adults > 1 { adults -= 1 }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(adults > 1 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(adults <= 1)
+                            
+                            Text("\(adults)")
+                                .font(.headline)
+                                .frame(minWidth: 30)
+                            
+                            Button {
+                                if adults < 10 { adults += 1 }
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(adults < 10 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(adults >= 10)
+                        }
+                    }
+                    
+                    // Children
+                    HStack {
+                        Label("Children", systemImage: "figure.and.child.holdinghands")
+                        Spacer()
+                        HStack(spacing: 16) {
+                            Button {
+                                if children > 0 { 
+                                    children -= 1
+                                    syncChildrenAges()
+                                }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(children > 0 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(children <= 0)
+                            
+                            Text("\(children)")
+                                .font(.headline)
+                                .frame(minWidth: 30)
+                            
+                            Button {
+                                if children < 10 { 
+                                    children += 1
+                                    syncChildrenAges()
+                                }
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(children < 10 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(children >= 10)
+                        }
+                    }
+                    
+                    // Rooms
+                    HStack {
+                        Label("Rooms", systemImage: "bed.double.fill")
+                        Spacer()
+                        HStack(spacing: 16) {
+                            Button {
+                                if rooms > 1 { rooms -= 1 }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(rooms > 1 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(rooms <= 1)
+                            
+                            Text("\(rooms)")
+                                .font(.headline)
+                                .frame(minWidth: 30)
+                            
+                            Button {
+                                if rooms < 5 { rooms += 1 }
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(rooms < 5 ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(rooms >= 5)
+                        }
+                    }
+                }
+                
+                if children > 0 {
+                    Section("Children's Ages") {
+                        ForEach(childrenAges.indices, id: \.self) { index in
+                            HStack {
+                                Text("Child \(index + 1)")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Picker("Age", selection: Binding(
+                                    get: { childrenAges[index] },
+                                    set: { childrenAges[index] = $0 }
+                                )) {
+                                    ForEach(0..<18) { age in
+                                        Text(age == 0 ? "Under 1" : "\(age) years").tag(age)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Guests & Rooms")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+    
+    private func syncChildrenAges() {
+        if children <= 0 {
+            childrenAges = []
+            return
+        }
+        
+        let targetCount = min(children, 10)
+        if childrenAges.count > targetCount {
+            childrenAges = Array(childrenAges.prefix(targetCount))
+        } else if childrenAges.count < targetCount {
+            childrenAges.append(contentsOf: Array(repeating: 5, count: targetCount - childrenAges.count))
+        }
     }
 }

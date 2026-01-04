@@ -451,6 +451,7 @@ struct DayScheduleSection: View {
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(10)
                 }
+                .buttonStyle(.plain)
                 
                 // Templates Button
                 Button {
@@ -468,6 +469,7 @@ struct DayScheduleSection: View {
                     .background(Color.green.opacity(0.1))
                     .cornerRadius(10)
                 }
+                .buttonStyle(.plain)
                 
                 // Hotel Browser Button
                 Button {
@@ -485,6 +487,7 @@ struct DayScheduleSection: View {
                     .background(Color.orange.opacity(0.1))
                     .cornerRadius(10)
                 }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
