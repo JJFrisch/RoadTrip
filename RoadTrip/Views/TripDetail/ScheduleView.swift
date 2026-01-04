@@ -38,15 +38,14 @@ struct ScheduleView: View {
                                 collapsedDayIDs.insert(day.id)
                             }
                         }
+                    },
+                    onTapDay: {
+                        selectedDay = day
                     }
                 )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedDay = day
-                    }
                     // MARK: - Day Swipe Actions
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button {
@@ -176,6 +175,7 @@ struct DayScheduleSection: View {
     let day: TripDay
     let isCollapsed: Bool
     let onToggleCollapse: () -> Void
+    let onTapDay: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddActivity = false
     @State private var showingTemplates = false
@@ -391,6 +391,10 @@ struct DayScheduleSection: View {
             }
             .frame(maxWidth: .infinity)
             .fixedSize(horizontal: false, vertical: true)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onTapDay()
+            }
             
             if !isCollapsed {
                 // Timeline View
