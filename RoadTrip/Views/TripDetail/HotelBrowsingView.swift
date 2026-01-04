@@ -391,8 +391,10 @@ struct HotelBrowsingView: View {
                 thumbnailURL: nil,
                 imageURLs: [],
                 pricePerNight: Double.random(in: 100...350),
+                totalPrice: nil,
                 currency: "USD",
                 amenities: Array(amenities.shuffled().prefix(4)),
+                description: nil,
                 bookingURL: "https://booking.com/hotel/\(index)",
                 source: .booking
             )

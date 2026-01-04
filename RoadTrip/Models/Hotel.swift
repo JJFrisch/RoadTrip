@@ -79,7 +79,7 @@ struct HotelSearchResult: Identifiable, Codable {
     let name: String
     let address: String
     let city: String
-    let state: String
+    let state: String?
     let country: String
     let latitude: Double?
     let longitude: Double?
@@ -89,8 +89,10 @@ struct HotelSearchResult: Identifiable, Codable {
     let thumbnailURL: String?
     let imageURLs: [String]
     let pricePerNight: Double?
-    let currency: String
+    let totalPrice: Double?
+    let currency: String?
     let amenities: [String]
+    let description: String?
     let bookingURL: String
     let source: BookingSource
     
@@ -104,7 +106,7 @@ struct HotelSearchResult: Identifiable, Codable {
     
     // Convert to Hotel model
     func toHotel() -> Hotel {
-        let hotel = Hotel(name: name, address: address, city: city, state: state, country: country)
+        let hotel = Hotel(name: name, address: address, city: city, state: state ?? "", country: country)
         hotel.latitude = latitude
         hotel.longitude = longitude
         hotel.rating = rating
@@ -113,7 +115,7 @@ struct HotelSearchResult: Identifiable, Codable {
         hotel.thumbnailURL = thumbnailURL
         hotel.imageURLs = imageURLs
         hotel.pricePerNight = pricePerNight
-        hotel.currency = currency
+        hotel.currency = currency ?? "USD"
         hotel.amenities = amenities
         hotel.sourceType = source.rawValue
         hotel.externalId = id
