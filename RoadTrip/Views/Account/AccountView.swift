@@ -72,6 +72,20 @@ struct AccountView: View {
                         }
                     }
                     
+                    Section("Support") {
+                        NavigationLink {
+                            ErrorLogView()
+                        } label: {
+                            Label("Error Log", systemImage: "exclamationmark.triangle")
+                        }
+                        
+                        NavigationLink {
+                            QuickTutorialView()
+                        } label: {
+                            Label("Tutorial", systemImage: "book.fill")
+                        }
+                    }
+                    
                     Section {
                         Button(role: .destructive) {
                             authService.signOut()

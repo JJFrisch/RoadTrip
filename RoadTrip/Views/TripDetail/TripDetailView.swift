@@ -9,6 +9,7 @@ struct TripDetailView: View {
     @State private var showingEditSheet = false
     @State private var showingOfflineMapSheet = false
     @State private var showingShareSheet = false
+    @State private var showingShareTrip = false
     @State private var showingMoreOptions = false
     @State private var showingCarRentalBrowser = false
     @State private var isPrefetchingRoutes = false
@@ -94,6 +95,20 @@ struct TripDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
+                        showingEditSheet = true
+                    } label: {
+                        Label("Edit Trip", systemImage: "pencil")
+                    }
+                    
+                    Button {
+                        showingShareTrip = true
+                    } label: {
+                        Label("Share Trip", systemImage: "square.and.arrow.up")
+                    }
+                    
+                    Divider()
+                    
+                    Button {
                         showingCarRentalBrowser = true
                     } label: {
                         Label("Rent a Car", systemImage: "car.fill")
@@ -137,6 +152,9 @@ struct TripDetailView: View {
             if let pdfData = pdfData {
                 ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
             }
+        }
+        .sheet(isPresented: $showingShareTrip) {
+            TripSharingView(trip: trip)
         }
         .onAppear {
             prefetchRoutes()

@@ -59,6 +59,8 @@ struct RoadTripperApp: App {
         WindowGroup {
             HomeView()
                 .preferredColorScheme(.none) // Supports both light and dark mode
+                .withToast()
+                .withErrorDialog()
         }
         .modelContainer(sharedModelContainer)
     }

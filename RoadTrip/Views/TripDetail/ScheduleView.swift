@@ -705,8 +705,9 @@ struct CalendarTimelineView: View {
             return true
         }
         
+        // Only calculate dynamic range if we have activities with times
         guard !scheduledActivities.isEmpty else {
-            return (8, 20) // Default 8 AM to 8 PM
+            return (8, 10) // Minimal default range when no times set
         }
         
         let calendar = Calendar.current

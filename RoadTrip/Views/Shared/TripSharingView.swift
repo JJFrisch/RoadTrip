@@ -38,17 +38,11 @@ struct TripSharingView: View {
                 // Role Selection
                 Section {
                     Picker("Permission", selection: $shareRole) {
-                        HStack {
-                            Image(systemName: "pencil")
-                            Text("Can Edit")
-                        }
-                        .tag(TripCollaborator.CollaboratorRole.editor)
+                        Text("Can Edit")
+                            .tag(TripCollaborator.CollaboratorRole.editor)
                         
-                        HStack {
-                            Image(systemName: "eye")
-                            Text("View Only")
-                        }
-                        .tag(TripCollaborator.CollaboratorRole.viewer)
+                        Text("View Only")
+                            .tag(TripCollaborator.CollaboratorRole.viewer)
                     }
                     .pickerStyle(.segmented)
                 } header: {

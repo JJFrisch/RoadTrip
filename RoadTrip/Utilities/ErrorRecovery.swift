@@ -52,6 +52,20 @@ class ErrorRecoveryManager: ObservableObject {
             let severityText = String(describing: severity).uppercased()
             print("[\(severityText)] \(title): \(message)")
             
+            // Show appropriate UI feedback
+            switch severity {
+            case .warning:
+                ToastManager.shared.show(title, type: .warning, duration: 4.0)
+            case .error:
+                ToastManager.shared.show(title, type: .error, duration: 5.0)
+            case .critical:
+                ErrorDialogManager.shared.showCriticalError(
+                    title: title,
+                    message: message,
+                    onRetry: action
+                )
+            }
+            
             // Keep only last 50 errors
             if self.errors.count > 50 {
                 self.errors.removeFirst()

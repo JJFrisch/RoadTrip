@@ -7,6 +7,8 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @StateObject private var authService = AuthService.shared
+    @StateObject private var searchManager = TripSearchManager()
+    @StateObject private var onboardingManager = OnboardingManager.shared
     
     @State private var showingNewTripSheet = false
     @State private var tripToDelete: Trip?
@@ -15,6 +17,13 @@ struct HomeView: View {
     @State private var showingSampleTripAlert = false
     @State private var showingAccount = false
     @State private var showingJoinTrip = false
+    @State private var showingOnboarding = false
+    @State private var showingTutorial = false
+    @State private var showingFilters = false
+    
+    var filteredTrips: [Trip] {
+        searchManager.filterAndSort(Array(trips))
+    }
     
     var body: some View {
         NavigationStack {
@@ -26,6 +35,12 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("My Trips")
+            .searchable(text: $searchManager.searchText, prompt: "Search trips...")
+            .onAppear {
+                if onboardingManager.shouldShowOnboarding {
+                    showingOnboarding = true
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -42,14 +57,16 @@ struct HomeView: View {
                                     .foregroundStyle(.white)
                             }
                         } else {
-                            Image(systemName: "person.circle")
-                                .font(.title2)
-                        }
-                    }
-                }
-                
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
+                        Button {
+                            showingFilters = true
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .font(.title3)
+                                .symbolVariant(searchManager.sortOption != .dateNewest || searchManager.filterByShared != .all ? .fill : .none)
+                        }
+                        
                         Button {
                             showingJoinTrip = true
                         } label: {
@@ -59,6 +76,12 @@ struct HomeView: View {
                         
                         Button {
                             showingNewTripSheet = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                        }
+                    }
+                }           showingNewTripSheet = true
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
@@ -88,16 +111,29 @@ struct HomeView: View {
                 } label: {
                     Text("Delete")
                 }
-                Button(role: .cancel) {
-                    tripToDelete = nil
-                } label: {
-                    Text("Cancel")
-                }
-            } message: { trip in
-                Text("Are you sure you want to delete \"\(trip.name)\"? This action cannot be undone.")
-            }
             .alert("Create Sample Trip", isPresented: $showingSampleTripAlert) {
                 Button("Create") {
+                    createComprehensiveSampleTrip()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will create a sample California Coast road trip to help you explore the app's features.")
+            }
+            .sheet(isPresented: $showingOnboarding) {
+                OnboardingView {
+                    // Optional: show tutorial after onboarding
+                }
+            }
+            .sheet(isPresented: $showingTutorial) {
+                QuickTutorialView()
+            }
+            .sheet(isPresented: $showingFilters) {
+                FilterSortSheet(searchManager: searchManager)
+            }
+            .withToast()
+            .withErrorDialog()
+        }
+    }           Button("Create") {
                     createSampleTrip()
                 }
                 Button("Cancel", role: .cancel) { }
@@ -151,19 +187,31 @@ struct HomeView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
-                }
-                
-                VStack(spacing: 16) {
                     Button {
-                        showingNewTripSheet = true
+                        showingSampleTripAlert = true
                     } label: {
-                        Label("Create Your First Trip", systemImage: "plus")
+                        Label("Explore Sample Trip", systemImage: "sparkles")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.blue, .purple.opacity(0.8)],
+                            .background(.blue.opacity(0.1))
+                            .foregroundStyle(.blue)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    
+                    Button {
+                        showingTutorial = true
+                    } label: {
+                        Label("Quick Tutorial", systemImage: "book.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.purple.opacity(0.1))
+                            .foregroundStyle(.purple)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                }
+                .padding(.horizontal, 32)s: [.blue, .purple.opacity(0.8)],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -235,10 +283,17 @@ struct HomeView: View {
             days[0].activities.append(activity1)
             
             let activity2 = Activity(name: "Fisherman's Wharf Lunch", location: "Fisherman's Wharf, San Francisco", category: "Food")
-            activity2.scheduledTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: startDate)
-            activity2.duration = 1.0
-            activity2.estimatedCost = 45
-            activity2.costCategory = "Food"
+    private var tripListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                if filteredTrips.isEmpty && !searchManager.searchText.isEmpty {
+                    NoSearchResultsView(searchText: searchManager.searchText) {
+                        searchManager.searchText = ""
+                    }
+                    .padding(.top, 100)
+                }
+                
+                ForEach(filteredTrips) { trip inod"
             activity2.order = 1
             days[0].activities.append(activity2)
         }
@@ -443,23 +498,17 @@ struct NewTripView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var tripName = ""
+    @State private var tripDescription = ""
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(86400 * 3) // 3 days later
-    @State private var showValidationError = false
-    @State private var validationError = ""
+    @State private var coverImage = ""
     
     var isFormValid: Bool {
         !tripName.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate
     }
     
-    var validationErrorMessage: String? {
-        if tripName.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "Trip name cannot be empty"
-        }
-        if endDate < startDate {
-            return "End date must be after or equal to start date"
-        }
-        return nil
+    var newDayCount: Int {
+        max(1, Calendar.current.dateComponents([.day], from: startDate, to: endDate).day! + 1)
     }
     
     var body: some View {
@@ -467,15 +516,80 @@ struct NewTripView: View {
             Form {
                 Section("Trip Details") {
                     TextField("Trip Name", text: $tripName)
-                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End Date", selection: $endDate, displayedComponents: .date)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Description")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $tripDescription)
+                            .frame(minHeight: 60)
+                    }
                 }
                 
-                if let error = validationErrorMessage {
-                    Section {
-                        Text(error)
+                Section {
+                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+                    DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    
+                    // Days preview
+                    HStack {
+                        Label("Duration", systemImage: "calendar")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(newDayCount) day\(newDayCount == 1 ? "" : "s")")
+                            .fontWeight(.medium)
+                        if newDayCount > 1 {
+                            Text("(\(newDayCount - 1) night\(newDayCount - 1 == 1 ? "" : "s"))")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Dates")
+                } footer: {
+                    if endDate < startDate {
+                        Text("End date must be after or equal to start date")
                             .foregroundStyle(.red)
-                            .font(.caption)
+                    }
+                }
+                
+                Section("Appearance") {
+                    HStack {
+                        Text("Cover Icon")
+                        Spacer()
+                        TextField("SF Symbol name", text: $coverImage)
+                            .multilineTextAlignment(.trailing)
+                            .textInputAutocapitalization(.never)
+                    }
+                    
+                    if !coverImage.isEmpty {
+                        HStack {
+                            Spacer()
+                            Image(systemName: coverImage)
+                                .font(.system(size: 50))
+                                .foregroundStyle(.blue.gradient)
+                                .symbolRenderingMode(.hierarchical)
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Icon suggestions
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(["car.fill", "airplane", "bicycle", "figure.hiking", "tent.fill", "beach.umbrella.fill", "mountain.2.fill", "building.2.fill"], id: \.self) { icon in
+                                Button {
+                                    coverImage = icon
+                                } label: {
+                                    Image(systemName: icon)
+                                        .font(.title2)
+                                        .foregroundStyle(coverImage == icon ? .white : .blue)
+                                        .frame(width: 44, height: 44)
+                                        .background(coverImage == icon ? Color.blue : Color.blue.opacity(0.1))
+                                        .cornerRadius(10)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -490,6 +604,7 @@ struct NewTripView: View {
                         createTrip()
                     }
                     .disabled(!isFormValid)
+                    .fontWeight(.semibold)
                 }
             }
         }
@@ -497,6 +612,8 @@ struct NewTripView: View {
     
     private func createTrip() {
         let newTrip = Trip(name: tripName.trimmingCharacters(in: .whitespaces), startDate: startDate, endDate: endDate)
+        newTrip.tripDescription = tripDescription.trimmingCharacters(in: .whitespaces).isEmpty ? nil : tripDescription
+        newTrip.coverImage = coverImage.isEmpty ? nil : coverImage
         modelContext.insert(newTrip)
         dismiss()
     }

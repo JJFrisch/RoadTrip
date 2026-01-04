@@ -29,6 +29,16 @@ struct EditTripView: View {
         newDayCount != currentDayCount
     }
     
+    var daysWillBeRemoved: Bool {
+        newDayCount < currentDayCount
+    }
+    
+    var removedDaysHaveData: Bool {
+        guard daysWillBeRemoved else { return false }
+        let daysToRemove = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).suffix(currentDayCount - newDayCount)
+        return daysToRemove.contains { !$0.activities.isEmpty || !$0.startLocation.isEmpty || !$0.endLocation.isEmpty }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -143,7 +153,7 @@ struct EditTripView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if daysWillChange && newDayCount < currentDayCount {
+                        if daysWillBeRemoved && removedDaysHaveData {
                             showingDaysWarning = true
                         } else {
                             saveChanges()

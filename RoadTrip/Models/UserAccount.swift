@@ -11,6 +11,7 @@ class UserAccount {
     var lastLoginAt: Date?
     var profileImageURL: String?
     var cloudUserId: String? // ID from cloud auth provider
+    
     var isLoggedIn: Bool
     
     init(email: String, displayName: String) {
