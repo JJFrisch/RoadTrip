@@ -96,7 +96,7 @@ struct HotelSearchResult: Identifiable, Codable {
     let bookingURL: String
     let source: BookingSource
     
-    enum BookingSource: String, Codable {
+    enum BookingSource: String, Codable, CaseIterable {
         case booking = "Booking.com"
         case hotels = "Hotels.com"
         case expedia = "Expedia"
