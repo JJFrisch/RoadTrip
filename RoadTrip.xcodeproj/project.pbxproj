@@ -111,6 +111,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Models/Activity.swift,
+				Models/ActivityTemplate.swift,
 				Utilities/NetworkMonitor.swift,
 				ViewModels/TripDetailViewModel.swift,
 				ViewModels/TripsViewModel.swift,
