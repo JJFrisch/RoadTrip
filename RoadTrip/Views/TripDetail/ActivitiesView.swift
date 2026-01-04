@@ -231,6 +231,8 @@ struct ActivitiesView: View {
         }
     }
     
+    // MARK: - Helper Methods
+    
     private func deleteActivity(_ activity: Activity) {
         modelContext.delete(activity)
     }
