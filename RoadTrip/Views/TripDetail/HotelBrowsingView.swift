@@ -471,11 +471,11 @@ struct HotelBrowsingView: View {
     
     private func sortIcon(for option: HotelFilters.SortOption) -> String {
         switch option {
-        case .recommended: return "star"
-        case .priceLowest: return "arrow.down"
-        case .priceHighest: return "arrow.up"
-        case .rating: return "hand.thumbsup"
-        case .distance: return "location"
+        case .priceLowToHigh: return "arrow.down"
+        case .priceHighToLow: return "arrow.up"
+        case .ratingHighToLow: return "star.fill"
+        case .starsHighToLow: return "star"
+        case .reviewCount: return "text.bubble"
         }
     }
 
