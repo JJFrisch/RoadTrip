@@ -193,7 +193,8 @@ final class GooglePlacesService {
             case "INVALID_REQUEST":
                 throw AppError.apiError(searchResponse.errorMessage ?? "Invalid request")
             case "REQUEST_DENIED":
-                throw AppError.invalidAPIKey
+                let message = searchResponse.errorMessage ?? "Request denied by Google. Check that Places API is enabled, billing is enabled, and key restrictions allow Web Service calls."
+                throw AppError.apiError(message)
             default:
                 throw AppError.apiError(searchResponse.errorMessage ?? "Unknown error")
             }
@@ -243,7 +244,8 @@ final class GooglePlacesService {
             case "INVALID_REQUEST":
                 throw AppError.apiError(detailsResponse.errorMessage ?? "Invalid request")
             case "REQUEST_DENIED":
-                throw AppError.invalidAPIKey
+                let message = detailsResponse.errorMessage ?? "Request denied by Google. Check that Places API is enabled, billing is enabled, and key restrictions allow Web Service calls."
+                throw AppError.apiError(message)
             default:
                 throw AppError.apiError(detailsResponse.errorMessage ?? "Unknown error")
             }

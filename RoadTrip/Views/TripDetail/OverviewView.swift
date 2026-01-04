@@ -8,6 +8,10 @@ struct OverviewView: View {
     let trip: Trip
     @State private var showingAddDay = false
     @State private var editingDay: TripDay?
+    @State private var addingActivityDay: TripDay?
+    @State private var browsingHotelDay: TripDay?
+    @State private var showingShareSheet = false
+    @State private var sharePDFData: Data?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -66,10 +70,6 @@ struct OverviewView: View {
                                         
                                         Text(formatDrivingTime(trip.totalDrivingTime))
                                             .font(.headline)
-                                            @State private var addingActivityDay: TripDay?
-                                            @State private var browsingHotelDay: TripDay?
-                                            @State private var showingShareSheet = false
-                                            @State private var sharePDFData: Data?
                                     }
                                 }
                                 
@@ -123,6 +123,17 @@ struct OverviewView: View {
         }
         .sheet(item: $editingDay) { day in
             EditTripDayView(day: day)
+        }
+        .sheet(item: $addingActivityDay) { day in
+            AddActivityFromScheduleView(day: day)
+        }
+        .sheet(item: $browsingHotelDay) { day in
+            HotelBrowsingView(day: day)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let pdfData = sharePDFData {
+                ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
+            }
         }
     }
     
@@ -182,17 +193,6 @@ struct OverviewView: View {
                                 .foregroundStyle(.secondary)
                             
                             Text(day.startLocation)
-                                                .sheet(item: $addingActivityDay) { day in
-                                                    AddActivityFromScheduleView(day: day)
-                                                }
-                                                .sheet(item: $browsingHotelDay) { day in
-                                                    HotelBrowsingView(day: day)
-                                                }
-                                                .sheet(isPresented: $showingShareSheet) {
-                                                    if let pdfData = sharePDFData {
-                                                        ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
-                                                    }
-                                                }
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
@@ -277,7 +277,8 @@ struct OverviewView: View {
                 }
             }
             
-            if let hotelName = day.hotelName {
+            let hotelDisplayName = day.hotel?.name ?? day.hotelName ?? ""
+            if !hotelDisplayName.isEmpty {
                 Divider()
                 
                 HStack(spacing: 8) {
@@ -285,7 +286,7 @@ struct OverviewView: View {
                         .font(.caption)
                         .foregroundStyle(.purple)
                     
-                    Text(hotelName)
+                    Text(hotelDisplayName)
                         .font(.subheadline)
                         .lineLimit(1)
                     
@@ -303,9 +304,52 @@ struct OverviewView: View {
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
         .padding(.bottom, 12)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                addingActivityDay = day
+            } label: {
+                Label("Add Activity", systemImage: "plus.circle")
+            }
+
+            Button {
+                browsingHotelDay = day
+            } label: {
+                Label("Add/Change Hotel", systemImage: "bed.double")
+            }
+
+            Button {
+                duplicateActivities(in: day)
+            } label: {
+                Label("Duplicate Day", systemImage: "plus.square.on.square")
+            }
+
+            Button {
+                if let data = PDFExportService.shared.generateTripPDF(trip: trip) {
+                    sharePDFData = data
+                    showingShareSheet = true
+                }
+            } label: {
+                Label("Share PDF", systemImage: "square.and.arrow.up")
+            }
+        }
         .onTapGesture {
             editingDay = day
         }
+    }
+
+    private func duplicateActivities(in day: TripDay) {
+        for activity in day.activities {
+            let copy = Activity(name: "\(activity.name) (Copy)", location: activity.location, category: activity.category)
+            copy.duration = activity.duration
+            copy.notes = activity.notes
+            copy.scheduledTime = activity.scheduledTime
+            copy.isCompleted = false
+            copy.order = day.activities.count
+            copy.estimatedCost = activity.estimatedCost
+            copy.costCategory = activity.costCategory
+            day.activities.append(copy)
+        }
+        try? modelContext.save()
     }
     
     private var emptyDaysView: some View {
@@ -333,80 +377,15 @@ struct AddDayView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     let trip: Trip
-    
+
     @State private var startLocation = ""
-                                                    if let hotelName = day.hotel?.name ?? day.hotelName, !hotelName.isEmpty {
+    @State private var endLocation = ""
     @State private var hotelName = ""
     @State private var distance: Double = 0
     @State private var drivingTime: Double = 0
     @State private var isCalculatingRoute = false
-    @State private var endLocationRegion: MKCoordinateRegion?
-    
-    var isFormValid: Bool {
-        !startLocation.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !endLocation.trimmingCharacters(in: .whitespaces).isEmpty &&
-        distance >= 0 &&
-        drivingTime >= 0
-    }
-    
-    var validationError: String? {
-        if startLocation.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "Start location is required"
-        }
-        if endLocation.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "End location is required"
-        }
-        if distance < 0 {
-            return "Distance cannot be negative"
-        }
-        if drivingTime < 0 {
-            return "Driving time cannot be negative"
-        }
-        return nil
-    }
-                                                .contextMenu {
-                                                    Button {
-                                                        addingActivityDay = day
-                                                    } label: {
-                                                        Label("Add Activity", systemImage: "plus.circle")
-                                                    }
 
-                                                    Button {
-                                                        browsingHotelDay = day
-                                                    } label: {
-                                                        Label("Add/Change Hotel", systemImage: "bed.double")
-                                                    }
-
-                                                    Button {
-                                                        duplicateActivities(in: day)
-                                                    } label: {
-                                                        Label("Duplicate Day", systemImage: "plus.square.on.square")
-                                                    }
-
-                                                    Button {
-                                                        if let data = PDFExportService.shared.generateTripPDF(trip: trip) {
-                                                            sharePDFData = data
-                                                            showingShareSheet = true
-                                                        }
-                                                    } label: {
-                                                        Label("Share PDF", systemImage: "square.and.arrow.up")
-                                                    }
-                                                }
-    
     var body: some View {
-                                            private func duplicateActivities(in day: TripDay) {
-                                                for activity in day.activities {
-                                                    let copy = Activity(name: "\(activity.name) (Copy)", location: activity.location, category: activity.category)
-                                                    copy.duration = activity.duration
-                                                    copy.notes = activity.notes
-                                                    copy.scheduledTime = activity.scheduledTime
-                                                    copy.isCompleted = false
-                                                    copy.order = day.activities.count
-                                                    copy.estimatedCost = activity.estimatedCost
-                                                    copy.costCategory = activity.costCategory
-                                                    day.activities.append(copy)
-                                                }
-                                            }
         NavigationStack {
             Form {
                 Section("Locations") {
@@ -416,35 +395,31 @@ struct AddDayView: View {
                         icon: "location.circle.fill",
                         iconColor: .green
                     )
-                    .onChange(of: startLocation) { oldValue, newValue in
-                        if !newValue.isEmpty && !endLocation.isEmpty {
+                    .onChange(of: startLocation) { _, _ in
+                        if !startLocation.isEmpty && !endLocation.isEmpty {
                             calculateRoute()
                         }
                     }
-                    
+
                     LocationSearchField(
                         title: "End Location",
                         location: $endLocation,
                         icon: "mappin.circle.fill",
                         iconColor: .red
                     )
-                    .onChange(of: endLocation) { oldValue, newValue in
-                        if !newValue.isEmpty {
-                            if !startLocation.isEmpty {
-                                calculateRoute()
-                            }
-                            updateEndLocationRegion()
+                    .onChange(of: endLocation) { _, _ in
+                        if !startLocation.isEmpty && !endLocation.isEmpty {
+                            calculateRoute()
                         }
                     }
                 }
-                
+
                 Section("Route Details") {
                     HStack {
                         Text("Distance (miles)")
                         Spacer()
                         if isCalculatingRoute {
-                            ProgressView()
-                                .frame(width: 80)
+                            ProgressView().frame(width: 80)
                         } else {
                             TextField("0", value: $distance, format: .number)
                                 .keyboardType(.decimalPad)
@@ -452,13 +427,12 @@ struct AddDayView: View {
                                 .frame(width: 80)
                         }
                     }
-                    
+
                     HStack {
                         Text("Driving Time (hours)")
                         Spacer()
                         if isCalculatingRoute {
-                            ProgressView()
-                                .frame(width: 80)
+                            ProgressView().frame(width: 80)
                         } else {
                             TextField("0", value: $drivingTime, format: .number)
                                 .keyboardType(.decimalPad)
@@ -467,24 +441,9 @@ struct AddDayView: View {
                         }
                     }
                 }
-                
+
                 Section("Accommodation") {
-                    LocationSearchField(
-                        title: "Hotel",
-                        location: $hotelName,
-                        icon: "bed.double.circle.fill",
-                        iconColor: .purple,
-                        placeholder: "Hotel (optional)",
-                        searchRegion: endLocationRegion
-                    )
-                }
-                
-                if let error = validationError {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                            .font(.caption)
-                    }
+                    TextField("Hotel (optional)", text: $hotelName)
                 }
             }
             .navigationTitle("Add Day")
@@ -493,34 +452,46 @@ struct AddDayView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         addDay()
                     }
-                    .disabled(!isFormValid)
+                    .disabled(startLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || endLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
     }
-    
+
     private func addDay() {
-        let dayNumber = trip.days.count + 1
-        let date = Calendar.current.date(byAdding: .day, value: dayNumber - 1, to: trip.startDate) ?? trip.startDate
-        
-        let newDay = TripDay(dayNumber: dayNumber, date: date, 
-                            startLocation: startLocation.trimmingCharacters(in: .whitespaces), 
-                            endLocation: endLocation.trimmingCharacters(in: .whitespaces))
-        newDay.hotelName = hotelName.trimmingCharacters(in: .whitespaces).isEmpty ? nil : hotelName
-        newDay.distance = distance
-        newDay.drivingTime = drivingTime
+        let nextNumber = (trip.days.map { $0.dayNumber }.max() ?? 0) + 1
+        let nextDate = (trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.date).map {
+            Calendar.current.date(byAdding: .day, value: 1, to: $0)
+        } ?? Calendar.current.date(byAdding: .day, value: 1, to: trip.endDate)
+
+        let date = nextDate ?? Date()
+
+        let newDay = TripDay(
+            dayNumber: nextNumber,
+            date: date,
+            startLocation: startLocation.trimmingCharacters(in: .whitespacesAndNewlines),
+            endLocation: endLocation.trimmingCharacters(in: .whitespacesAndNewlines),
+            distance: distance,
+            drivingTime: drivingTime,
+            activities: []
+        )
+
+        let trimmedHotel = hotelName.trimmingCharacters(in: .whitespacesAndNewlines)
+        newDay.hotelName = trimmedHotel.isEmpty ? nil : trimmedHotel
+
         trip.days.append(newDay)
-        
+        trip.endDate = max(trip.endDate, date)
+        try? modelContext.save()
         dismiss()
     }
-    
+
     private func calculateRoute() {
         isCalculatingRoute = true
-        
         Task {
             do {
                 let routeInfo = try await RouteCalculator.shared.calculateRoute(
@@ -528,7 +499,6 @@ struct AddDayView: View {
                     to: endLocation,
                     transportType: .automobile
                 )
-                
                 await MainActor.run {
                     distance = routeInfo.distanceInMiles
                     drivingTime = routeInfo.durationInHours
@@ -538,22 +508,6 @@ struct AddDayView: View {
                 await MainActor.run {
                     isCalculatingRoute = false
                 }
-            }
-        }
-    }
-    
-    private func updateEndLocationRegion() {
-        Task {
-            do {
-                let placemark = try await RouteCalculator.shared.getPlacemark(for: endLocation)
-                await MainActor.run {
-                    endLocationRegion = MKCoordinateRegion(
-                        center: placemark.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-                    )
-                }
-            } catch {
-                // Silently fail - region will remain nil
             }
         }
     }
