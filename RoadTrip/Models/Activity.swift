@@ -36,6 +36,11 @@ class Activity {
     var website: String?
     var phoneNumber: String?
     
+    // Multi-day activity support
+    var isMultiDay: Bool = false
+    var endDate: Date? // For multi-day activities like hotel stays
+    var spansDays: Int = 1 // Number of days this activity spans
+    
     init(name: String, location: String, category: String) {
         self.id = UUID()
         self.name = name
@@ -48,6 +53,141 @@ class Activity {
     // Convenience for coordinate
     var hasCoordinates: Bool {
         latitude != nil && longitude != nil
+    }
+}
+
+// MARK: - Activity Template for Quick Reuse
+@Model
+class ActivityTemplate {
+    var id: UUID
+    var name: String
+    var location: String
+    var category: String
+    var defaultDuration: Double // in hours
+    var notes: String?
+    var estimatedCost: Double?
+    var costCategory: String?
+    var usageCount: Int = 0
+    var lastUsed: Date?
+    var createdAt: Date
+    
+    // Common preset templates
+    static let presetNames = [
+        "Breakfast", "Lunch", "Dinner", "Coffee Break",
+        "Hotel Check-in", "Hotel Check-out",
+        "Gas Stop", "Rest Stop", "Scenic Overlook"
+    ]
+    
+    init(name: String, location: String = "", category: String, defaultDuration: Double = 1.0) {
+        self.id = UUID()
+        self.name = name
+        self.location = location
+        self.category = category
+        self.defaultDuration = defaultDuration
+        self.createdAt = Date()
+    }
+    
+    // Create activity from template
+    func createActivity(for day: TripDay, at time: Date? = nil) -> Activity {
+        let activity = Activity(name: name, location: location.isEmpty ? day.startLocation : location, category: category)
+        activity.duration = defaultDuration
+        activity.scheduledTime = time
+        activity.notes = notes
+        activity.estimatedCost = estimatedCost
+        activity.costCategory = costCategory
+        activity.isCompleted = true
+        activity.order = day.activities.count
+        
+        // Update template usage stats
+        usageCount += 1
+        lastUsed = Date()
+        
+        return activity
+    }
+}
+
+// MARK: - Activity History for Undo/Redo
+class ActivityUndoManager: ObservableObject {
+    static let shared = ActivityUndoManager()
+    
+    struct ActivitySnapshot {
+        let activityId: UUID
+        let name: String
+        let location: String
+        let category: String
+        let scheduledTime: Date?
+        let duration: Double?
+        let notes: String?
+        let isCompleted: Bool
+        let estimatedCost: Double?
+        let costCategory: String?
+        let action: UndoAction
+        let timestamp: Date
+    }
+    
+    enum UndoAction {
+        case create
+        case update
+        case delete
+    }
+    
+    @Published private(set) var canUndo: Bool = false
+    @Published private(set) var canRedo: Bool = false
+    
+    private var undoStack: [ActivitySnapshot] = []
+    private var redoStack: [ActivitySnapshot] = []
+    private let maxStackSize = 50
+    
+    private init() {}
+    
+    func recordChange(_ activity: Activity, action: UndoAction) {
+        let snapshot = ActivitySnapshot(
+            activityId: activity.id,
+            name: activity.name,
+            location: activity.location,
+            category: activity.category,
+            scheduledTime: activity.scheduledTime,
+            duration: activity.duration,
+            notes: activity.notes,
+            isCompleted: activity.isCompleted,
+            estimatedCost: activity.estimatedCost,
+            costCategory: activity.costCategory,
+            action: action,
+            timestamp: Date()
+        )
+        
+        undoStack.append(snapshot)
+        if undoStack.count > maxStackSize {
+            undoStack.removeFirst()
+        }
+        
+        redoStack.removeAll()
+        updateState()
+    }
+    
+    func undo(in day: TripDay) -> ActivitySnapshot? {
+        guard let snapshot = undoStack.popLast() else { return nil }
+        redoStack.append(snapshot)
+        updateState()
+        return snapshot
+    }
+    
+    func redo(in day: TripDay) -> ActivitySnapshot? {
+        guard let snapshot = redoStack.popLast() else { return nil }
+        undoStack.append(snapshot)
+        updateState()
+        return snapshot
+    }
+    
+    func clearHistory() {
+        undoStack.removeAll()
+        redoStack.removeAll()
+        updateState()
+    }
+    
+    private func updateState() {
+        canUndo = !undoStack.isEmpty
+        canRedo = !redoStack.isEmpty
     }
 }
 

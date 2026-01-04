@@ -10,6 +10,11 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+// Extension to make Date Identifiable for sheet presentation
+extension Date: @retroactive Identifiable {
+    public var id: TimeInterval { timeIntervalSince1970 }
+}
+
 struct ScheduleView: View {
     let trip: Trip
     @State private var selectedDay: TripDay?
@@ -157,6 +162,8 @@ struct DayScheduleSection: View {
     let day: TripDay
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddActivity = false
+    @State private var showingTemplates = false
+    @StateObject private var undoManager = ActivityUndoManager.shared
     
     var completedActivities: [Activity] {
         day.activities.filter { $0.isCompleted }.sorted { a, b in
@@ -165,6 +172,43 @@ struct DayScheduleSection: View {
             }
             return timeA < timeB
         }
+    }
+    
+    // MARK: - Day Summary Stats
+    private var totalPlannedTime: Double {
+        completedActivities.compactMap { $0.duration }.reduce(0, +)
+    }
+    
+    private var totalEstimatedCost: Double {
+        day.activities.compactMap { $0.estimatedCost }.reduce(0, +)
+    }
+    
+    private var freeTimeGaps: [(start: Date, end: Date, duration: TimeInterval)] {
+        guard completedActivities.count > 1 else { return [] }
+        
+        var gaps: [(start: Date, end: Date, duration: TimeInterval)] = []
+        let sorted = completedActivities
+        
+        for i in 0..<(sorted.count - 1) {
+            guard let currentTime = sorted[i].scheduledTime,
+                  let currentDuration = sorted[i].duration,
+                  let nextTime = sorted[i + 1].scheduledTime else { continue }
+            
+            let currentEnd = currentTime.addingTimeInterval(currentDuration * 3600)
+            
+            if nextTime > currentEnd {
+                let gapDuration = nextTime.timeIntervalSince(currentEnd)
+                if gapDuration >= 900 { // Only show gaps of 15+ minutes
+                    gaps.append((start: currentEnd, end: nextTime, duration: gapDuration))
+                }
+            }
+        }
+        
+        return gaps
+    }
+    
+    private var totalFreeTime: TimeInterval {
+        freeTimeGaps.map { $0.duration }.reduce(0, +)
     }
     
     // Dark mode adaptive gradient colors
@@ -186,6 +230,16 @@ struct DayScheduleSection: View {
             } else {
                 return "\(h) hr \(m) min"
             }
+        }
+    }
+    
+    private func formatTimeInterval(_ interval: TimeInterval) -> String {
+        let hours = Int(interval / 3600)
+        let minutes = Int((interval.truncatingRemainder(dividingBy: 3600)) / 60)
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
         }
     }
     
@@ -300,28 +354,94 @@ struct DayScheduleSection: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                CalendarTimelineView(activities: completedActivities)
+                CalendarTimelineView(activities: completedActivities, day: day)
                     .padding(.vertical, 16)
             }
             
-            // Add Activity Button
-            Button {
-                showingAddActivity = true
-            } label: {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                    Text("Add Activity")
-                        .fontWeight(.medium)
+            // Day Summary Stats (shown when there are activities)
+            if !completedActivities.isEmpty {
+                DaySummaryStatsView(
+                    totalPlannedTime: totalPlannedTime,
+                    totalFreeTime: totalFreeTime,
+                    totalEstimatedCost: totalEstimatedCost,
+                    freeTimeGaps: freeTimeGaps
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+            }
+            
+            // Action Buttons Row
+            HStack(spacing: 12) {
+                // Add Activity Button
+                Button {
+                    showingAddActivity = true
+                } label: {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.body)
+                        Text("Add Activity")
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(10)
                 }
-                .foregroundStyle(.blue)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(10)
+                
+                // Templates Button
+                Button {
+                    showingTemplates = true
+                } label: {
+                    HStack {
+                        Image(systemName: "doc.on.doc.fill")
+                            .font(.body)
+                        Text("Templates")
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.green)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(10)
+                }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, 8)
+            
+            // Undo/Redo buttons
+            if undoManager.canUndo || undoManager.canRedo {
+                HStack(spacing: 12) {
+                    Button {
+                        // Undo action
+                        if let snapshot = undoManager.undo(in: day) {
+                            applyUndo(snapshot)
+                        }
+                    } label: {
+                        Label("Undo", systemImage: "arrow.uturn.backward")
+                            .font(.caption)
+                    }
+                    .disabled(!undoManager.canUndo)
+                    
+                    Button {
+                        // Redo action
+                        if let snapshot = undoManager.redo(in: day) {
+                            applyRedo(snapshot)
+                        }
+                    } label: {
+                        Label("Redo", systemImage: "arrow.uturn.forward")
+                            .font(.caption)
+                    }
+                    .disabled(!undoManager.canRedo)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            } else {
+                Spacer()
+                    .frame(height: 8)
+            }
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -329,14 +449,163 @@ struct DayScheduleSection: View {
         .sheet(isPresented: $showingAddActivity) {
             AddActivityFromScheduleView(day: day)
         }
+        .sheet(isPresented: $showingTemplates) {
+            ActivityTemplatePickerSheet(day: day)
+        }
+    }
+    
+    private func applyUndo(_ snapshot: ActivityUndoManager.ActivitySnapshot) {
+        if let activity = day.activities.first(where: { $0.id == snapshot.activityId }) {
+            activity.name = snapshot.name
+            activity.location = snapshot.location
+            activity.scheduledTime = snapshot.scheduledTime
+            activity.duration = snapshot.duration
+            activity.notes = snapshot.notes
+            activity.isCompleted = snapshot.isCompleted
+            activity.estimatedCost = snapshot.estimatedCost
+            activity.costCategory = snapshot.costCategory
+        }
+    }
+    
+    private func applyRedo(_ snapshot: ActivityUndoManager.ActivitySnapshot) {
+        applyUndo(snapshot) // Same logic for redo
     }
 }
 
 struct CalendarTimelineView: View {
     let activities: [Activity]
+    let day: TripDay
     
-    private let hourHeight: CGFloat = 80
+    @State private var travelTimes: [UUID: TimeInterval] = [:] // Travel time to next activity
+    @State private var isCalculatingTravel = false
+    @State private var selectedActivityForEdit: Activity?
+    @State private var draggedActivity: Activity?
+    @State private var showingAddAtTime: Date?
+    @State private var zoomScale: CGFloat = 1.0
+    
+    // Base hour height that can be zoomed
+    private var hourHeight: CGFloat { 80 * zoomScale }
     private let timeColumnWidth: CGFloat = 60
+    private let minZoom: CGFloat = 0.5
+    private let maxZoom: CGFloat = 2.0
+    
+    // Check if this day is today
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(day.date)
+    }
+    
+    // Current time offset for the red line
+    private var currentTimeOffset: CGFloat? {
+        guard isToday else { return nil }
+        let now = Date()
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: now)
+        let minute = calendar.component(.minute, from: now)
+        
+        // Check if current time is within visible range
+        guard hour >= timeRange.start && hour < timeRange.end else { return nil }
+        
+        let hoursFromStart = Double(hour - timeRange.start)
+        let minuteFraction = Double(minute) / 60.0
+        return CGFloat(hoursFromStart + minuteFraction) * hourHeight
+    }
+    
+    // Time periods for color coding
+    private enum TimePeriod {
+        case earlyMorning // 5-8 AM
+        case morning      // 8-12 PM
+        case afternoon    // 12-5 PM
+        case evening      // 5-9 PM
+        case night        // 9 PM - 5 AM
+        
+        var backgroundColor: Color {
+            switch self {
+            case .earlyMorning: return Color.orange.opacity(0.05)
+            case .morning: return Color.yellow.opacity(0.05)
+            case .afternoon: return Color.blue.opacity(0.05)
+            case .evening: return Color.purple.opacity(0.05)
+            case .night: return Color.indigo.opacity(0.08)
+            }
+        }
+        
+        static func forHour(_ hour: Int) -> TimePeriod {
+            switch hour {
+            case 5..<8: return .earlyMorning
+            case 8..<12: return .morning
+            case 12..<17: return .afternoon
+            case 17..<21: return .evening
+            default: return .night
+            }
+        }
+    }
+    
+    // Check for time conflicts
+    private func hasConflict(_ activity: Activity) -> Bool {
+        guard let time = activity.scheduledTime,
+              let duration = activity.duration else { return false }
+        
+        let endTime = time.addingTimeInterval(duration * 3600)
+        
+        for other in activities where other.id != activity.id {
+            guard let otherTime = other.scheduledTime,
+                  let otherDuration = other.duration else { continue }
+            
+            let otherEndTime = otherTime.addingTimeInterval(otherDuration * 3600)
+            
+            // Check if they overlap
+            if time < otherEndTime && endTime > otherTime {
+                return true
+            }
+        }
+        return false
+    }
+    
+    // Find free time slots
+    private func findFreeSlots() -> [(start: Date, end: Date)] {
+        let calendar = Calendar.current
+        let dayStart = calendar.date(bySettingHour: timeRange.start, minute: 0, second: 0, of: day.date)!
+        let dayEnd = calendar.date(bySettingHour: timeRange.end, minute: 0, second: 0, of: day.date)!
+        
+        var slots: [(start: Date, end: Date)] = []
+        var currentTime = dayStart
+        
+        let sortedActivities = activities
+            .filter { $0.scheduledTime != nil && $0.duration != nil }
+            .sorted { $0.scheduledTime! < $1.scheduledTime! }
+        
+        for activity in sortedActivities {
+            guard let activityStart = activity.scheduledTime,
+                  let duration = activity.duration else { continue }
+            
+            if currentTime < activityStart {
+                slots.append((start: currentTime, end: activityStart))
+            }
+            
+            let activityEnd = activityStart.addingTimeInterval(duration * 3600)
+            currentTime = max(currentTime, activityEnd)
+        }
+        
+        if currentTime < dayEnd {
+            slots.append((start: currentTime, end: dayEnd))
+        }
+        
+        return slots
+    }
+    
+    // Check if a time slot is free
+    private func isTimeSlotFree(at time: Date) -> Bool {
+        for activity in activities {
+            guard let activityTime = activity.scheduledTime,
+                  let duration = activity.duration else { continue }
+            
+            let activityEnd = activityTime.addingTimeInterval(duration * 3600)
+            
+            if time >= activityTime && time < activityEnd {
+                return false
+            }
+        }
+        return true
+    }
     
     // Dynamically calculate time range based on current activities
     private var timeRange: (start: Int, end: Int) {
@@ -382,42 +651,215 @@ struct CalendarTimelineView: View {
     }
     
     var body: some View {
-        ScrollView {
-            ZStack(alignment: .topLeading) {
-                // Hour grid background
-                VStack(spacing: 0) {
-                    ForEach(timeRange.start..<timeRange.end, id: \.self) { hour in
-                        HStack(spacing: 0) {
-                            // Time label
-                            Text(formatHour(hour))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: timeColumnWidth, alignment: .trailing)
-                                .padding(.trailing, 8)
-                            
-                            // Hour line
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 1)
-                        }
-                        .frame(height: hourHeight)
+        VStack(spacing: 0) {
+            // Zoom controls
+            HStack {
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        zoomScale = max(minZoom, zoomScale - 0.25)
                     }
+                } label: {
+                    Image(systemName: "minus.magnifyingglass")
+                        .font(.caption)
+                        .padding(6)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(6)
                 }
-                .padding(.leading, 8)
+                .disabled(zoomScale <= minZoom)
                 
-                // Activity blocks
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(activities) { activity in
-                        if let startTime = activity.scheduledTime,
-                           let duration = activity.duration {
-                            ActivityBlock(activity: activity, startTime: startTime, duration: duration)
-                                .offset(y: calculateOffset(for: startTime))
-                                .padding(.leading, timeColumnWidth + 16)
-                        }
+                Text("\(Int(zoomScale * 100))%")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40)
+                
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        zoomScale = min(maxZoom, zoomScale + 0.25)
+                    }
+                } label: {
+                    Image(systemName: "plus.magnifyingglass")
+                        .font(.caption)
+                        .padding(6)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(6)
+                }
+                .disabled(zoomScale >= maxZoom)
+                
+                Spacer()
+                
+                if isToday {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 6, height: 6)
+                        Text("Now")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            
+            ScrollView {
+                ZStack(alignment: .topLeading) {
+                    // Hour grid background with time period colors and tappable slots
+                    VStack(spacing: 0) {
+                        ForEach(timeRange.start..<timeRange.end, id: \.self) { hour in
+                            ZStack(alignment: .leading) {
+                                // Time period background color
+                                TimePeriod.forHour(hour).backgroundColor
+                                
+                                HStack(spacing: 0) {
+                                    // Time label
+                                    Text(formatHour(hour))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: timeColumnWidth, alignment: .trailing)
+                                        .padding(.trailing, 8)
+                                    
+                                    // Tappable hour slot
+                                    Rectangle()
+                                        .fill(Color.clear)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            let calendar = Calendar.current
+                                            if let tappedTime = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day.date),
+                                               isTimeSlotFree(at: tappedTime) {
+                                                showingAddAtTime = tappedTime
+                                            }
+                                        }
+                                    
+                                    // Hour line overlay
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(height: 1)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                            .frame(height: hourHeight)
+                        }
+                    }
+                    .padding(.leading, 8)
+                    
+                    // Current time indicator (red line)
+                    if let offset = currentTimeOffset {
+                        HStack(spacing: 0) {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 10, height: 10)
+                            
+                            Rectangle()
+                                .fill(Color.red)
+                                .frame(height: 2)
+                        }
+                        .offset(x: timeColumnWidth + 8, y: offset - 5)
+                        .allowsHitTesting(false)
+                    }
+                    
+                    // Activity blocks with drag reordering
+                    ForEach(Array(activities.enumerated()), id: \.element.id) { index, activity in
+                        if let startTime = activity.scheduledTime,
+                           let duration = activity.duration {
+                            VStack(spacing: 0) {
+                                EnhancedActivityBlock(
+                                    activity: activity,
+                                    startTime: startTime,
+                                    duration: duration,
+                                    hasConflict: hasConflict(activity),
+                                    travelTimeToNext: travelTimes[activity.id],
+                                    hourHeight: hourHeight,
+                                    onQuickEdit: {
+                                        selectedActivityForEdit = activity
+                                    }
+                                )
+                                .draggable(activity.id.uuidString) {
+                                    // Drag preview
+                                    Text(activity.name)
+                                        .padding(8)
+                                        .background(categoryColor(for: activity).opacity(0.8))
+                                        .foregroundStyle(.white)
+                                        .cornerRadius(8)
+                                }
+                                .dropDestination(for: String.self) { items, _ in
+                                    guard let droppedIdString = items.first,
+                                          let droppedId = UUID(uuidString: droppedIdString),
+                                          let droppedActivity = activities.first(where: { $0.id == droppedId }),
+                                          droppedActivity.id != activity.id else {
+                                        return false
+                                    }
+                                    
+                                    // Swap scheduled times
+                                    let targetTime = activity.scheduledTime
+                                    activity.scheduledTime = droppedActivity.scheduledTime
+                                    droppedActivity.scheduledTime = targetTime
+                                    return true
+                                }
+                                
+                                // Travel time indicator
+                                if index < activities.count - 1, let travelTime = travelTimes[activity.id] {
+                                    TravelTimeIndicator(travelTime: travelTime)
+                                }
+                            }
+                            .offset(y: calculateOffset(for: startTime))
+                            .padding(.leading, timeColumnWidth + 16)
+                        }
+                    }
+                }
+                .padding()
+            }
+            .gesture(
+                MagnificationGesture()
+                    .onChanged { value in
+                        let newScale = zoomScale * value
+                        zoomScale = min(maxZoom, max(minZoom, newScale))
+                    }
+            )
+        }
+        .onAppear {
+            calculateTravelTimes()
+        }
+        .sheet(item: $selectedActivityForEdit) { activity in
+            QuickTimeEditSheet(activity: activity, day: day)
+        }
+        .sheet(item: $showingAddAtTime) { time in
+            AddActivityAtTimeSheet(day: day, suggestedTime: time)
+        }
+    }
+    
+    private func calculateTravelTimes() {
+        guard activities.count > 1 else { return }
+        isCalculatingTravel = true
+        
+        Task {
+            var times: [UUID: TimeInterval] = [:]
+            
+            for i in 0..<(activities.count - 1) {
+                let current = activities[i]
+                let next = activities[i + 1]
+                
+                if let routeInfo = try? await RouteCalculator.shared.calculateRoute(
+                    from: current.location,
+                    to: next.location,
+                    transportType: .automobile
+                ) {
+                    times[current.id] = routeInfo.estimatedTime
+                }
+            }
+            
+            await MainActor.run {
+                travelTimes = times
+                isCalculatingTravel = false
+            }
+        }
+    }
+    
+    private func categoryColor(for activity: Activity) -> Color {
+        switch activity.category {
+        case "Food": return .orange
+        case "Attraction": return .blue
+        case "Hotel": return .purple
+        default: return .gray
         }
     }
     
@@ -534,6 +976,280 @@ struct ActivityBlock: View {
     }
 }
 
+// MARK: - Enhanced Activity Block with Conflict Detection
+struct EnhancedActivityBlock: View {
+    let activity: Activity
+    let startTime: Date
+    let duration: Double
+    let hasConflict: Bool
+    let travelTimeToNext: TimeInterval?
+    let hourHeight: CGFloat
+    let onQuickEdit: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Color indicator - red if conflict
+            RoundedRectangle(cornerRadius: 4)
+                .fill(hasConflict ? Color.red : categoryColor)
+                .frame(width: 4)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(startTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(hasConflict ? .red : categoryColor)
+                    
+                    if hasConflict {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                    
+                    Spacer()
+                    
+                    // Quick edit button
+                    Button {
+                        onQuickEdit()
+                    } label: {
+                        Image(systemName: "clock.badge.questionmark")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Text(activity.category)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(hasConflict ? .red : categoryColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background((hasConflict ? Color.red : categoryColor).opacity(0.15))
+                        .cornerRadius(4)
+                }
+                
+                Text(activity.name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                
+                HStack(spacing: 8) {
+                    Label(activity.location, systemImage: "mappin.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Label("\(formatDuration(duration))", systemImage: "clock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(12)
+        }
+        .frame(height: max(40, CGFloat(duration.isNaN || duration.isInfinite || duration < 0 ? 1.0 : duration) * hourHeight))
+        .background(hasConflict ? Color.red.opacity(0.1) : categoryColor.opacity(0.1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(hasConflict ? Color.red.opacity(0.5) : categoryColor.opacity(0.3), lineWidth: hasConflict ? 2 : 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: (hasConflict ? Color.red : categoryColor).opacity(0.2), radius: 4, y: 2)
+        .contentShape(Rectangle())
+    }
+    
+    private var categoryColor: Color {
+        switch activity.category {
+        case "Food": return .orange
+        case "Attraction": return .blue
+        case "Hotel": return .purple
+        default: return .gray
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes)m"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h)h"
+            } else {
+                return "\(h)h \(m)m"
+            }
+        }
+    }
+}
+
+// MARK: - Travel Time Indicator
+struct TravelTimeIndicator: View {
+    let travelTime: TimeInterval
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "car.fill")
+                .font(.caption2)
+            Text(formatTravelTime(travelTime))
+                .font(.caption2)
+                .fontWeight(.medium)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+        .padding(.vertical, 4)
+    }
+    
+    private func formatTravelTime(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds / 60)
+        if minutes < 60 {
+            return "\(minutes) min drive"
+        } else {
+            let hours = minutes / 60
+            let remainingMinutes = minutes % 60
+            if remainingMinutes == 0 {
+                return "\(hours) hr drive"
+            } else {
+                return "\(hours) hr \(remainingMinutes) min drive"
+            }
+        }
+    }
+}
+
+// MARK: - Quick Time Edit Sheet
+struct QuickTimeEditSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let activity: Activity
+    let day: TripDay
+    
+    @State private var selectedTime: Date
+    @State private var selectedDuration: Double
+    
+    init(activity: Activity, day: TripDay) {
+        self.activity = activity
+        self.day = day
+        _selectedTime = State(initialValue: activity.scheduledTime ?? Date())
+        _selectedDuration = State(initialValue: activity.duration ?? 1.0)
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Activity") {
+                    HStack {
+                        Text(activity.name)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text(activity.category)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(categoryColor.opacity(0.15))
+                            .foregroundStyle(categoryColor)
+                            .cornerRadius(6)
+                    }
+                }
+                
+                Section("Time") {
+                    DatePicker("Start Time", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Duration")
+                            Spacer()
+                            Text(formatDuration(selectedDuration))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Slider(value: $selectedDuration, in: 0.25...4, step: 0.25)
+                        
+                        // Quick duration buttons
+                        HStack(spacing: 8) {
+                            ForEach([15, 30, 60, 90, 120], id: \.self) { minutes in
+                                Button {
+                                    selectedDuration = Double(minutes) / 60.0
+                                } label: {
+                                    Text(minutes < 60 ? "\(minutes)m" : "\(minutes/60)h")
+                                        .font(.caption)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Int(selectedDuration * 60) == minutes ? Color.blue : Color.gray.opacity(0.2))
+                                        .foregroundStyle(Int(selectedDuration * 60) == minutes ? .white : .primary)
+                                        .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                
+                Section {
+                    // Calculate end time
+                    let endTime = Calendar.current.date(byAdding: .minute, value: Int(selectedDuration * 60), to: selectedTime) ?? selectedTime
+                    HStack {
+                        Text("Ends at")
+                        Spacer()
+                        Text(endTime.formatted(date: .omitted, time: .shortened))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Quick Edit Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+    
+    private var categoryColor: Color {
+        switch activity.category {
+        case "Food": return .orange
+        case "Attraction": return .blue
+        case "Hotel": return .purple
+        default: return .gray
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h) hr"
+            } else {
+                return "\(h) hr \(m) min"
+            }
+        }
+    }
+    
+    private func saveChanges() {
+        let calendar = Calendar.current
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: selectedTime)
+        activity.scheduledTime = calendar.date(bySettingHour: timeComponents.hour ?? 9,
+                                                minute: timeComponents.minute ?? 0,
+                                                second: 0,
+                                                of: day.date)
+        activity.duration = selectedDuration
+        dismiss()
+    }
+}
+
 struct TimelineItemView: View {
     let activity: Activity
     
@@ -633,7 +1349,7 @@ struct AddActivityFromScheduleView: View {
     @State private var location = ""
     @State private var category = "Attraction"
     @State private var includeTime = true
-    @State private var scheduledTime = Date()
+    @State private var scheduledTime: Date
     @State private var duration: Double = 1.0
     @State private var notes = ""
     
@@ -641,6 +1357,45 @@ struct AddActivityFromScheduleView: View {
     @State private var useSearchNear = false
     
     let categories = ["Food", "Attraction", "Hotel", "Other"]
+    
+    // Smart time suggestion
+    private var suggestedTime: Date {
+        let calendar = Calendar.current
+        
+        // Get all scheduled activities sorted by time
+        let scheduledActivities = day.activities
+            .filter { $0.isCompleted && $0.scheduledTime != nil && $0.duration != nil }
+            .sorted { $0.scheduledTime! < $1.scheduledTime! }
+        
+        if let lastActivity = scheduledActivities.last,
+           let lastTime = lastActivity.scheduledTime,
+           let lastDuration = lastActivity.duration {
+            // Suggest 15 minutes after the last activity ends
+            return lastTime.addingTimeInterval((lastDuration + 0.25) * 3600)
+        }
+        
+        // Default to 9 AM if no activities
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day.date) ?? Date()
+    }
+    
+    init(day: TripDay) {
+        self.day = day
+        
+        // Calculate suggested time
+        let calendar = Calendar.current
+        let scheduledActivities = day.activities
+            .filter { $0.isCompleted && $0.scheduledTime != nil && $0.duration != nil }
+            .sorted { $0.scheduledTime! < $1.scheduledTime! }
+        
+        if let lastActivity = scheduledActivities.last,
+           let lastTime = lastActivity.scheduledTime,
+           let lastDuration = lastActivity.duration {
+            _scheduledTime = State(initialValue: lastTime.addingTimeInterval((lastDuration + 0.25) * 3600))
+        } else {
+            _scheduledTime = State(initialValue: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day.date) ?? Date())
+        }
+    }
+
     
     var isFormValid: Bool {
         !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -785,6 +1540,593 @@ struct AddActivityFromScheduleView: View {
         }
         
         day.activities.append(newActivity)
+        dismiss()
+    }
+}
+
+// MARK: - Day Summary Stats View
+struct DaySummaryStatsView: View {
+    let totalPlannedTime: Double
+    let totalFreeTime: TimeInterval
+    let totalEstimatedCost: Double
+    let freeTimeGaps: [(start: Date, end: Date, duration: TimeInterval)]
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                // Total Planned Time
+                StatBadge(
+                    icon: "clock.fill",
+                    value: formatHours(totalPlannedTime),
+                    label: "Planned",
+                    color: .blue
+                )
+                
+                // Free Time
+                StatBadge(
+                    icon: "clock.badge.checkmark.fill",
+                    value: formatTimeInterval(totalFreeTime),
+                    label: "Free",
+                    color: .green
+                )
+                
+                // Estimated Cost
+                if totalEstimatedCost > 0 {
+                    StatBadge(
+                        icon: "dollarsign.circle.fill",
+                        value: String(format: "$%.0f", totalEstimatedCost),
+                        label: "Est. Cost",
+                        color: .orange
+                    )
+                }
+            }
+            
+            // Show free time gaps if any
+            if !freeTimeGaps.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(freeTimeGaps.indices, id: \.self) { index in
+                            let gap = freeTimeGaps[index]
+                            FreeTimeGapChip(
+                                start: gap.start,
+                                end: gap.end,
+                                duration: gap.duration
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Color(.systemGray6))
+        .cornerRadius(10)
+    }
+    
+    private func formatHours(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes)m"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h)h"
+            }
+            return "\(h)h \(m)m"
+        }
+    }
+    
+    private func formatTimeInterval(_ interval: TimeInterval) -> String {
+        let hours = Int(interval / 3600)
+        let minutes = Int((interval.truncatingRemainder(dividingBy: 3600)) / 60)
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+}
+
+struct StatBadge: View {
+    let icon: String
+    let value: String
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(color)
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct FreeTimeGapChip: View {
+    let start: Date
+    let end: Date
+    let duration: TimeInterval
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "clock")
+                .font(.caption2)
+            Text("\(start.formatted(date: .omitted, time: .shortened)) - \(end.formatted(date: .omitted, time: .shortened))")
+                .font(.caption2)
+            Text("(\(formatDuration(duration)))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.green.opacity(0.1))
+        .foregroundStyle(.green)
+        .cornerRadius(12)
+    }
+    
+    private func formatDuration(_ interval: TimeInterval) -> String {
+        let minutes = Int(interval / 60)
+        if minutes < 60 {
+            return "\(minutes)m free"
+        }
+        let hours = minutes / 60
+        let remainingMinutes = minutes % 60
+        if remainingMinutes == 0 {
+            return "\(hours)h free"
+        }
+        return "\(hours)h \(remainingMinutes)m free"
+    }
+}
+
+// MARK: - Add Activity At Time Sheet (for tap-to-add)
+struct AddActivityAtTimeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let day: TripDay
+    let suggestedTime: Date
+    
+    @State private var activityName = ""
+    @State private var location = ""
+    @State private var category = "Attraction"
+    @State private var scheduledTime: Date
+    @State private var duration: Double = 1.0
+    @State private var notes = ""
+    
+    let categories = ["Food", "Attraction", "Hotel", "Other"]
+    
+    init(day: TripDay, suggestedTime: Date) {
+        self.day = day
+        self.suggestedTime = suggestedTime
+        _scheduledTime = State(initialValue: suggestedTime)
+    }
+    
+    var isFormValid: Bool {
+        !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !location.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    HStack {
+                        Image(systemName: "clock.fill")
+                            .foregroundStyle(.blue)
+                        Text("Adding activity at \(suggestedTime.formatted(date: .omitted, time: .shortened))")
+                            .font(.subheadline)
+                    }
+                }
+                
+                Section("Activity Details") {
+                    TextField("Activity Name", text: $activityName)
+                    
+                    LocationSearchField(
+                        title: "Location",
+                        location: $location,
+                        icon: "mappin.circle.fill",
+                        iconColor: .blue,
+                        searchRegionAddress: day.startLocation
+                    )
+                    
+                    Picker("Category", selection: $category) {
+                        ForEach(categories, id: \.self) { cat in
+                            Text(cat).tag(cat)
+                        }
+                    }
+                }
+                
+                Section("Time") {
+                    DatePicker("Start Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Duration")
+                            Spacer()
+                            Text(formatDuration(duration))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            ForEach([30, 60, 90, 120], id: \.self) { minutes in
+                                Button {
+                                    duration = Double(minutes) / 60.0
+                                } label: {
+                                    Text(minutes < 60 ? "\(minutes)m" : "\(minutes/60)h\(minutes % 60 > 0 ? "\(minutes % 60)m" : "")")
+                                        .font(.caption)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Int(duration * 60) == minutes ? Color.blue : Color.gray.opacity(0.2))
+                                        .foregroundStyle(Int(duration * 60) == minutes ? .white : .primary)
+                                        .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                
+                Section("Notes") {
+                    TextEditor(text: $notes)
+                        .frame(height: 60)
+                }
+            }
+            .navigationTitle("Quick Add")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addActivity()
+                    }
+                    .disabled(!isFormValid)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            return m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
+        }
+    }
+    
+    private func addActivity() {
+        let newActivity = Activity(
+            name: activityName.trimmingCharacters(in: .whitespaces),
+            location: location.trimmingCharacters(in: .whitespaces),
+            category: category
+        )
+        
+        newActivity.order = day.activities.count
+        newActivity.isCompleted = true
+        newActivity.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
+        
+        let calendar = Calendar.current
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: scheduledTime)
+        newActivity.scheduledTime = calendar.date(bySettingHour: timeComponents.hour ?? 9,
+                                                   minute: timeComponents.minute ?? 0,
+                                                   second: 0,
+                                                   of: day.date)
+        newActivity.duration = duration
+        
+        day.activities.append(newActivity)
+        dismiss()
+    }
+}
+
+// MARK: - Activity Template Picker Sheet
+struct ActivityTemplatePickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    let day: TripDay
+    
+    @Query(sort: \ActivityTemplate.usageCount, order: .reverse) private var templates: [ActivityTemplate]
+    @State private var showingCreateTemplate = false
+    
+    // Preset quick templates
+    private let presetTemplates: [(name: String, category: String, duration: Double, icon: String)] = [
+        ("Breakfast", "Food", 1.0, "cup.and.saucer.fill"),
+        ("Lunch", "Food", 1.0, "fork.knife"),
+        ("Dinner", "Food", 1.5, "wineglass.fill"),
+        ("Coffee Break", "Food", 0.5, "cup.and.saucer.fill"),
+        ("Hotel Check-in", "Hotel", 0.5, "building.2.fill"),
+        ("Hotel Check-out", "Hotel", 0.5, "door.left.hand.open"),
+        ("Gas Stop", "Other", 0.25, "fuelpump.fill"),
+        ("Rest Stop", "Other", 0.25, "figure.stand"),
+        ("Scenic Overlook", "Attraction", 0.5, "binoculars.fill"),
+        ("Photo Stop", "Attraction", 0.25, "camera.fill")
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                // Quick Presets
+                Section("Quick Add") {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
+                        ForEach(presetTemplates, id: \.name) { template in
+                            Button {
+                                addFromPreset(template)
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: template.icon)
+                                        .font(.title2)
+                                        .foregroundStyle(categoryColor(template.category))
+                                    Text(template.name)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(categoryColor(template.category).opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                // Saved Templates
+                if !templates.isEmpty {
+                    Section("Saved Templates") {
+                        ForEach(templates) { template in
+                            Button {
+                                addFromTemplate(template)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(template.name)
+                                            .fontWeight(.medium)
+                                            .foregroundStyle(.primary)
+                                        HStack(spacing: 8) {
+                                            Text(template.category)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text("•")
+                                                .foregroundStyle(.secondary)
+                                            Text(formatDuration(template.defaultDuration))
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    VStack(alignment: .trailing) {
+                                        Text("Used \(template.usageCount)x")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    modelContext.delete(template)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Create New Template
+                Section {
+                    Button {
+                        showingCreateTemplate = true
+                    } label: {
+                        Label("Create New Template", systemImage: "plus.circle")
+                    }
+                }
+            }
+            .navigationTitle("Activity Templates")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showingCreateTemplate) {
+                CreateTemplateSheet()
+            }
+        }
+    }
+    
+    private func categoryColor(_ category: String) -> Color {
+        switch category {
+        case "Food": return .orange
+        case "Attraction": return .blue
+        case "Hotel": return .purple
+        default: return .gray
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes)m"
+        }
+        let h = totalMinutes / 60
+        let m = totalMinutes % 60
+        return m == 0 ? "\(h)h" : "\(h)h \(m)m"
+    }
+    
+    private func addFromPreset(_ preset: (name: String, category: String, duration: Double, icon: String)) {
+        let activity = Activity(name: preset.name, location: day.startLocation, category: preset.category)
+        activity.duration = preset.duration
+        activity.order = day.activities.count
+        activity.isCompleted = true
+        
+        // Set suggested time based on existing activities
+        activity.scheduledTime = suggestNextTime()
+        
+        day.activities.append(activity)
+        dismiss()
+    }
+    
+    private func addFromTemplate(_ template: ActivityTemplate) {
+        let activity = template.createActivity(for: day, at: suggestNextTime())
+        day.activities.append(activity)
+        dismiss()
+    }
+    
+    private func suggestNextTime() -> Date {
+        let calendar = Calendar.current
+        
+        // Get all scheduled activities sorted by time
+        let scheduledActivities = day.activities
+            .filter { $0.scheduledTime != nil && $0.duration != nil }
+            .sorted { $0.scheduledTime! < $1.scheduledTime! }
+        
+        if let lastActivity = scheduledActivities.last,
+           let lastTime = lastActivity.scheduledTime,
+           let lastDuration = lastActivity.duration {
+            // Suggest 15 minutes after the last activity ends
+            return lastTime.addingTimeInterval((lastDuration + 0.25) * 3600)
+        }
+        
+        // Default to 9 AM if no activities
+        return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day.date) ?? day.date
+    }
+}
+
+// MARK: - Create Template Sheet
+struct CreateTemplateSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    
+    @State private var name = ""
+    @State private var location = ""
+    @State private var category = "Attraction"
+    @State private var defaultDuration: Double = 1.0
+    @State private var notes = ""
+    @State private var estimatedCost: Double = 0
+    @State private var includeCost = false
+    
+    let categories = ["Food", "Attraction", "Hotel", "Other"]
+    
+    var isFormValid: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Template Details") {
+                    TextField("Template Name", text: $name)
+                    TextField("Default Location (optional)", text: $location)
+                    
+                    Picker("Category", selection: $category) {
+                        ForEach(categories, id: \.self) { cat in
+                            Text(cat).tag(cat)
+                        }
+                    }
+                }
+                
+                Section("Default Duration") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Duration")
+                            Spacer()
+                            Text(formatDuration(defaultDuration))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Slider(value: $defaultDuration, in: 0.25...4, step: 0.25)
+                        
+                        HStack(spacing: 8) {
+                            ForEach([15, 30, 60, 90, 120], id: \.self) { minutes in
+                                Button {
+                                    defaultDuration = Double(minutes) / 60.0
+                                } label: {
+                                    Text(minutes < 60 ? "\(minutes)m" : "\(minutes/60)h")
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Int(defaultDuration * 60) == minutes ? Color.blue : Color.gray.opacity(0.2))
+                                        .foregroundStyle(Int(defaultDuration * 60) == minutes ? .white : .primary)
+                                        .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                
+                Section("Budget") {
+                    Toggle("Include Estimated Cost", isOn: $includeCost)
+                    
+                    if includeCost {
+                        HStack {
+                            Text("$")
+                            TextField("0.00", value: $estimatedCost, format: .number.precision(.fractionLength(2)))
+                                .keyboardType(.decimalPad)
+                        }
+                    }
+                }
+                
+                Section("Notes") {
+                    TextEditor(text: $notes)
+                        .frame(height: 60)
+                }
+            }
+            .navigationTitle("New Template")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveTemplate()
+                    }
+                    .disabled(!isFormValid)
+                }
+            }
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        }
+        let h = totalMinutes / 60
+        let m = totalMinutes % 60
+        return m == 0 ? "\(h) hr" : "\(h) hr \(m) min"
+    }
+    
+    private func saveTemplate() {
+        let template = ActivityTemplate(
+            name: name.trimmingCharacters(in: .whitespaces),
+            location: location.trimmingCharacters(in: .whitespaces),
+            category: category,
+            defaultDuration: defaultDuration
+        )
+        template.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
+        
+        if includeCost && estimatedCost > 0 {
+            template.estimatedCost = estimatedCost
+        }
+        
+        modelContext.insert(template)
         dismiss()
     }
 }
