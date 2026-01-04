@@ -57,46 +57,45 @@ struct HotelDetailView: View {
     
     private var imageCarousel: some View {
         TabView(selection: $selectedImageIndex) {
-                        ForEach(0..<max(hotel.imageURLs.count, 1), id: \.self) { index in
-                            if !hotel.imageURLs.isEmpty, let url = URL(string: hotel.imageURLs[index]) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case .empty:
-                                        Rectangle()
-                                            .fill(Color(.systemGray5))
-                                            .overlay {
-                                                ProgressView()
-                                            }
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    case .failure:
-                                        Rectangle()
-                                            .fill(Color(.systemGray5))
-                                            .overlay {
-                                                Image(systemName: "photo")
-                                                    .font(.largeTitle)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                    @unknown default:
-                                        Rectangle()
-                                            .fill(Color(.systemGray5))
-                                    }
+            ForEach(0..<max(hotel.imageURLs.count, 1), id: \.self) { index in
+                if !hotel.imageURLs.isEmpty, let url = URL(string: hotel.imageURLs[index]) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
+                                .overlay {
+                                    ProgressView()
                                 }
-                                .tag(index)
-                            } else {
-                                Rectangle()
-                                    .fill(Color(.systemGray5))
-                                    .overlay {
-                                        Image(systemName: "photo")
-                                            .font(.largeTitle)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .tag(index)
-                            }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(.secondary)
+                                }
+                        @unknown default:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
                         }
                     }
+                    .tag(index)
+                } else {
+                    Rectangle()
+                        .fill(Color(.systemGray5))
+                        .overlay {
+                            Image(systemName: "photo")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        }
+                        .tag(index)
+                }
+            }
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .frame(height: 250)
@@ -106,189 +105,189 @@ struct HotelDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Hotel Header
             VStack(alignment: .leading, spacing: 12) {
-                        // Name and Rating
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(hotel.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            
-                            HStack(spacing: 12) {
-                                // Stars
-                                if let stars = hotel.starRating {
-                                    HStack(spacing: 2) {
-                                        ForEach(0..<stars, id: \.self) { _ in
-                                            Image(systemName: "star.fill")
-                                                .font(.caption)
-                                                .foregroundStyle(.yellow)
-                                        }
-                                    }
-                                }
-                                
-                                // Rating
-                                if let rating = hotel.rating {
-                                    HStack(spacing: 4) {
-                                        Text(String(format: "%.1f", rating))
-                                            .font(.headline)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(.white)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(ratingColor(rating))
-                                            .cornerRadius(6)
-                                        
-                                        Text(ratingText(rating))
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                
-                                // Review Count
-                                if let count = hotel.reviewCount {
-                                    Text("(\(count) reviews)")
+                // Name and Rating
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(hotel.name)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    HStack(spacing: 12) {
+                        // Stars
+                        if let stars = hotel.starRating {
+                            HStack(spacing: 2) {
+                                ForEach(0..<stars, id: \.self) { _ in
+                                    Image(systemName: "star.fill")
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.yellow)
                                 }
                             }
                         }
                         
-                        // Address
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "location.fill")
-                                .foregroundStyle(.red)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(hotel.address)
-                                Text("\(hotel.city), \(hotel.country)")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
-                        
-                        Divider()
-                        
-                        // Price
-                        if let price = hotel.pricePerNight {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                    Text("$\(Int(price))")
-                                        .font(.system(size: 36, weight: .bold))
-                                        .foregroundStyle(.green)
-                                    Text("per night")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
+                        // Rating
+                        if let rating = hotel.rating {
+                            HStack(spacing: 4) {
+                                Text(String(format: "%.1f", rating))
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(ratingColor(rating))
+                                    .cornerRadius(6)
                                 
-                                if let total = hotel.totalPrice {
-                                    Text("Total: $\(Int(total))")
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
-                                }
+                                Text(ratingText(rating))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                        }
+                        
+                        // Review Count
+                        if let count = hotel.reviewCount {
+                            Text("(\(count) reviews)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .padding()
-                    
-                    Divider()
-                    
-                    // Description
-                    if let description = hotel.description {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("About")
-                                .font(.headline)
-                            Text(description)
+                }
+                
+                // Address
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "location.fill")
+                        .foregroundStyle(.red)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(hotel.address)
+                        Text("\(hotel.city), \(hotel.country)")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+                
+                Divider()
+                
+                // Price
+                if let price = hotel.pricePerNight {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("$\(Int(price))")
+                                .font(.system(size: 36, weight: .bold))
+                                .foregroundStyle(.green)
+                            Text("per night")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-                        .padding()
                         
-                        Divider()
-                    }
-                    
-                    // Amenities
-                    if !hotel.amenities.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Amenities")
+                        if let total = hotel.totalPrice {
+                            Text("Total: $\(Int(total))")
                                 .font(.headline)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], alignment: .leading, spacing: 12) {
-                                ForEach(hotel.amenities, id: \.self) { amenity in
-                                    HStack(spacing: 8) {
-                                        Image(systemName: amenityIcon(amenity))
-                                            .foregroundStyle(.blue)
-                                            .frame(width: 20)
-                                        Text(amenity)
-                                            .font(.subheadline)
-                                    }
-                                }
-                            }
+                                .foregroundStyle(.secondary)
                         }
-                        .padding()
-                        
-                        Divider()
-                    }
-                    
-                    // Map
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Location")
-                            .font(.headline)
-                        
-                        Map(initialPosition: .region(MKCoordinateRegion(
-                            center: CLLocationCoordinate2D(
-                                latitude: hotel.latitude,
-                                longitude: hotel.longitude
-                            ),
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        ))) {
-                            Marker(hotel.name, coordinate: CLLocationCoordinate2D(
-                                latitude: hotel.latitude,
-                                longitude: hotel.longitude
-                            ))
-                            .tint(.red)
-                        }
-                        .frame(height: 200)
-                        .cornerRadius(12)
-                        .allowsHitTesting(false)
                     }
                     .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+            }
+            .padding()
+            
+            Divider()
+            
+            // Description
+            if let description = hotel.description {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("About")
+                        .font(.headline)
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                
+                Divider()
+            }
+            
+            // Amenities
+            if !hotel.amenities.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Amenities")
+                        .font(.headline)
                     
-                    Divider()
-                    
-                    // Booking Options
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Book This Hotel")
-                            .font(.headline)
-                        
-                        // Source Button
-                        Button {
-                            if let url = URL(string: hotel.bookingURL) {
-                                openURL(url)
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], alignment: .leading, spacing: 12) {
+                        ForEach(hotel.amenities, id: \.self) { amenity in
+                            HStack(spacing: 8) {
+                                Image(systemName: amenityIcon(amenity))
+                                    .foregroundStyle(.blue)
+                                    .frame(width: 20)
+                                Text(amenity)
+                                    .font(.subheadline)
                             }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Book on \(hotel.source.rawValue)")
-                                        .font(.headline)
-                                    Text("Opens in Safari")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "arrow.up.right")
-                            }
-                            .foregroundStyle(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(sourceColor(hotel.source))
-                            .cornerRadius(12)
                         }
+                    }
+                }
+                .padding()
+                
+                Divider()
+            }
+            
+            // Map
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Location")
+                    .font(.headline)
+                
+                Map(initialPosition: .region(MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(
+                        latitude: hotel.latitude,
+                        longitude: hotel.longitude
+                    ),
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                ))) {
+                    Marker(hotel.name, coordinate: CLLocationCoordinate2D(
+                        latitude: hotel.latitude,
+                        longitude: hotel.longitude
+                    ))
+                    .tint(.red)
+                }
+                .frame(height: 200)
+                .cornerRadius(12)
+                .allowsHitTesting(false)
+            }
+            .padding()
+            
+            Divider()
+            
+            // Booking Options
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Book This Hotel")
+                    .font(.headline)
+                
+                // Source Button
+                Button {
+                    if let url = URL(string: hotel.bookingURL) {
+                        openURL(url)
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Book on \(hotel.source.rawValue)")
+                                .font(.headline)
+                            Text("Opens in Safari")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "arrow.up.right")
+                    }
+                    .foregroundStyle(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(sourceColor(hotel.source))
+                    .cornerRadius(12)
+                }
             }
             .padding()
         }
