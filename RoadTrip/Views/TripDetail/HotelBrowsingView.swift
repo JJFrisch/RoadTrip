@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 struct HotelBrowsingView: View {
     let day: TripDay
@@ -415,18 +416,41 @@ struct HotelBrowsingView: View {
                 Button("Set as Night's Hotel") {
                     guard let selected = hotelToSet else { return }
 
-                    if let existing = day.hotel {
-                        modelContext.delete(existing)
+                    Task {
+                        if let existing = day.hotel {
+                            modelContext.delete(existing)
+                        }
+
+                        let hotel = selected.toHotel()
+
+                        // If the provider didn't give coordinates (or they look invalid), geocode the full address.
+                        let lat = hotel.latitude
+                        let lon = hotel.longitude
+                        let hasValidCoordinate = {
+                            guard let lat, let lon else { return false }
+                            return (-90...90).contains(lat) && (-180...180).contains(lon)
+                        }()
+
+                        if !hasValidCoordinate {
+                            do {
+                                let coordinate = try await GeocodingService.shared.geocode(location: geocodingQuery(for: selected))
+                                hotel.latitude = coordinate.latitude
+                                hotel.longitude = coordinate.longitude
+                            } catch {
+                                // Best-effort; keep nil if geocoding fails.
+                            }
+                        }
+
+                        modelContext.insert(hotel)
+                        day.hotel = hotel
+                        day.hotelName = hotel.name
+
+                        try? modelContext.save()
+                        await MainActor.run {
+                            hotelToSet = nil
+                            dismiss()
+                        }
                     }
-
-                    let hotel = selected.toHotel()
-                    modelContext.insert(hotel)
-                    day.hotel = hotel
-                    day.hotelName = hotel.name
-
-                    try? modelContext.save()
-                    hotelToSet = nil
-                    dismiss()
                 }
 
                 Button("View Details") {
@@ -491,17 +515,27 @@ struct HotelBrowsingView: View {
     private func loadMockData() {
         Task {
             // Load mock data directly without API call
+            let results = await generateSampleHotels()
             await MainActor.run {
-                searchService.searchResults = generateSampleHotels()
+                searchService.searchResults = results
             }
         }
     }
     
-    private func generateSampleHotels() -> [HotelSearchResult] {
+    private func generateSampleHotels() async -> [HotelSearchResult] {
         let hotelNames = ["Grand Plaza Hotel", "Comfort Inn & Suites", "Luxury Resort & Spa", "Downtown Boutique Hotel", "Mountain View Lodge"]
         let amenities = ["Free WiFi", "Free Parking", "Pool", "Fitness Center", "Restaurant", "Breakfast Included"]
+
+        let baseCoordinate: CLLocationCoordinate2D
+        do {
+            baseCoordinate = try await GeocodingService.shared.geocode(location: searchLocation)
+        } catch {
+            baseCoordinate = CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795)
+        }
         
         return hotelNames.enumerated().map { index, name in
+            let latOffset = Double.random(in: -0.03...0.03)
+            let lonOffset = Double.random(in: -0.03...0.03)
             HotelSearchResult(
                 id: "sample-\(index)",
                 name: name,
@@ -509,8 +543,8 @@ struct HotelBrowsingView: View {
                 city: searchLocation,
                 state: "CA",
                 country: "USA",
-                latitude: 37.7749 + Double.random(in: -0.05...0.05),
-                longitude: -122.4194 + Double.random(in: -0.05...0.05),
+                latitude: baseCoordinate.latitude + latOffset,
+                longitude: baseCoordinate.longitude + lonOffset,
                 rating: Double.random(in: 3.8...4.9),
                 reviewCount: Int.random(in: 100...2000),
                 starRating: Int.random(in: 3...5),
@@ -525,6 +559,28 @@ struct HotelBrowsingView: View {
                 source: .booking
             )
         }
+    }
+
+    private func geocodingQuery(for hotel: HotelSearchResult) -> String {
+        let parts: [String] = [
+            hotel.address,
+            hotel.city,
+            hotel.state ?? "",
+            hotel.country
+        ]
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty }
+
+        // Avoid obvious duplicates like address == city.
+        var deduped: [String] = []
+        for part in parts {
+            if deduped.contains(where: { $0.caseInsensitiveCompare(part) == .orderedSame }) {
+                continue
+            }
+            deduped.append(part)
+        }
+
+        return deduped.joined(separator: ", ")
     }
     
     private func performSearch() {

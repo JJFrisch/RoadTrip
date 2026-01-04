@@ -144,7 +144,7 @@ class HotelSearchService: ObservableObject {
         guard Config.rapidAPIKey != "YOUR_RAPIDAPI_KEY_HERE" else {
             print("⚠️ RapidAPI key not configured - using mock data")
             try? await Task.sleep(nanoseconds: 500_000_000)
-            return generateMockResults(source: .booking, location: location, count: 5)
+            return await generateMockResults(source: .booking, location: location, count: 5)
         }
         
         // Get destination ID using async lookup (with API fallback)
@@ -200,7 +200,7 @@ class HotelSearchService: ObservableObject {
         
         guard let url = components.url else {
             print("❌ Invalid URL")
-            return generateMockResults(source: .booking, location: location, count: 5)
+            return await generateMockResults(source: .booking, location: location, count: 5)
         }
         
         // Create request with headers
@@ -222,7 +222,7 @@ class HotelSearchService: ObservableObject {
                     if let errorString = String(data: data, encoding: .utf8) {
                         print("Error details: \(errorString)")
                     }
-                    return generateMockResults(source: .booking, location: location, count: 5)
+                    return await generateMockResults(source: .booking, location: location, count: 5)
                 }
             }
             
@@ -254,11 +254,14 @@ class HotelSearchService: ObservableObject {
                 // Estimate nights
                 let nights = Calendar.current.dateComponents([.day], from: checkIn, to: checkOut).day ?? 1
                 let totalPrice = pricePerNight.map { $0 * Double(nights) }
+
+                // Booking search results sometimes omit a structured address; accessibilityLabel is a decent hint.
+                let addressHint = bookingHotel.accessibilityLabel?.trimmingCharacters(in: .whitespacesAndNewlines)
                 
                 let result = HotelSearchResult(
                     id: hotelId,
                     name: name,
-                    address: location, // API doesn't provide detailed address in search results
+                    address: (addressHint?.isEmpty == false ? addressHint! : location),
                     city: location,
                     state: nil,
                     country: "USA", // Would need geocoding for accurate country
@@ -287,26 +290,26 @@ class HotelSearchService: ObservableObject {
         } catch {
             print("❌ Booking.com API Error: \(error.localizedDescription)")
             // Fallback to mock data on error
-            return generateMockResults(source: .booking, location: location, count: 5)
+            return await generateMockResults(source: .booking, location: location, count: 5)
         }
     }
     
     // MARK: - Hotels.com Search (Mock)
     private func searchHotelsCom(location: String, checkIn: Date, checkOut: Date, guests: Int) async -> [HotelSearchResult] {
         try? await Task.sleep(nanoseconds: 600_000_000)
-        return generateMockResults(source: .hotels, location: location, count: 4)
+        return await generateMockResults(source: .hotels, location: location, count: 4)
     }
     
     // MARK: - Expedia Search (Mock)
     private func searchExpedia(location: String, checkIn: Date, checkOut: Date, guests: Int) async -> [HotelSearchResult] {
         try? await Task.sleep(nanoseconds: 550_000_000)
-        return generateMockResults(source: .expedia, location: location, count: 6)
+        return await generateMockResults(source: .expedia, location: location, count: 6)
     }
     
     // MARK: - Airbnb Search (Mock)
     private func searchAirbnb(location: String, checkIn: Date, checkOut: Date, guests: Int) async -> [HotelSearchResult] {
         try? await Task.sleep(nanoseconds: 650_000_000)
-        return generateMockResults(source: .airbnb, location: location, count: 3)
+        return await generateMockResults(source: .airbnb, location: location, count: 3)
     }
     
     // MARK: - Apply Filters
@@ -373,7 +376,7 @@ class HotelSearchService: ObservableObject {
     }
     
     // MARK: - Mock Data Generator
-    private func generateMockResults(source: HotelSearchResult.BookingSource, location: String, count: Int) -> [HotelSearchResult] {
+    private func generateMockResults(source: HotelSearchResult.BookingSource, location: String, count: Int) async -> [HotelSearchResult] {
         let hotelNames = [
             "Grand Plaza Hotel", "Comfort Inn & Suites", "Luxury Resort & Spa", "Downtown Boutique Hotel",
             "Oceanview Hotel", "Mountain Lodge", "City Center Inn", "Historic Hotel", "Modern Suites",
@@ -388,10 +391,22 @@ class HotelSearchService: ObservableObject {
             ["Free WiFi", "Parking", "Breakfast Included", "Pet Friendly"]
         ]
         
+        let baseCoordinate: CLLocationCoordinate2D
+        do {
+            baseCoordinate = try await GeocodingService.shared.geocode(location: location)
+        } catch {
+            // Fallback (rough center of US) if geocoding fails.
+            baseCoordinate = CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795)
+        }
+
         return (0..<count).map { index in
             let price = Double.random(in: 80...350).rounded()
             let rating = Double.random(in: 3.5...5.0)
             let stars = Int.random(in: 2...5)
+
+            // Small random offset so results aren't stacked.
+            let latOffset = Double.random(in: -0.03...0.03)
+            let lonOffset = Double.random(in: -0.03...0.03)
             
             return HotelSearchResult(
                 id: "\(source.rawValue)-\(UUID().uuidString)",
@@ -400,8 +415,8 @@ class HotelSearchService: ObservableObject {
                 city: location,
                 state: "CA",
                 country: "USA",
-                latitude: 37.7749 + Double.random(in: -0.1...0.1),
-                longitude: -122.4194 + Double.random(in: -0.1...0.1),
+                latitude: baseCoordinate.latitude + latOffset,
+                longitude: baseCoordinate.longitude + lonOffset,
                 rating: rating,
                 reviewCount: Int.random(in: 50...2000),
                 starRating: stars,

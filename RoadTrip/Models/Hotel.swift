@@ -107,8 +107,21 @@ struct HotelSearchResult: Identifiable, Codable {
     // Convert to Hotel model
     func toHotel() -> Hotel {
         let hotel = Hotel(name: name, address: address, city: city, state: state ?? "", country: country)
-        hotel.latitude = latitude
-        hotel.longitude = longitude
+
+        if let latitude, let longitude {
+            var lat = latitude
+            var lon = longitude
+
+            // If lat/lon appear swapped (common data issue), correct it.
+            if !(-90...90).contains(lat), (-90...90).contains(lon), (-180...180).contains(lat) {
+                swap(&lat, &lon)
+            }
+
+            if (-90...90).contains(lat), (-180...180).contains(lon) {
+                hotel.latitude = lat
+                hotel.longitude = lon
+            }
+        }
         hotel.rating = rating
         hotel.reviewCount = reviewCount
         hotel.starRating = starRating

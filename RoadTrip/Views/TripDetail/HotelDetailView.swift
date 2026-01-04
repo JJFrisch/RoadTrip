@@ -19,6 +19,7 @@ struct HotelDetailView: View {
     
     @State private var showingSaveConfirmation = false
     @State private var selectedImageIndex = 0
+    @State private var mapCoordinate: CLLocationCoordinate2D?
     
     var body: some View {
         NavigationStack {
@@ -51,6 +52,40 @@ struct HotelDetailView: View {
                 }
             } message: {
                 Text("\(hotel.name) has been added to your trip itinerary.")
+            }
+        }
+        .onAppear {
+            resolveMapCoordinateIfNeeded()
+        }
+    }
+
+    private func resolveMapCoordinateIfNeeded() {
+        if let lat = hotel.latitude, let lon = hotel.longitude, (-90...90).contains(lat), (-180...180).contains(lon) {
+            mapCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            return
+        }
+
+        // Fallback: geocode the best address we have.
+        Task {
+            let parts: [String] = [
+                hotel.address,
+                hotel.city,
+                hotel.state ?? "",
+                hotel.country
+            ]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+            let query = parts.joined(separator: ", ")
+            guard query.isEmpty == false else { return }
+
+            do {
+                let coordinate = try await GeocodingService.shared.geocode(location: query)
+                await MainActor.run {
+                    mapCoordinate = coordinate
+                }
+            } catch {
+                // Best-effort: leave nil if geocoding fails.
             }
         }
     }
@@ -235,22 +270,23 @@ struct HotelDetailView: View {
                 Text("Location")
                     .font(.headline)
 
-                Map(initialPosition: .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(
-                        latitude: hotel.latitude ?? 0,
-                        longitude: hotel.longitude ?? 0
-                    ),
-                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                ))) {
-                    Marker(hotel.name, coordinate: CLLocationCoordinate2D(
-                        latitude: hotel.latitude ?? 0,
-                        longitude: hotel.longitude ?? 0
-                    ))
-                    .tint(.red)
+                if let mapCoordinate {
+                    Map(initialPosition: .region(MKCoordinateRegion(
+                        center: mapCoordinate,
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    ))) {
+                        Marker(hotel.name, coordinate: mapCoordinate)
+                            .tint(.red)
+                    }
+                    .frame(height: 200)
+                    .cornerRadius(12)
+                    .allowsHitTesting(false)
+                } else {
+                    ContentUnavailableView("Location unavailable", systemImage: "mappin.slash")
+                        .frame(height: 200)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
                 }
-                .frame(height: 200)
-                .cornerRadius(12)
-                .allowsHitTesting(false)
             }
             .padding()
 
