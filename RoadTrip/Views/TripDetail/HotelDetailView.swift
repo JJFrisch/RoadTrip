@@ -105,14 +105,12 @@ struct HotelDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Hotel Header
             VStack(alignment: .leading, spacing: 12) {
-                // Name and Rating
                 VStack(alignment: .leading, spacing: 6) {
                     Text(hotel.name)
                         .font(.title2)
                         .fontWeight(.bold)
-                    
+
                     HStack(spacing: 12) {
-                        // Stars
                         if let stars = hotel.starRating {
                             HStack(spacing: 2) {
                                 ForEach(0..<stars, id: \.self) { _ in
@@ -122,167 +120,173 @@ struct HotelDetailView: View {
                                 }
                             }
                         }
-                        
-                        // Rating
+
                         if let rating = hotel.rating {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 6) {
                                 Text(String(format: "%.1f", rating))
                                     .font(.headline)
+                                Text(ratingText(rating))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(ratingColor(rating).opacity(0.15))
+                            .clipShape(Capsule())
                         }
                     }
+
+                    if let count = hotel.reviewCount {
+                        Text("(\(count) reviews)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                
-                // Review Count
-                if let count = hotel.reviewCount {
-                    Text("(\(count) reviews)")
-                        .font(.caption)
+            }
+            .padding()
+
+            Divider()
+
+            // Address
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "location.fill")
+                    .foregroundStyle(.red)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(hotel.address)
+                    Text("\(hotel.city), \(hotel.country)")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            .padding()
+
+            Divider()
+
+            // Price
+            if let price = hotel.pricePerNight {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("$\(Int(price))")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(.green)
+                        Text("per night")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let total = hotel.totalPrice {
+                        Text("Total: $\(Int(total))")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding()
+
+                Divider()
+            }
+
+            // Description
+            if let description = hotel.description {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("About")
+                        .font(.headline)
+                    Text(description)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .padding()
+
+                Divider()
             }
-        }
-        
-        // Address
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "location.fill")
-                .foregroundStyle(.red)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(hotel.address)
-                Text("\(hotel.city), \(hotel.country)")
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-        }
-        
-        Divider()
-        
-        // Price
-        if let price = hotel.pricePerNight {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("$\(Int(price))")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(.green)
-                    Text("per night")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                if let total = hotel.totalPrice {
-                                    Text("Total: $\(Int(total))")
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
-                                }
+
+            // Amenities
+            if !hotel.amenities.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Amenities")
+                        .font(.headline)
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+                        ForEach(hotel.amenities, id: \.self) { amenity in
+                            HStack(spacing: 8) {
+                                Image(systemName: amenityIcon(amenity))
+                                    .foregroundStyle(.blue)
+                                    .frame(width: 20)
+                                Text(amenity)
+                                    .font(.subheadline)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
                         }
                     }
-                    .padding()
-                    
-                    Divider()
-                    
-                    // Description
-                    if let description = hotel.description {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("About")
+                }
+                .padding()
+
+                Divider()
+            }
+
+            // Map
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Location")
+                    .font(.headline)
+
+                Map(initialPosition: .region(MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(
+                        latitude: hotel.latitude ?? 0,
+                        longitude: hotel.longitude ?? 0
+                    ),
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                ))) {
+                    Marker(hotel.name, coordinate: CLLocationCoordinate2D(
+                        latitude: hotel.latitude ?? 0,
+                        longitude: hotel.longitude ?? 0
+                    ))
+                    .tint(.red)
+                }
+                .frame(height: 200)
+                .cornerRadius(12)
+                .allowsHitTesting(false)
+            }
+            .padding()
+
+            Divider()
+
+            // Booking Options
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Book This Hotel")
+                    .font(.headline)
+
+                Button {
+                    if let url = URL(string: hotel.bookingURL) {
+                        openURL(url)
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Book on \(hotel.source.rawValue)")
                                 .font(.headline)
-                            Text(description)
-                                .font(.subheadline)
+                            Text("Opens in Safari")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        .padding()
-                        
-                        Divider()
+
+                        Spacer()
+
+                        Image(systemName: "arrow.up.right")
                     }
-                    
-                    // Amenities
-                    if !hotel.amenities.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Amenities")
-                                .font(.headline)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], alignment: .leading, spacing: 12) {
-                                ForEach(hotel.amenities, id: \.self) { amenity in
-                                    HStack(spacing: 8) {
-                                        Image(systemName: amenityIcon(amenity))
-                                            .foregroundStyle(.blue)
-                                            .frame(width: 20)
-                                        Text(amenity)
-                                            .font(.subheadline)
-                                    }
-                                }
-                            }
-                        }
-                        .padding()
-                        
-                        Divider()
-                    }
-                    
-                    // Map
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Location")
-                            .font(.headline)
-                        
-                        Map(initialPosition: .region(MKCoordinateRegion(
-                            center: CLLocationCoordinate2D(
-                                latitude: hotel.latitude ?? 0,
-                                longitude: hotel.longitude ?? 0
-                            ),
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        ))) {
-                            Marker(hotel.name, coordinate: CLLocationCoordinate2D(
-                                latitude: hotel.latitude ?? 0,
-                                longitude: hotel.longitude ?? 0
-                            ))
-                            .tint(.red)
-                        }
-                        .frame(height: 200)
-                        .cornerRadius(12)
-                        .allowsHitTesting(false)
-                    }
+                    .foregroundStyle(.white)
                     .padding()
-                    
-                    Divider()
-                    
-                    // Booking Options
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Book This Hotel")
-                            .font(.headline)
-                        
-                        // Source Button
-                        Button {
-                            if let url = URL(string: hotel.bookingURL) {
-                                openURL(url)
-                            }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Book on \(hotel.source.rawValue)")
-                                        .font(.headline)
-                                    Text("Opens in Safari")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "arrow.up.right")
-                            }
-                            .foregroundStyle(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(sourceColor(hotel.source))
-                            .cornerRadius(12)
-                        }
-                    }
-                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(sourceColor(hotel.source))
+                    .cornerRadius(12)
                 }
             }
+            .padding()
         }
     }
     
