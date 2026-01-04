@@ -163,6 +163,7 @@ struct DayScheduleSection: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddActivity = false
     @State private var showingTemplates = false
+    @State private var showingHotelBrowser = false
     @StateObject private var undoManager = ActivityUndoManager.shared
     
     var completedActivities: [Activity] {
@@ -405,6 +406,23 @@ struct DayScheduleSection: View {
                     .background(Color.green.opacity(0.1))
                     .cornerRadius(10)
                 }
+                
+                // Hotel Browser Button
+                Button {
+                    showingHotelBrowser = true
+                } label: {
+                    HStack {
+                        Image(systemName: "bed.double.fill")
+                            .font(.body)
+                        Text("Hotels")
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(10)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
@@ -451,6 +469,9 @@ struct DayScheduleSection: View {
         }
         .sheet(isPresented: $showingTemplates) {
             ActivityTemplatePickerSheet(day: day)
+        }
+        .sheet(isPresented: $showingHotelBrowser) {
+            HotelBrowsingView(day: day)
         }
     }
     

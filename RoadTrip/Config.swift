@@ -42,6 +42,27 @@ struct Config {
         return "YOUR_MAPBOX_TOKEN_HERE"
     }
     
+    /// RapidAPI Key for Booking.com and other hotel APIs
+    /// Get your key at: https://rapidapi.com/
+    /// Subscribe to: https://rapidapi.com/DataCrawler/api/booking-com15
+    static var rapidAPIKey: String {
+        if let key = Bundle.main.object(forInfoDictionaryKey: "RAPIDAPI_KEY") as? String, !key.isEmpty {
+            return key
+        }
+        
+        if let key = ProcessInfo.processInfo.environment["RAPIDAPI_KEY"], !key.isEmpty {
+            return key
+        }
+        
+        // API key configured
+        return "876258fbf6mshab8de6e5cbf66edp188ec4jsnfb9851109a0a"
+    }
+    
+    // MARK: - Hotel API Configuration
+    
+    static let rapidAPIHost = "booking-com15.p.rapidapi.com"
+    static let bookingAPIBaseURL = "https://booking-com15.p.rapidapi.com/api/v1"
+    
     // MARK: - Configuration
     
     static let maxCachedLocations = 200
