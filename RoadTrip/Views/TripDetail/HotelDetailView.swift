@@ -24,8 +24,39 @@ struct HotelDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Image Carousel
-                    TabView(selection: $selectedImageIndex) {
+                    imageCarousel
+                    hotelDetailsSection
+                }
+            }
+            .navigationTitle("Hotel Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        saveHotelToDay()
+                    } label: {
+                        Label("Add to Day", systemImage: "plus.circle.fill")
+                    }
+                }
+            }
+            .alert("Hotel Added", isPresented: $showingSaveConfirmation) {
+                Button("OK") {
+                    dismiss()
+                }
+            } message: {
+                Text("\(hotel.name) has been added to your trip itinerary.")
+            }
+        }
+    }
+    
+    private var imageCarousel: some View {
+        TabView(selection: $selectedImageIndex) {
                         ForEach(0..<max(hotel.imageURLs.count, 1), id: \.self) { index in
                             if !hotel.imageURLs.isEmpty, let url = URL(string: hotel.imageURLs[index]) {
                                 AsyncImage(url: url) { phase in
@@ -66,11 +97,15 @@ struct HotelDetailView: View {
                             }
                         }
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .always))
-                    .frame(height: 250)
-                    
-                    // Hotel Header
-                    VStack(alignment: .leading, spacing: 12) {
+        }
+        .tabViewStyle(.page(indexDisplayMode: .always))
+        .frame(height: 250)
+    }
+    
+    private var hotelDetailsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Hotel Header
+            VStack(alignment: .leading, spacing: 12) {
                         // Name and Rating
                         VStack(alignment: .leading, spacing: 6) {
                             Text(hotel.name)
@@ -254,34 +289,8 @@ struct HotelDetailView: View {
                             .background(sourceColor(hotel.source))
                             .cornerRadius(12)
                         }
-                    }
-                    .padding()
-                }
             }
-            .navigationTitle("Hotel Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        saveHotelToDay()
-                    } label: {
-                        Label("Add to Day", systemImage: "plus.circle.fill")
-                    }
-                }
-            }
-            .alert("Hotel Added", isPresented: $showingSaveConfirmation) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("\(hotel.name) has been added to your trip itinerary.")
-            }
+            .padding()
         }
     }
     
@@ -294,13 +303,15 @@ struct HotelDetailView: View {
         let hotelActivity = Activity(
             name: "🏨 \(hotel.name)",
             location: hotel.address,
-            startTime: Calendar.current.date(bySettingHour: 15, minute: 0, second: 0, of: day.date) ?? day.date,
-            endTime: Calendar.current.date(bySettingHour: 11, minute: 0, second: 0, of: Calendar.current.date(byAdding: .day, value: 1, to: day.date) ?? day.date) ?? day.date,
-            type: "accommodation",
-            estimatedCost: hotel.totalPrice ?? hotel.pricePerNight ?? 0,
-            latitude: hotel.latitude,
-            longitude: hotel.longitude
+            category: "Hotel"
         )
+        hotelActivity.scheduledTime = Calendar.current.date(bySettingHour: 15, minute: 0, second: 0, of: day.date) ?? day.date
+        hotelActivity.duration = 20.0 // 20 hours (check-in to check-out)
+        hotelActivity.estimatedCost = hotel.totalPrice ?? hotel.pricePerNight ?? 0
+        hotelActivity.latitude = hotel.latitude
+        hotelActivity.longitude = hotel.longitude
+        hotelActivity.rating = hotel.rating
+        hotelActivity.sourceType = "booking"
         
         day.activities.append(hotelActivity)
         

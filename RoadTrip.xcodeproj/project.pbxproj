@@ -112,6 +112,7 @@
 			membershipExceptions = (
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
+				Models/Hotel.swift,
 				Utilities/NetworkMonitor.swift,
 				ViewModels/TripDetailViewModel.swift,
 				ViewModels/TripsViewModel.swift,
