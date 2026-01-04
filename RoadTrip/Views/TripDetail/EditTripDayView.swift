@@ -16,6 +16,7 @@ struct EditTripDayView: View {
     @State private var hotelName: String
     @State private var isCalculatingRoute = false
     @State private var endLocationRegion: MKCoordinateRegion?
+    @State private var showingHotelBrowser = false
     
     init(day: TripDay) {
         self.day = day
@@ -109,14 +110,35 @@ struct EditTripDayView: View {
                 }
                 
                 Section("Accommodation") {
-                    LocationSearchField(
-                        title: "Hotel",
-                        location: $hotelName,
-                        icon: "bed.double.circle.fill",
-                        iconColor: .purple,
-                        placeholder: "Optional",
-                        searchRegion: endLocationRegion
-                    )
+                    Button {
+                        showingHotelBrowser = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "bed.double.circle.fill")
+                                .foregroundStyle(.purple)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(hotelName.isEmpty ? "Add Hotel" : "Change Hotel")
+                                    .foregroundStyle(.primary)
+                                if !hotelName.isEmpty {
+                                    Text(hotelName)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                } else {
+                                    Text("Optional")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
             .navigationTitle("Edit Day \(day.dayNumber)")
@@ -135,6 +157,11 @@ struct EditTripDayView: View {
                     .fontWeight(.semibold)
                 }
             }
+        }
+        .sheet(isPresented: $showingHotelBrowser, onDismiss: {
+            hotelName = day.hotelName ?? ""
+        }) {
+            HotelBrowsingView(day: day)
         }
     }
     

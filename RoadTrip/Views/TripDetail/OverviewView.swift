@@ -287,6 +287,10 @@ struct OverviewView: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
         .padding(.bottom, 12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            editingDay = day
+        }
     }
     
     private var emptyDaysView: some View {

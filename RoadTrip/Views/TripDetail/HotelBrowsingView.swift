@@ -24,6 +24,7 @@ struct HotelBrowsingView: View {
     @State private var showingSourceSettings = false
     @State private var filters = HotelFilters()
     @State private var selectedHotel: HotelSearchResult?
+    @State private var hotelToSet: HotelSearchResult?
     @State private var hasSearched = false
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -58,7 +59,7 @@ struct HotelBrowsingView: View {
                     HStack {
                         Image(systemName: "location.fill")
                             .foregroundStyle(.blue)
-                        TextField("Destination", text: $searchLocation)
+                        TextField("Nearby", text: $searchLocation)
                             .textFieldStyle(.plain)
                     }
                     .padding()
@@ -313,7 +314,7 @@ struct HotelBrowsingView: View {
                             ForEach(searchService.searchResults) { hotel in
                                 HotelResultCard(hotel: hotel)
                                     .onTapGesture {
-                                        selectedHotel = hotel
+                                        hotelToSet = hotel
                                     }
                             }
                         }
@@ -335,6 +336,39 @@ struct HotelBrowsingView: View {
             }
             .sheet(isPresented: $showingSourceSettings) {
                 HotelSourceSettingsSheet(preferences: userPreferences)
+            }
+            .confirmationDialog(
+                "Set as Night's Hotel?",
+                isPresented: Binding(
+                    get: { hotelToSet != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            hotelToSet = nil
+                        }
+                    }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Set as Night's Hotel") {
+                    guard let selected = hotelToSet else { return }
+                    day.hotelName = selected.name
+                    try? modelContext.save()
+                    hotelToSet = nil
+                    dismiss()
+                }
+
+                Button("View Details") {
+                    selectedHotel = hotelToSet
+                    hotelToSet = nil
+                }
+
+                Button("Cancel", role: .cancel) {
+                    hotelToSet = nil
+                }
+            } message: {
+                if let selected = hotelToSet {
+                    Text(selected.name)
+                }
             }
             .sheet(item: $selectedHotel) { hotel in
                 HotelDetailView(hotel: hotel, day: day)
