@@ -272,18 +272,18 @@ struct HotelDetailView: View {
                                 Spacer()
                                 
                                 Image(systemName: "arrow.up.right")
+                            }
+                            .foregroundStyle(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(sourceColor(hotel.source))
+                            .cornerRadius(12)
                         }
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(sourceColor(hotel.source))
-                        .cornerRadius(12)
                     }
+                    .padding()
                 }
-                .padding()
             }
         }
-    }
     
     private func saveHotelToDay() {
         // Convert search result to Hotel model
