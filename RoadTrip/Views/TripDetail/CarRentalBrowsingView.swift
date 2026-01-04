@@ -390,7 +390,7 @@ struct CarResultCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Car Image
             ZStack(alignment: .topTrailing) {
-                if let imageURL = car.imageURLs.first, let url = URL(string: imageURL) {
+                if let imageURL = car.imageURL, let url = URL(string: imageURL) {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .empty:
