@@ -25,6 +25,8 @@ struct HotelBrowsingView: View {
     @State private var filters = HotelFilters()
     @State private var selectedHotel: HotelSearchResult?
     @State private var hasSearched = false
+    @State private var showingError = false
+    @State private var errorMessage = ""
     
     private var userPreferences: HotelPreferences {
         preferences.first ?? {
@@ -47,6 +49,9 @@ struct HotelBrowsingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Network Status Banner
+                NetworkStatusBanner()
+                
                 // Search Header
                 VStack(spacing: 16) {
                     // Location Search
@@ -227,6 +232,79 @@ struct HotelBrowsingView: View {
                         Text("Try adjusting your filters or search criteria")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        // Retry Button
+                        Button {
+                            performSearch()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Try Again")
+                            }
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                        }
+                        .padding(.top, 8)
+                        
+                        Spacer()
+                    }
+                } else if let apiError = searchService.errorMessage {
+                    // API Error State
+                    VStack(spacing: 16) {
+                        Spacer()
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.orange)
+                        Text("Search Error")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        Text(apiError)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        VStack(spacing: 12) {
+                            // Retry Button
+                            Button {
+                                performSearch()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Retry Search")
+                                }
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                                .frame(width: 200)
+                                .padding(.vertical, 12)
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                            }
+                            
+                            // Use Mock Data Button
+                            Button {
+                                loadMockData()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "doc.text")
+                                    Text("Use Sample Data")
+                                }
+                                .fontWeight(.medium)
+                                .foregroundStyle(.blue)
+                                .frame(width: 200)
+                                .padding(.vertical, 12)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(.top, 8)
+                        
                         Spacer()
                     }
                 } else {
@@ -261,6 +339,14 @@ struct HotelBrowsingView: View {
             .sheet(item: $selectedHotel) { hotel in
                 HotelDetailView(hotel: hotel, day: day)
             }
+            .alert("Search Error", isPresented: $showingError) {
+                Button("Retry") {
+                    performSearch()
+                }
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
         }
     }
     
@@ -276,17 +362,75 @@ struct HotelBrowsingView: View {
         filters.petFriendly
     }
     
+    private func loadMockData() {
+        Task {
+            // Load mock data directly without API call
+            await MainActor.run {
+                searchService.searchResults = generateSampleHotels()
+            }
+        }
+    }
+    
+    private func generateSampleHotels() -> [HotelSearchResult] {
+        let hotelNames = ["Grand Plaza Hotel", "Comfort Inn & Suites", "Luxury Resort & Spa", "Downtown Boutique Hotel", "Mountain View Lodge"]
+        let amenities = ["Free WiFi", "Free Parking", "Pool", "Fitness Center", "Restaurant", "Breakfast Included"]
+        
+        return hotelNames.enumerated().map { index, name in
+            HotelSearchResult(
+                id: "sample-\(index)",
+                name: name,
+                address: "\(100 + index * 50) Main Street",
+                city: searchLocation,
+                state: "CA",
+                country: "USA",
+                latitude: 37.7749 + Double.random(in: -0.05...0.05),
+                longitude: -122.4194 + Double.random(in: -0.05...0.05),
+                rating: Double.random(in: 3.8...4.9),
+                reviewCount: Int.random(in: 100...2000),
+                starRating: Int.random(in: 3...5),
+                thumbnailURL: nil,
+                imageURLs: [],
+                pricePerNight: Double.random(in: 100...350),
+                currency: "USD",
+                amenities: Array(amenities.shuffled().prefix(4)),
+                bookingURL: "https://booking.com/hotel/\(index)",
+                source: .booking
+            )
+        }
+    }
+    
     private func performSearch() {
         hasSearched = true
         Task {
-            _ = await searchService.searchHotels(
-                location: searchLocation,
-                checkInDate: checkInDate,
-                checkOutDate: checkOutDate,
-                guests: guests,
-                enabledSources: userPreferences.enabledSources,
-                filters: filters
-            )
+            // Geocode the location first
+            do {
+                let coordinates = try await GeocodingService.shared.geocode(location: searchLocation)
+                
+                print("📍 Search coordinates: \(coordinates.latitude), \(coordinates.longitude)")
+                
+                _ = await searchService.searchHotels(
+                    location: searchLocation,
+                    checkInDate: checkInDate,
+                    checkOutDate: checkOutDate,
+                    guests: guests,
+                    enabledSources: userPreferences.enabledSources,
+                    filters: filters
+                )
+            } catch {
+                print("❌ Geocoding error: \(error.localizedDescription)")
+                errorMessage = "Unable to find location '\(searchLocation)'. Please try a different city name or check your spelling."
+                showingError = true
+                
+                // Still search with location string, API will handle it
+                _ = await searchService.searchHotels(
+                    location: searchLocation,
+                    checkInDate: checkInDate,
+                    checkOutDate: checkOutDate,
+                    guests: guests,
+                    enabledSources: userPreferences.enabledSources,
+                    filters: filters
+                )
+            }
         }
     }
 }
@@ -299,14 +443,41 @@ struct HotelResultCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Hotel Image
             ZStack(alignment: .topTrailing) {
-                Rectangle()
-                    .fill(Color(.systemGray5))
-                    .aspectRatio(16/9, contentMode: .fill)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
+                if let imageURL = hotel.imageURLs.first, let url = URL(string: imageURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
+                                .overlay {
+                                    ProgressView()
+                                }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(.secondary)
+                                }
+                        @unknown default:
+                            Rectangle()
+                                .fill(Color(.systemGray5))
+                        }
                     }
+                } else {
+                    Rectangle()
+                        .fill(Color(.systemGray5))
+                        .overlay {
+                            Image(systemName: "photo")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        }
+                }
                 
                 // Source Badge
                 Text(hotel.source.rawValue)

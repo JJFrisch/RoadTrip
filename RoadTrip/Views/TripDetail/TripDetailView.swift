@@ -10,6 +10,7 @@ struct TripDetailView: View {
     @State private var showingOfflineMapSheet = false
     @State private var showingShareSheet = false
     @State private var showingMoreOptions = false
+    @State private var showingCarRentalBrowser = false
     @State private var isPrefetchingRoutes = false
     @State private var pdfData: Data?
     @State private var notificationsEnabled = false
@@ -93,6 +94,14 @@ struct TripDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
+                        showingCarRentalBrowser = true
+                    } label: {
+                        Label("Rent a Car", systemImage: "car.fill")
+                    }
+                    
+                    Divider()
+                    
+                    Button {
                         exportToPDF()
                     } label: {
                         Label("Export to PDF", systemImage: "doc.fill")
@@ -120,6 +129,9 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingOfflineMapSheet) {
             OfflineMapDownloadSheet(trip: trip)
+        }
+        .sheet(isPresented: $showingCarRentalBrowser) {
+            CarRentalBrowsingView(trip: trip)
         }
         .sheet(isPresented: $showingShareSheet) {
             if let pdfData = pdfData {

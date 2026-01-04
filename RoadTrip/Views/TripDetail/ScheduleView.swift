@@ -7,6 +7,7 @@
 
 // Views/TripDetail/ScheduleView.swift
 import SwiftUI
+import SwiftData
 import MapKit
 import CoreLocation
 
