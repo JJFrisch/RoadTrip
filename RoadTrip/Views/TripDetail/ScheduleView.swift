@@ -633,7 +633,7 @@ struct CalendarTimelineView: View {
     private var timeRange: (start: Int, end: Int) {
         // Filter activities with valid scheduled times
         let scheduledActivities = activities.filter { activity in
-            guard let time = activity.scheduledTime,
+            guard activity.scheduledTime != nil,
                   let duration = activity.duration,
                   !duration.isNaN && !duration.isInfinite && duration >= 0 else {
                 return false
