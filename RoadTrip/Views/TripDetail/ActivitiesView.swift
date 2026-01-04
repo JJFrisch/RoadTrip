@@ -743,16 +743,15 @@ struct AddActivityView: View {
     private func applyTemplate(_ template: ActivityTemplate) {
         activityName = template.name
         category = template.category
-        if let suggestedDuration = template.suggestedDuration {
-            duration = suggestedDuration
-            endTime = Calendar.current.date(byAdding: .minute, value: Int(suggestedDuration * 60), to: scheduledTime) ?? scheduledTime
-        }
+        duration = template.defaultDuration
+        endTime = Calendar.current.date(byAdding: .minute, value: Int(template.defaultDuration * 60), to: scheduledTime) ?? scheduledTime
+        
         if let templateNotes = template.notes {
             notes = templateNotes
         }
         
         // Update use count
-        template.useCount += 1
+        template.usageCount += 1
         template.lastUsed = Date()
         
         updateSuggestedTime()
