@@ -54,8 +54,9 @@ struct Config {
             return key
         }
         
-        // API key configured
-        return "876258fbf6mshab8de6e5cbf66edp188ec4jsnfb9851109a0a"
+        // Development fallback - Replace with your key for local testing.
+        // WARNING: Never commit real API keys to version control!
+        return "YOUR_RAPIDAPI_KEY_HERE"
     }
     
     // MARK: - Hotel API Configuration

@@ -53,12 +53,11 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 
 ### Restrict Your API Key (Security)
 1. In Google Cloud Console, click on your API key
-2. Under "Application restrictions":
-   - Select "iOS apps"
-   - Add your bundle identifier: `com.yourcompany.RoadTrip`
-3. Under "API restrictions":
-   - Select "Restrict key"
-   - Choose: Places API, Geocoding API
+2. **Important:** This app currently calls the **Google Places Web Service** endpoints via `URLSession` (see `RoadTrip/Services/GooglePlacesService.swift`).
+   - If you set **Application restrictions → iOS apps**, Google will expect the native iOS key verification fields used by the SDK, and your Web Service requests may be denied.
+3. Recommended restrictions for this implementation:
+   - **Application restrictions:** *None* (or use a backend/proxy if you want to lock by IP)
+   - **API restrictions:** *Restrict key* to **Places API (New)** and **Geocoding API**
 
 ### Free Tier Limits
 - **Places Nearby Search**: $17/1000 requests (first $200/month free)
