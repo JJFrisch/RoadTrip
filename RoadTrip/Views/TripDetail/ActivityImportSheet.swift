@@ -259,6 +259,21 @@ struct ActivityImportSheet: View {
                                     .foregroundStyle(.yellow)
                             }
                         }
+
+                        if let blurb = place.blurb, !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text(blurb)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        if let website = place.website,
+                           let url = URL(string: website) {
+                            Link(website.replacingOccurrences(of: "https://", with: "").replacingOccurrences(of: "http://", with: ""), destination: url)
+                                .font(.caption2)
+                                .foregroundStyle(.blue)
+                                .lineLimit(1)
+                        }
                     }
                     
                     Spacer()
@@ -302,7 +317,11 @@ struct ActivityImportSheet: View {
                             rating: nil,
                             coordinate: nil,
                             category: activity.category,
-                            typicalDurationHours: activity.duration
+                            typicalDurationHours: activity.duration,
+                            blurb: activity.notes,
+                            website: activity.website,
+                            phoneNumber: activity.phoneNumber,
+                            types: nil
                         )
                     }
                     
@@ -361,6 +380,7 @@ struct ActivityImportSheet: View {
                             typicalDurationHours: activity.duration,
                             placeId: activity.placeId,
                             photoURL: activity.photoURL,
+                            blurb: activity.notes,
                             website: activity.website,
                             phoneNumber: activity.phoneNumber,
                             types: nil

@@ -74,6 +74,7 @@ final class GooglePlacesService {
         let formattedAddress: String?
         let geometry: Place.Geometry
         let rating: Double?
+        let editorialSummary: String?
         let website: String?
         let phoneNumber: String?
         let openingHours: DetailedOpeningHours?
@@ -109,6 +110,7 @@ final class GooglePlacesService {
             case formattedAddress = "formatted_address"
             case geometry, rating, website
             case phoneNumber = "formatted_phone_number"
+            case editorialSummary = "editorial_summary"
             case openingHours = "opening_hours"
             case photos, reviews, types
         }
@@ -171,6 +173,7 @@ final class GooglePlacesService {
     private struct V1Place: Codable {
         let id: String?
         let displayName: V1LocalizedText?
+        let editorialSummary: V1LocalizedText?
         let formattedAddress: String?
         let location: V1LatLng?
         let rating: Double?
@@ -308,6 +311,7 @@ final class GooglePlacesService {
             formattedAddress: place.formattedAddress,
             geometry: Place.Geometry(location: Place.Location(lat: location.latitude, lng: location.longitude)),
             rating: place.rating,
+            editorialSummary: place.editorialSummary?.text,
             website: place.websiteUri,
             phoneNumber: place.internationalPhoneNumber,
             openingHours: openingHours,
@@ -417,7 +421,7 @@ final class GooglePlacesService {
             throw AppError.invalidURL
         }
 
-        let fieldMask = "id,displayName,formattedAddress,location,rating,types,photos,websiteUri,internationalPhoneNumber,regularOpeningHours.openNow,regularOpeningHours.weekdayDescriptions"
+        let fieldMask = "id,displayName,editorialSummary,formattedAddress,location,rating,types,photos,websiteUri,internationalPhoneNumber,regularOpeningHours.openNow,regularOpeningHours.weekdayDescriptions"
         let request = makeV1Request(url: url, method: "GET", fieldMask: fieldMask)
 
         let (data, response) = try await session.data(for: request)

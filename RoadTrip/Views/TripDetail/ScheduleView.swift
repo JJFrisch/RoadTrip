@@ -22,11 +22,24 @@ struct ScheduleView: View {
     @State private var isRefreshing = false
     @State private var dayToCopy: TripDay?
     @State private var showingCopyOptions = false
+    @State private var collapsedDayIDs: Set<UUID> = []
     
     var body: some View {
         List {
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
-                DayScheduleSection(day: day)
+                DayScheduleSection(
+                    day: day,
+                    isCollapsed: collapsedDayIDs.contains(day.id),
+                    onToggleCollapse: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            if collapsedDayIDs.contains(day.id) {
+                                collapsedDayIDs.remove(day.id)
+                            } else {
+                                collapsedDayIDs.insert(day.id)
+                            }
+                        }
+                    }
+                )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
@@ -161,6 +174,8 @@ struct ScheduleView: View {
 
 struct DayScheduleSection: View {
     let day: TripDay
+    let isCollapsed: Bool
+    let onToggleCollapse: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddActivity = false
     @State private var showingTemplates = false
@@ -269,6 +284,19 @@ struct DayScheduleSection: View {
                         }
                         
                         Spacer()
+
+                        Button {
+                            onToggleCollapse()
+                        } label: {
+                            Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white.opacity(0.95))
+                                .padding(8)
+                                .background(.white.opacity(0.18))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
                         
                         if !completedActivities.isEmpty {
                             VStack(alignment: .trailing, spacing: 2) {
@@ -361,42 +389,44 @@ struct DayScheduleSection: View {
                 }
                 .padding()
             }
-            .frame(height: 120)
+            .frame(minHeight: 120)
             .clipped()
             
-            // Timeline View
-            if completedActivities.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.secondary)
-                    
-                    Text("No scheduled activities")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Tap on activities and set times to see them here")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+            if !isCollapsed {
+                // Timeline View
+                if completedActivities.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                        
+                        Text("No activities in schedule")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Check activities in Activities to show them here")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else {
+                    CalendarTimelineView(activities: completedActivities, day: day)
+                        .padding(.vertical, 16)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
-            } else {
-                CalendarTimelineView(activities: completedActivities, day: day)
-                    .padding(.vertical, 16)
-            }
-            
-            // Day Summary Stats (shown when there are activities)
-            if !completedActivities.isEmpty {
-                DaySummaryStatsView(
-                    totalPlannedTime: totalPlannedTime,
-                    totalFreeTime: totalFreeTime,
-                    totalEstimatedCost: totalEstimatedCost,
-                    freeTimeGaps: freeTimeGaps
-                )
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                
+                // Day Summary Stats (shown when there are activities)
+                if !completedActivities.isEmpty {
+                    DaySummaryStatsView(
+                        totalPlannedTime: totalPlannedTime,
+                        totalFreeTime: totalFreeTime,
+                        totalEstimatedCost: totalEstimatedCost,
+                        freeTimeGaps: freeTimeGaps
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                }
             }
             
             // Action Buttons Row

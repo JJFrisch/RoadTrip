@@ -220,10 +220,10 @@ struct EditActivityView: View {
                 // Activity info section
                 Section("Activity Info") {
                     if activity.isCompleted {
-                        Label("Marked as completed", systemImage: "checkmark.circle.fill")
+                        Label("Included in schedule", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     } else {
-                        Label("Not completed", systemImage: "circle")
+                        Label("Not in schedule", systemImage: "circle")
                             .foregroundStyle(.secondary)
                     }
                     

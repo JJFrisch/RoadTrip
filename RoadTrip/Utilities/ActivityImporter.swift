@@ -12,6 +12,7 @@ final class ActivityImporter {
         var typicalDurationHours: Double?
         var placeId: String?
         var photoURL: String?
+        var blurb: String?
         var website: String?
         var phoneNumber: String?
         var types: [String]?
@@ -50,32 +51,48 @@ final class ActivityImporter {
             type: type,
             keyword: keyword
         )
-        
-        return places.map { place in
-            let category = mapGoogleTypeToCategory(place.types?.first ?? "")
-            let duration = estimateDuration(for: category)
-            
-            var photoURL: String? = nil
-            if let photo = place.photos?.first {
-                photoURL = GooglePlacesService.shared.getPhotoURL(photoReference: photo.photoReference)?.absoluteString
+
+        // Fetch details per result so we can show a blurb + website.
+        return await withTaskGroup(of: ImportedPlace?.self) { group in
+            for place in places {
+                group.addTask {
+                    let category = mapGoogleTypeToCategory(place.types?.first ?? "")
+                    let duration = estimateDuration(for: category)
+
+                    var photoURL: String? = nil
+                    if let photo = place.photos?.first {
+                        photoURL = GooglePlacesService.shared.getPhotoURL(photoReference: photo.photoReference)?.absoluteString
+                    }
+
+                    let details = try? await GooglePlacesService.shared.getPlaceDetails(placeId: place.placeId)
+
+                    return ImportedPlace(
+                        name: place.name,
+                        address: details?.formattedAddress ?? place.vicinity,
+                        rating: details?.rating ?? place.rating,
+                        coordinate: CLLocationCoordinate2D(
+                            latitude: details?.geometry.location.lat ?? place.geometry.location.lat,
+                            longitude: details?.geometry.location.lng ?? place.geometry.location.lng
+                        ),
+                        category: category,
+                        typicalDurationHours: duration,
+                        placeId: place.placeId,
+                        photoURL: photoURL,
+                        blurb: details?.editorialSummary,
+                        website: details?.website,
+                        phoneNumber: details?.phoneNumber,
+                        types: details?.types ?? place.types
+                    )
+                }
             }
-            
-            return ImportedPlace(
-                name: place.name,
-                address: place.vicinity,
-                rating: place.rating,
-                coordinate: CLLocationCoordinate2D(
-                    latitude: place.geometry.location.lat,
-                    longitude: place.geometry.location.lng
-                ),
-                category: category,
-                typicalDurationHours: duration,
-                placeId: place.placeId,
-                photoURL: photoURL,
-                website: nil,
-                phoneNumber: nil,
-                types: place.types
-            )
+
+            var results: [ImportedPlace] = []
+            for await item in group {
+                if let item {
+                    results.append(item)
+                }
+            }
+            return results
         }
     }
     
@@ -103,6 +120,7 @@ final class ActivityImporter {
             typicalDurationHours: duration,
             placeId: details.placeId,
             photoURL: photoURL,
+            blurb: details.editorialSummary,
             website: details.website,
             phoneNumber: details.phoneNumber,
             types: details.types

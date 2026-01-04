@@ -67,6 +67,11 @@ final class TripDetailViewModel: ObservableObject {
             activity.photoURL = place.photoURL
             activity.website = place.website
             activity.phoneNumber = place.phoneNumber
+            if (activity.notes == nil || activity.notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true),
+               let blurb = place.blurb,
+               !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                activity.notes = blurb
+            }
 
             modelContext.insert(activity)
             day.activities.append(activity)
@@ -105,6 +110,11 @@ final class TripDetailViewModel: ObservableObject {
             activity.photoURL = place.photoURL
             activity.website = place.website
             activity.phoneNumber = place.phoneNumber
+            if (activity.notes == nil || activity.notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true),
+               let blurb = place.blurb,
+               !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                activity.notes = blurb
+            }
             
             modelContext.insert(activity)
             day.activities.append(activity)

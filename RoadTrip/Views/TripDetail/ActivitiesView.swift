@@ -24,6 +24,7 @@ struct ActivitiesView: View {
     @State private var editMode: EditMode = .inactive
     @State private var draggedActivity: Activity?
     @State private var daySheetItem: DaySheetItem?
+    @State private var collapsedDayIDs: Set<UUID> = []
 
     
     var body: some View {
@@ -37,94 +38,106 @@ struct ActivitiesView: View {
             }
             
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+                let isCollapsed = collapsedDayIDs.contains(day.id)
+
                 Section {
-                    if day.activities.isEmpty {
-                        // Drop zone for empty days
-                        Text("No activities yet")
-                            .foregroundStyle(.secondary)
-                            .italic()
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .contentShape(Rectangle())
-                            .onDrop(of: [.text], isTargeted: nil) { providers in
-                                handleDrop(providers: providers, targetDay: day, targetIndex: 0)
-                            }
+                    if isCollapsed {
+                        HStack {
+                            Text(day.activities.isEmpty ? "No activities" : "\(day.activities.count) activities")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
                     } else {
-                        ForEach(day.activities.sorted(by: { $0.order < $1.order })) { activity in
-                            HStack(spacing: 12) {
-                                Button {
-                                    activity.isCompleted.toggle()
-                                } label: {
-                                    Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(activity.isCompleted ? .green : .gray)
-                                        .font(.title3)
+                        if day.activities.isEmpty {
+                            // Drop zone for empty days
+                            Text("No activities yet")
+                                .foregroundStyle(.secondary)
+                                .italic()
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .contentShape(Rectangle())
+                                .onDrop(of: [.text], isTargeted: nil) { providers in
+                                    handleDrop(providers: providers, targetDay: day, targetIndex: 0)
                                 }
-                                .buttonStyle(.plain)
-                                
-                                ActivityRowView(activity: activity)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        editingActivity = activity
+                        } else {
+                            ForEach(day.activities.sorted(by: { $0.order < $1.order })) { activity in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.15)) {
+                                            activity.isCompleted.toggle()
+                                        }
+                                    } label: {
+                                        Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(activity.isCompleted ? .green : .gray)
+                                            .font(.title3)
                                     }
-                            }
-                            // MARK: - Swipe Actions
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    withAnimation {
-                                        activity.isCompleted.toggle()
+                                    .buttonStyle(.plain)
+                                    
+                                    ActivityRowView(activity: activity)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            editingActivity = activity
+                                        }
+                                }
+                                // MARK: - Swipe Actions
+                                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.15)) {
+                                            activity.isCompleted.toggle()
+                                        }
+                                    } label: {
+                                        Label(
+                                            activity.isCompleted ? "Unschedule" : "Schedule",
+                                            systemImage: activity.isCompleted ? "xmark.circle" : "checkmark.circle"
+                                        )
                                     }
-                                } label: {
-                                    Label(
-                                        activity.isCompleted ? "Unmark" : "Complete",
-                                        systemImage: activity.isCompleted ? "xmark.circle" : "checkmark.circle"
-                                    )
+                                    .tint(activity.isCompleted ? .orange : .green)
                                 }
-                                .tint(activity.isCompleted ? .orange : .green)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    activityToDelete = activity
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        activityToDelete = activity
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            }
-                            .onDrag {
-                                draggedActivity = activity
-                                return NSItemProvider(object: activity.id.uuidString as NSString)
-                            }
-                            .onDrop(of: [.text], isTargeted: nil) { providers in
-                                handleDrop(providers: providers, targetDay: day, targetIndex: activity.order)
-                            }
-                            .contextMenu {
-                                // Move to day submenu
-                                Menu {
-                                    ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
-                                        if targetDay.id != day.id {
-                                            Button {
-                                                moveActivityToDay(activity, from: day, to: targetDay)
-                                            } label: {
-                                                Label("Day \(targetDay.dayNumber)", systemImage: "calendar")
+                                .onDrag {
+                                    draggedActivity = activity
+                                    return NSItemProvider(object: activity.id.uuidString as NSString)
+                                }
+                                .onDrop(of: [.text], isTargeted: nil) { providers in
+                                    handleDrop(providers: providers, targetDay: day, targetIndex: activity.order)
+                                }
+                                .contextMenu {
+                                    // Move to day submenu
+                                    Menu {
+                                        ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
+                                            if targetDay.id != day.id {
+                                                Button {
+                                                    moveActivityToDay(activity, from: day, to: targetDay)
+                                                } label: {
+                                                    Label("Day \(targetDay.dayNumber)", systemImage: "calendar")
+                                                }
                                             }
                                         }
+                                    } label: {
+                                        Label("Move to Day", systemImage: "arrow.right.circle")
                                     }
-                                } label: {
-                                    Label("Move to Day", systemImage: "arrow.right.circle")
-                                }
-                                
-                                Button {
-                                    editingActivity = activity
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                
-                                Button(role: .destructive) {
-                                    activityToDelete = activity
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    
+                                    Button {
+                                        editingActivity = activity
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    
+                                    Button(role: .destructive) {
+                                        activityToDelete = activity
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
-                        }
-                        .onMove { indices, newOffset in
-                            moveActivity(in: day, from: indices, to: newOffset)
+                            .onMove { indices, newOffset in
+                                moveActivity(in: day, from: indices, to: newOffset)
+                            }
                         }
                     }
                     
@@ -146,14 +159,31 @@ struct ActivitiesView: View {
                         .buttonStyle(.borderless)
                     }
                 } header: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Day \(day.dayNumber)")
-                                .font(.headline)
-                            Text("\(day.startLocation) → \(day.endLocation)")
-                                .font(.subheadline)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            if isCollapsed {
+                                collapsedDayIDs.remove(day.id)
+                            } else {
+                                collapsedDayIDs.insert(day.id)
+                            }
+                        }
+                    } label: {
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Day \(day.dayNumber)")
+                                    .font(.headline)
+                                Text("\(day.startLocation) → \(day.endLocation)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
         .listStyle(.insetGrouped)
