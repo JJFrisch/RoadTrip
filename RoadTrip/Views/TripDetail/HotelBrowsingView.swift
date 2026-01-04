@@ -536,7 +536,7 @@ struct HotelBrowsingView: View {
         return hotelNames.enumerated().map { index, name in
             let latOffset = Double.random(in: -0.03...0.03)
             let lonOffset = Double.random(in: -0.03...0.03)
-            HotelSearchResult(
+            return HotelSearchResult(
                 id: "sample-\(index)",
                 name: name,
                 address: "\(100 + index * 50) Main Street",
