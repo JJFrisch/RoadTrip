@@ -14,70 +14,9 @@ struct HotelSourceSettingsSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    Text("Select which booking sites to search when looking for hotels. More sources mean more options but slower searches.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Search Sources")
-                }
-                
-                Section {
-                    ForEach(HotelSearchResult.BookingSource.allCases.filter { $0 != .direct }, id: \.self) { source in
-                        Toggle(isOn: Binding(
-                            get: { preferences.enabledSources.contains(source.rawValue) },
-                            set: { enabled in
-                                if enabled {
-                                    if !preferences.enabledSources.contains(source.rawValue) {
-                                        preferences.enabledSources.append(source.rawValue)
-                                    }
-                                } else {
-                                    preferences.enabledSources.removeAll { $0 == source.rawValue }
-                                }
-                            }
-                        )) {
-                            HStack {
-                                Image(systemName: sourceIcon(source))
-                                    .foregroundStyle(sourceColor(source))
-                                    .frame(width: 30)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(source.rawValue)
-                                        .font(.headline)
-                                    Text(sourceDescription(source))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Booking Sites")
-                } footer: {
-                    Text("At least one source must be enabled")
-                        .font(.caption)
-                }
-                
-                Section {
-                    HStack {
-                        Text("Enabled Sources")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(preferences.enabledSources.count)")
-                            .fontWeight(.semibold)
-                    }
-                    
-                    HStack {
-                        Text("Search Speed")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(searchSpeed)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(searchSpeedColor)
-                    }
-                } header: {
-                    Text("Summary")
-                }
+                searchSourcesSection
+                sourcesListSection
+                summarySection
             }
             .navigationTitle("Booking Sites")
             .navigationBarTitleDisplayMode(.inline)
@@ -92,6 +31,91 @@ struct HotelSourceSettingsSheet: View {
                     }
                 }
             }
+        }
+    }
+    
+    private var searchSourcesSection: some View {
+        Section {
+            Text("Select which booking sites to search when looking for hotels. More sources mean more options but slower searches.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Search Sources")
+        }
+    }
+    
+    private var sourcesListSection: some View {
+        Section {
+            ForEach(availableSources, id: \.self) { source in
+                sourceToggleRow(for: source)
+            }
+        } header: {
+            Text("Booking Sites")
+        } footer: {
+            Text("At least one source must be enabled")
+                .font(.caption)
+        }
+    }
+    
+    private var availableSources: [HotelSearchResult.BookingSource] {
+        HotelSearchResult.BookingSource.allCases.filter { $0 != .direct }
+    }
+    
+    private func sourceToggleRow(for source: HotelSearchResult.BookingSource) -> some View {
+        Toggle(isOn: sourceBinding(for: source)) {
+            HStack {
+                Image(systemName: sourceIcon(source))
+                    .foregroundStyle(sourceColor(source))
+                    .frame(width: 30)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(source.rawValue)
+                        .font(.headline)
+                    Text(sourceDescription(source))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+    
+    private func sourceBinding(for source: HotelSearchResult.BookingSource) -> Binding<Bool> {
+        Binding(
+            get: {
+                preferences.enabledSources.contains(source.rawValue)
+            },
+            set: { enabled in
+                if enabled {
+                    if !preferences.enabledSources.contains(source.rawValue) {
+                        preferences.enabledSources.append(source.rawValue)
+                    }
+                } else {
+                    preferences.enabledSources.removeAll { $0 == source.rawValue }
+                }
+            }
+        )
+    }
+    
+    private var summarySection: some View {
+        Section {
+            HStack {
+                Text("Enabled Sources")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(preferences.enabledSources.count)")
+                    .fontWeight(.semibold)
+            }
+            
+            HStack {
+                Text("Search Speed")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(searchSpeed)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(searchSpeedColor)
+            }
+        } header: {
+            Text("Summary")
         }
     }
     
