@@ -6,9 +6,15 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
+    @StateObject private var authService = AuthService.shared
+    
     @State private var showingNewTripSheet = false
     @State private var tripToDelete: Trip?
+    @State private var tripToEdit: Trip?
+    @State private var tripToShare: Trip?
     @State private var showingSampleTripAlert = false
+    @State private var showingAccount = false
+    @State private var showingJoinTrip = false
     
     var body: some View {
         NavigationStack {
@@ -21,17 +27,59 @@ struct HomeView: View {
             }
             .navigationTitle("My Trips")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        showingNewTripSheet = true
+                        showingAccount = true
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
+                        if authService.isLoggedIn, let user = authService.currentUser {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 32, height: 32)
+                                Text(user.displayName.prefix(1).uppercased())
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                            }
+                        } else {
+                            Image(systemName: "person.circle")
+                                .font(.title2)
+                        }
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 16) {
+                        Button {
+                            showingJoinTrip = true
+                        } label: {
+                            Image(systemName: "person.badge.plus")
+                                .font(.title3)
+                        }
+                        
+                        Button {
+                            showingNewTripSheet = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                        }
                     }
                 }
             }
             .sheet(isPresented: $showingNewTripSheet) {
                 NewTripView()
+            }
+            .sheet(isPresented: $showingAccount) {
+                AccountView()
+            }
+            .sheet(isPresented: $showingJoinTrip) {
+                JoinTripView()
+            }
+            .sheet(item: $tripToEdit) { trip in
+                EditTripView(trip: trip)
+            }
+            .sheet(item: $tripToShare) { trip in
+                TripSharingView(trip: trip)
             }
             .alert("Delete Trip", isPresented: .constant(tripToDelete != nil), presenting: tripToDelete) { trip in
                 Button(role: .destructive) {
@@ -229,6 +277,20 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
+                        Button {
+                            tripToEdit = trip
+                        } label: {
+                            Label("Edit Trip", systemImage: "pencil")
+                        }
+                        
+                        Button {
+                            tripToShare = trip
+                        } label: {
+                            Label("Share Trip", systemImage: "square.and.arrow.up")
+                        }
+                        
+                        Divider()
+                        
                         Button(role: .destructive) {
                             tripToDelete = trip
                         } label: {
@@ -282,10 +344,18 @@ struct TripCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(trip.name)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(trip.name)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .lineLimit(1)
+                        
+                        if trip.isShared {
+                            Image(systemName: "person.2.fill")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        }
+                    }
                     
                     Text("\(trip.numberOfNights) night\(trip.numberOfNights == 1 ? "" : "s")")
                         .font(.subheadline)
@@ -346,6 +416,18 @@ struct TripCardView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
+            }
+            
+            // Show collaborators indicator
+            if trip.isShared && !trip.sharedWith.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                    Text("\(trip.sharedWith.count + 1) collaborator\(trip.sharedWith.count == 0 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                }
             }
         }
         .padding()

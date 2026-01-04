@@ -81,24 +81,7 @@ struct SafeFeature<Content: View>: View {
         if hasError {
             fallback()
         } else {
-            ZStack {
-                do {
-                    try feature()
-                } catch {
-                    FallbackView(
-                        title: errorTitle,
-                        message: error.localizedDescription,
-                        action: {
-                            hasError = true
-                            ErrorRecoveryManager.shared.record(
-                                title: errorTitle,
-                                message: error.localizedDescription,
-                                severity: .warning
-                            )
-                        }
-                    )
-                }
-            }
+            feature()
         }
     }
 }
@@ -254,7 +237,7 @@ struct ErrorLogView: View {
             }
             .navigationTitle("Error Log")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailingItemGroups) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(role: .destructive) {
                         manager.clearErrors()
                     } label: {
