@@ -307,6 +307,8 @@ struct ActivitiesView: View {
     }
 }
 
+}
+
 struct ActivityRowView: View {
     let activity: Activity
     

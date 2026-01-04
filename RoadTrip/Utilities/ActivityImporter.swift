@@ -56,8 +56,8 @@ final class ActivityImporter {
         return await withTaskGroup(of: ImportedPlace?.self) { group in
             for place in places {
                 group.addTask {
-                    let category = mapGoogleTypeToCategory(place.types?.first ?? "")
-                    let duration = estimateDuration(for: category)
+                    let category = self.mapGoogleTypeToCategory(place.types?.first ?? "")
+                    let duration = self.estimateDuration(for: category)
 
                     var photoURL: String? = nil
                     if let photo = place.photos?.first {
