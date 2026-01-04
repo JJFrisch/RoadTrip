@@ -3,8 +3,9 @@ import Foundation
 import SwiftData
 
 @Model
-final class ActivityTemplate: Identifiable {
-    @Attribute(.unique) var id: UUID
+final class ActivityTemplate {
+    @Attribute(.unique)
+    var id: UUID
     var name: String
     var location: String
     var category: String
