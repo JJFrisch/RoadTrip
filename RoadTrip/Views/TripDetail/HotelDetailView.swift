@@ -393,6 +393,7 @@ struct HotelDetailView: View {
     )
     
     let day = TripDay(
+        dayNumber: 1,
         date: Date(),
         startLocation: "San Francisco",
         endLocation: "San Francisco"

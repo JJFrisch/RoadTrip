@@ -122,16 +122,16 @@ struct CarRentalDetailView: View {
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 if car.hasAirConditioning {
-                                    FeatureRow(icon: "snowflake", text: "Air Conditioning")
+                                    CarRentalFeatureRow(icon: "snowflake", text: "Air Conditioning")
                                 }
                                 if car.hasGPS {
-                                    FeatureRow(icon: "location.fill", text: "GPS Navigation")
+                                    CarRentalFeatureRow(icon: "location.fill", text: "GPS Navigation")
                                 }
                                 if car.hasUnlimitedMileage {
-                                    FeatureRow(icon: "infinity", text: "Unlimited Mileage")
+                                    CarRentalFeatureRow(icon: "infinity", text: "Unlimited Mileage")
                                 }
                                 ForEach(car.features, id: \.self) { feature in
-                                    FeatureRow(icon: "checkmark.circle.fill", text: feature)
+                                    CarRentalFeatureRow(icon: "checkmark.circle.fill", text: feature)
                                 }
                             }
                         }
@@ -294,7 +294,7 @@ struct SpecRow: View {
     }
 }
 
-struct FeatureRow: View {
+struct CarRentalFeatureRow: View {
     let icon: String
     let text: String
     
