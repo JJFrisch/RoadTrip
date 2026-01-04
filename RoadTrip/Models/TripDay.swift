@@ -18,6 +18,9 @@ class TripDay {
     var distance: Double // in miles
     var drivingTime: Double // in hours
     var hotelName: String?
+
+    @Relationship(deleteRule: .cascade)
+    var hotel: Hotel?
     
     @Relationship(deleteRule: .cascade)
     var activities: [Activity]
@@ -30,6 +33,8 @@ class TripDay {
         self.endLocation = endLocation
         self.distance = distance
         self.drivingTime = drivingTime
+        self.hotelName = nil
+        self.hotel = nil
         self.activities = activities
     }
 }

@@ -317,6 +317,33 @@ struct DayScheduleSection: View {
                         }
                         .foregroundStyle(.white)
                     }
+
+                    if let hotel = day.hotel {
+                        HStack(spacing: 6) {
+                            Image(systemName: "bed.double.fill")
+                                .font(.caption)
+                            Text(hotel.name)
+                                .font(.caption)
+                                .lineLimit(1)
+
+                            if let price = hotel.pricePerNight {
+                                Spacer()
+                                Text(String(format: "$%.0f", price))
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                    } else if let hotelName = day.hotelName, !hotelName.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "bed.double.fill")
+                                .font(.caption)
+                            Text(hotelName)
+                                .font(.caption)
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                    }
                     
                     if let firstTime = completedActivities.first?.scheduledTime,
                        let lastTime = completedActivities.last?.scheduledTime,

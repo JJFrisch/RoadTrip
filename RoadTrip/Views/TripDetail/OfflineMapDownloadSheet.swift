@@ -12,6 +12,8 @@ struct OfflineMapDownloadSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var mapboxManager = MapboxOfflineManager.shared
     @StateObject private var networkMonitor = NetworkMonitor.shared
+
+    @AppStorage("useOfflineMapsWhenOffline") private var useOfflineMapsWhenOffline: Bool = true
     
     let trip: Trip
     
@@ -44,6 +46,9 @@ struct OfflineMapDownloadSheet: View {
                     if !networkMonitor.isConnected {
                         Label("No internet connection", systemImage: "wifi.slash")
                             .foregroundStyle(.red)
+                        if !mapboxManager.downloadedRegions.isEmpty {
+                            Toggle("Use Offline Maps", isOn: $useOfflineMapsWhenOffline)
+                        }
                     } else if networkMonitor.isExpensive {
                         Label("Using cellular data - downloads may be expensive", systemImage: "antenna.radiowaves.left.and.right")
                             .foregroundStyle(.orange)
@@ -103,6 +108,30 @@ struct OfflineMapDownloadSheet: View {
                 }
                 
                 Section("Downloaded Regions") {
+                    if mapboxManager.isDownloading, let current = mapboxManager.currentDownload {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(current.name)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    Text("Downloading…")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Text("\(Int(mapboxManager.downloadProgress * 100))%")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+
+                            ProgressView(value: mapboxManager.downloadProgress)
+                        }
+                        .padding(.vertical, 4)
+                    }
+
                     if mapboxManager.downloadedRegions.isEmpty {
                         Text("No offline maps downloaded")
                             .foregroundStyle(.secondary)

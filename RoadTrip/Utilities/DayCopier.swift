@@ -16,7 +16,42 @@ final class DayCopier {
         }
 
         let newDay = TripDay(dayNumber: newDayNumber, date: newDate, startLocation: day.startLocation, endLocation: day.endLocation, distance: day.distance, drivingTime: day.drivingTime, activities: copiedActivities)
-        newDay.hotelName = day.hotelName
+
+        if let sourceHotel = day.hotel {
+            let copiedHotel = Hotel(name: sourceHotel.name, address: sourceHotel.address, city: sourceHotel.city, state: sourceHotel.state, zipCode: sourceHotel.zipCode, country: sourceHotel.country)
+            copiedHotel.latitude = sourceHotel.latitude
+            copiedHotel.longitude = sourceHotel.longitude
+            copiedHotel.rating = sourceHotel.rating
+            copiedHotel.reviewCount = sourceHotel.reviewCount
+            copiedHotel.starRating = sourceHotel.starRating
+            copiedHotel.imageURLs = sourceHotel.imageURLs
+            copiedHotel.thumbnailURL = sourceHotel.thumbnailURL
+            copiedHotel.amenities = sourceHotel.amenities
+            copiedHotel.hasWiFi = sourceHotel.hasWiFi
+            copiedHotel.hasParking = sourceHotel.hasParking
+            copiedHotel.hasBreakfast = sourceHotel.hasBreakfast
+            copiedHotel.hasPool = sourceHotel.hasPool
+            copiedHotel.hasFitness = sourceHotel.hasFitness
+            copiedHotel.petFriendly = sourceHotel.petFriendly
+            copiedHotel.pricePerNight = sourceHotel.pricePerNight
+            copiedHotel.currency = sourceHotel.currency
+            copiedHotel.taxesAndFees = sourceHotel.taxesAndFees
+            copiedHotel.bookingComURL = sourceHotel.bookingComURL
+            copiedHotel.hotelsComURL = sourceHotel.hotelsComURL
+            copiedHotel.expediaURL = sourceHotel.expediaURL
+            copiedHotel.airbnbURL = sourceHotel.airbnbURL
+            copiedHotel.directBookingURL = sourceHotel.directBookingURL
+            copiedHotel.sourceType = sourceHotel.sourceType
+            copiedHotel.externalId = sourceHotel.externalId
+            copiedHotel.lastUpdated = sourceHotel.lastUpdated
+            copiedHotel.isFavorite = sourceHotel.isFavorite
+            copiedHotel.notes = sourceHotel.notes
+
+            newDay.hotel = copiedHotel
+            newDay.hotelName = copiedHotel.name
+        } else {
+            newDay.hotelName = day.hotelName
+        }
         return newDay
     }
 }

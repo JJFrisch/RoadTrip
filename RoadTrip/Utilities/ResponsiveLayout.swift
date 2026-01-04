@@ -113,6 +113,21 @@ extension View {
     func responsiveFont(_ defaultFont: Font, _ compactFont: Font) -> some View {
         modifier(ResponsiveFontModifier(defaultFont: defaultFont, compactFont: compactFont))
     }
+
+    func constrainedContentWidth(_ maxWidth: CGFloat = 720) -> some View {
+        modifier(ConstrainedContentWidthModifier(maxWidth: maxWidth))
+    }
+}
+
+private struct ConstrainedContentWidthModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    let maxWidth: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: horizontalSizeClass == .regular ? maxWidth : .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
 }
 
 // MARK: - Size Class Aware Container

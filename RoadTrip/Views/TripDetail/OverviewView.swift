@@ -66,6 +66,10 @@ struct OverviewView: View {
                                         
                                         Text(formatDrivingTime(trip.totalDrivingTime))
                                             .font(.headline)
+                                            @State private var addingActivityDay: TripDay?
+                                            @State private var browsingHotelDay: TripDay?
+                                            @State private var showingShareSheet = false
+                                            @State private var sharePDFData: Data?
                                     }
                                 }
                                 
@@ -81,7 +85,7 @@ struct OverviewView: View {
                                             .font(.caption)
                                             .foregroundStyle(.purple)
                                         
-                                        Text("\(trip.days.filter { $0.hotelName != nil }.count)")
+                                        Text("\(trip.days.filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
                                             .font(.headline)
                                     }
                                 }
@@ -178,6 +182,17 @@ struct OverviewView: View {
                                 .foregroundStyle(.secondary)
                             
                             Text(day.startLocation)
+                                                .sheet(item: $addingActivityDay) { day in
+                                                    AddActivityFromScheduleView(day: day)
+                                                }
+                                                .sheet(item: $browsingHotelDay) { day in
+                                                    HotelBrowsingView(day: day)
+                                                }
+                                                .sheet(isPresented: $showingShareSheet) {
+                                                    if let pdfData = sharePDFData {
+                                                        ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
+                                                    }
+                                                }
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
@@ -320,7 +335,7 @@ struct AddDayView: View {
     let trip: Trip
     
     @State private var startLocation = ""
-    @State private var endLocation = ""
+                                                    if let hotelName = day.hotel?.name ?? day.hotelName, !hotelName.isEmpty {
     @State private var hotelName = ""
     @State private var distance: Double = 0
     @State private var drivingTime: Double = 0
@@ -349,8 +364,49 @@ struct AddDayView: View {
         }
         return nil
     }
+                                                .contextMenu {
+                                                    Button {
+                                                        addingActivityDay = day
+                                                    } label: {
+                                                        Label("Add Activity", systemImage: "plus.circle")
+                                                    }
+
+                                                    Button {
+                                                        browsingHotelDay = day
+                                                    } label: {
+                                                        Label("Add/Change Hotel", systemImage: "bed.double")
+                                                    }
+
+                                                    Button {
+                                                        duplicateActivities(in: day)
+                                                    } label: {
+                                                        Label("Duplicate Day", systemImage: "plus.square.on.square")
+                                                    }
+
+                                                    Button {
+                                                        if let data = PDFExportService.shared.generateTripPDF(trip: trip) {
+                                                            sharePDFData = data
+                                                            showingShareSheet = true
+                                                        }
+                                                    } label: {
+                                                        Label("Share PDF", systemImage: "square.and.arrow.up")
+                                                    }
+                                                }
     
     var body: some View {
+                                            private func duplicateActivities(in day: TripDay) {
+                                                for activity in day.activities {
+                                                    let copy = Activity(name: "\(activity.name) (Copy)", location: activity.location, category: activity.category)
+                                                    copy.duration = activity.duration
+                                                    copy.notes = activity.notes
+                                                    copy.scheduledTime = activity.scheduledTime
+                                                    copy.isCompleted = false
+                                                    copy.order = day.activities.count
+                                                    copy.estimatedCost = activity.estimatedCost
+                                                    copy.costCategory = activity.costCategory
+                                                    day.activities.append(copy)
+                                                }
+                                            }
         NavigationStack {
             Form {
                 Section("Locations") {

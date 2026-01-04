@@ -215,7 +215,9 @@ struct BudgetView: View {
                 .font(.headline)
             
             ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
-                let dayCost = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+                let lodgingCost = day.hotel?.pricePerNight ?? 0
+                let activityCost = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+                let dayCost = activityCost + lodgingCost
                 
                 VStack(spacing: 8) {
                     HStack {
@@ -232,6 +234,26 @@ struct BudgetView: View {
                     }
                     
                     if dayCost > 0 {
+                        if let hotel = day.hotel, let price = hotel.pricePerNight, price > 0 {
+                            HStack {
+                                Image(systemName: iconForCategory("Lodging"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+
+                                Text(hotel.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+
+                                Text(String(format: "$%.2f", price))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.leading, 8)
+                        }
+
                         // Show activities with costs
                         ForEach(day.activities.filter { $0.estimatedCost != nil && $0.estimatedCost! > 0 }) { activity in
                             HStack {

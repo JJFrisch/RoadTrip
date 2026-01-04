@@ -137,7 +137,7 @@ class PDFExportService {
                 }
                 
                 // Hotel
-                if let hotel = day.hotelName, !hotel.isEmpty {
+                if let hotel = day.hotel?.name ?? day.hotelName, !hotel.isEmpty {
                     let hotelInfo = "🏨 \(hotel)"
                     hotelInfo.draw(at: CGPoint(x: margin + 10, y: yPosition), withAttributes: bodyAttributes)
                     yPosition += 18

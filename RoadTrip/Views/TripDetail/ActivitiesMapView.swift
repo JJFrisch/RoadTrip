@@ -21,10 +21,10 @@ class ActivityAnnotation: NSObject, MKAnnotation  {
 
 struct ActivitiesMapView: View {
     let activities: [Activity]
-    @State private var region = MKCoordinateRegion(
+    @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795), // Center of USA
         span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
-    )
+    ))
     @State private var annotations: [ActivityAnnotation] = []
     @State private var selectedAnnotation: ActivityAnnotation?
     @State private var isLoading = true
@@ -33,7 +33,7 @@ struct ActivitiesMapView: View {
 
     var body: some View {
         ZStack {
-            Map(position: .constant(.region(region)), selection: $selectedAnnotation) {
+            Map(position: $position, selection: $selectedAnnotation) {
                 ForEach(annotations, id: \.id) { annotation in
                     Annotation("", coordinate: annotation.coordinate) {
                         ActivityMapMarker(activity: annotation.activity, isSelected: selectedAnnotation?.id == annotation.id)
@@ -112,9 +112,17 @@ struct ActivitiesMapView: View {
         annotations.removeAll()
         
         let group = DispatchGroup()
-        var coordinates: [CLLocationCoordinate2D] = []
+        var temp: [(Activity, CLLocationCoordinate2D)] = []
+        let lock = NSLock()
         
         for activity in activities {
+            if let placemark = LocationCache.shared.getCachedPlacemark(for: activity.location) {
+                lock.lock()
+                temp.append((activity, placemark.coordinate))
+                lock.unlock()
+                continue
+            }
+
             group.enter()
             let request = MKLocalSearch.Request()
             request.naturalLanguageQuery = activity.location
@@ -125,9 +133,10 @@ struct ActivitiesMapView: View {
                 
                 if let item = response?.mapItems.first {
                     let coordinate = item.placemark.coordinate
-                    coordinates.append(coordinate)
-                    let annotation = ActivityAnnotation(activity: activity, coordinate: coordinate)
-                    annotations.append(annotation)
+                    LocationCache.shared.cachePlacemark(item.placemark, for: activity.location)
+                    lock.lock()
+                    temp.append((activity, coordinate))
+                    lock.unlock()
                 }
             }
         }
@@ -135,9 +144,10 @@ struct ActivitiesMapView: View {
         group.notify(queue: .main) {
             isLoading = false
             
-            if annotations.isEmpty {
+            if temp.isEmpty {
                 hasError = true
             } else {
+                annotations = temp.map { ActivityAnnotation(activity: $0.0, coordinate: $0.1) }
                 zoomToFitAllActivities()
             }
         }
@@ -147,6 +157,16 @@ struct ActivitiesMapView: View {
         guard !annotations.isEmpty else { return }
         
         let coordinates = annotations.map { $0.coordinate }
+
+        if coordinates.count == 1, let only = coordinates.first {
+            withAnimation {
+                position = .region(MKCoordinateRegion(
+                    center: only,
+                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                ))
+            }
+            return
+        }
         
         let minLat = coordinates.map { $0.latitude }.min() ?? 0
         let maxLat = coordinates.map { $0.latitude }.max() ?? 0
@@ -164,7 +184,7 @@ struct ActivitiesMapView: View {
         )
         
         withAnimation {
-            region = MKCoordinateRegion(center: center, span: span)
+            position = .region(MKCoordinateRegion(center: center, span: span))
         }
     }
 }

@@ -19,7 +19,10 @@ struct HotelBrowsingView: View {
     @State private var searchLocation: String
     @State private var checkInDate: Date
     @State private var checkOutDate: Date
-    @State private var guests: Int = 2
+    @State private var adults: Int = 2
+    @State private var children: Int = 0
+    @State private var rooms: Int = 1
+    @State private var childrenAges: [Int] = []
     @State private var showingFilters = false
     @State private var showingSourceSettings = false
     @State private var filters = HotelFilters()
@@ -99,13 +102,73 @@ struct HotelBrowsingView: View {
                     
                     // Guests and Search
                     HStack(spacing: 12) {
-                        // Guests
-                        HStack {
-                            Image(systemName: "person.2.fill")
-                                .foregroundStyle(.blue)
-                            Stepper("\(guests) Guest\(guests == 1 ? "" : "s")", value: $guests, in: 1...10)
+                        // Guests & Rooms
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.2.fill")
+                                    .foregroundStyle(.blue)
+                                Text("Guests")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+
+                            HStack {
+                                Text("Adults")
+                                Spacer()
+                                Stepper(value: $adults, in: 1...10) {
+                                    Text("\(adults)")
+                                        .monospacedDigit()
+                                }
+                                .labelsHidden()
+                            }
+
+                            HStack {
+                                Text("Kids")
+                                Spacer()
+                                Stepper(value: $children, in: 0...10) {
+                                    Text("\(children)")
+                                        .monospacedDigit()
+                                }
+                                .labelsHidden()
+                            }
+
+                            if children > 0 {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Kids Ages")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                    ForEach(childrenAges.indices, id: \ .self) { index in
+                                        HStack {
+                                            Text("Child \(index + 1)")
+                                            Spacer()
+                                            Stepper(value: Binding(
+                                                get: { childrenAges[index] },
+                                                set: { childrenAges[index] = $0 }
+                                            ), in: 0...17) {
+                                                Text("\(childrenAges[index])")
+                                                    .monospacedDigit()
+                                            }
+                                            .labelsHidden()
+                                        }
+                                    }
+                                }
+                            }
+
+                            HStack {
+                                Text("Rooms")
+                                Spacer()
+                                Stepper(value: $rooms, in: 1...5) {
+                                    Text("\(rooms)")
+                                        .monospacedDigit()
+                                }
+                                .labelsHidden()
+                            }
                         }
+                        .font(.subheadline)
                         .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
                         
@@ -351,7 +414,16 @@ struct HotelBrowsingView: View {
             ) {
                 Button("Set as Night's Hotel") {
                     guard let selected = hotelToSet else { return }
-                    day.hotelName = selected.name
+
+                    if let existing = day.hotel {
+                        modelContext.delete(existing)
+                    }
+
+                    let hotel = selected.toHotel()
+                    modelContext.insert(hotel)
+                    day.hotel = hotel
+                    day.hotelName = hotel.name
+
                     try? modelContext.save()
                     hotelToSet = nil
                     dismiss()
@@ -382,6 +454,12 @@ struct HotelBrowsingView: View {
                 Text(errorMessage)
             }
         }
+        .onAppear {
+            syncChildrenAges()
+        }
+        .onChange(of: children) { _, _ in
+            syncChildrenAges()
+        }
     }
     
     private var hasActiveFilters: Bool {
@@ -394,6 +472,20 @@ struct HotelBrowsingView: View {
         filters.requireBreakfast ||
         filters.requirePool ||
         filters.petFriendly
+    }
+
+    private func syncChildrenAges() {
+        if children <= 0 {
+            childrenAges = []
+            return
+        }
+
+        let targetCount = min(children, 10)
+        if childrenAges.count > targetCount {
+            childrenAges = Array(childrenAges.prefix(targetCount))
+        } else if childrenAges.count < targetCount {
+            childrenAges.append(contentsOf: Array(repeating: 5, count: targetCount - childrenAges.count))
+        }
     }
     
     private func loadMockData() {
@@ -448,7 +540,10 @@ struct HotelBrowsingView: View {
                     location: searchLocation,
                     checkInDate: checkInDate,
                     checkOutDate: checkOutDate,
-                    guests: guests,
+                    adults: adults,
+                    children: children,
+                    childrenAges: childrenAges,
+                    rooms: rooms,
                     enabledSources: userPreferences.enabledSources,
                     filters: filters
                 )
@@ -462,7 +557,10 @@ struct HotelBrowsingView: View {
                     location: searchLocation,
                     checkInDate: checkInDate,
                     checkOutDate: checkOutDate,
-                    guests: guests,
+                    adults: adults,
+                    children: children,
+                    childrenAges: childrenAges,
+                    rooms: rooms,
                     enabledSources: userPreferences.enabledSources,
                     filters: filters
                 )

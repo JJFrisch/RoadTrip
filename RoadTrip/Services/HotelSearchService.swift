@@ -59,7 +59,10 @@ class HotelSearchService: ObservableObject {
         location: String,
         checkInDate: Date,
         checkOutDate: Date,
-        guests: Int = 2,
+        adults: Int = 2,
+        children: Int = 0,
+        childrenAges: [Int] = [],
+        rooms: Int = 1,
         enabledSources: [String],
         filters: HotelFilters
     ) async -> [HotelSearchResult] {
@@ -80,7 +83,10 @@ class HotelSearchService: ObservableObject {
                         location: location,
                         checkInDate: checkInDate,
                         checkOutDate: checkOutDate,
-                        guests: guests,
+                        adults: adults,
+                        children: children,
+                        childrenAges: childrenAges,
+                        rooms: rooms,
                         filters: filters
                     )
                 }
@@ -111,26 +117,29 @@ class HotelSearchService: ObservableObject {
         location: String,
         checkInDate: Date,
         checkOutDate: Date,
-        guests: Int,
+        adults: Int,
+        children: Int,
+        childrenAges: [Int],
+        rooms: Int,
         filters: HotelFilters
     ) async -> [HotelSearchResult] {
         
         switch source.lowercased() {
         case "booking":
-            return await searchBookingCom(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: guests)
+            return await searchBookingCom(location: location, checkIn: checkInDate, checkOut: checkOutDate, adults: adults, children: children, childrenAges: childrenAges, rooms: rooms)
         case "hotels":
-            return await searchHotelsCom(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: guests)
+            return await searchHotelsCom(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: adults + children)
         case "expedia":
-            return await searchExpedia(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: guests)
+            return await searchExpedia(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: adults + children)
         case "airbnb":
-            return await searchAirbnb(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: guests)
+            return await searchAirbnb(location: location, checkIn: checkInDate, checkOut: checkOutDate, guests: adults + children)
         default:
             return []
         }
     }
     
     // MARK: - Booking.com Search (Real API Implementation)
-    private func searchBookingCom(location: String, checkIn: Date, checkOut: Date, guests: Int) async -> [HotelSearchResult] {
+    private func searchBookingCom(location: String, checkIn: Date, checkOut: Date, adults: Int, children: Int, childrenAges: [Int], rooms: Int) async -> [HotelSearchResult] {
         // Check if API key is configured
         guard Config.rapidAPIKey != "YOUR_RAPIDAPI_KEY_HERE" else {
             print("⚠️ RapidAPI key not configured - using mock data")
@@ -158,20 +167,36 @@ class HotelSearchService: ObservableObject {
         
         // Build URL with query parameters
         var components = URLComponents(string: "\(Config.bookingAPIBaseURL)/hotels/searchHotels")!
-        components.queryItems = [
+        var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "dest_id", value: destId),
             URLQueryItem(name: "search_type", value: "city"),
             URLQueryItem(name: "arrival_date", value: checkInStr),
             URLQueryItem(name: "departure_date", value: checkOutStr),
-            URLQueryItem(name: "adults", value: String(guests)),
-            URLQueryItem(name: "children_age", value: "0,17"),
-            URLQueryItem(name: "room_qty", value: "1"),
+            URLQueryItem(name: "adults", value: String(max(1, adults))),
+            URLQueryItem(name: "room_qty", value: String(max(1, rooms))),
             URLQueryItem(name: "page_number", value: "1"),
             URLQueryItem(name: "units", value: "metric"),
             URLQueryItem(name: "temperature_unit", value: "c"),
             URLQueryItem(name: "languagecode", value: "en-us"),
             URLQueryItem(name: "currency_code", value: "USD")
         ]
+
+        if children > 0 {
+            let cappedChildren = min(children, 10)
+            let agesArray: [Int]
+            if childrenAges.count >= cappedChildren {
+                agesArray = Array(childrenAges.prefix(cappedChildren))
+            } else if childrenAges.isEmpty {
+                agesArray = Array(repeating: 5, count: cappedChildren)
+            } else {
+                agesArray = childrenAges + Array(repeating: 5, count: cappedChildren - childrenAges.count)
+            }
+
+            let ages = agesArray.map { String(max(0, min(17, $0))) }.joined(separator: ",")
+            queryItems.append(URLQueryItem(name: "children_age", value: ages))
+        }
+
+        components.queryItems = queryItems
         
         guard let url = components.url else {
             print("❌ Invalid URL")

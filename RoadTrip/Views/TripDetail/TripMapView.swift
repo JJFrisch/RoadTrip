@@ -5,6 +5,10 @@ import MapKit
 struct TripMapView: View {
     let trip: Trip
     @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var networkMonitor = NetworkMonitor.shared
+    @StateObject private var offlineManager = MapboxOfflineManager.shared
+
+    @AppStorage("useOfflineMapsWhenOffline") private var useOfflineMapsWhenOffline: Bool = true
     @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -98.5795),
         span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
@@ -110,6 +114,20 @@ struct TripMapView: View {
                     .cornerRadius(8)
                     .padding()
                 }
+
+                if !networkMonitor.isConnected, useOfflineMapsWhenOffline, !offlineManager.downloadedRegions.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.down.map")
+                        Text("Offline maps enabled")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .padding(.bottom)
+                }
             }
         }
         .onAppear {
@@ -192,6 +210,13 @@ struct TripMapView: View {
         
         for location in uniqueLocations {
             guard !location.title.isEmpty else { continue }
+
+            if let placemark = LocationCache.shared.getCachedPlacemark(for: location.title) {
+                lock.lock()
+                tempAnnotations.append((location, placemark.coordinate))
+                lock.unlock()
+                continue
+            }
             
             group.enter()
             let request = MKLocalSearch.Request()
@@ -203,6 +228,7 @@ struct TripMapView: View {
                 
                 if let item = response?.mapItems.first {
                     let coordinate = item.placemark.coordinate
+                    LocationCache.shared.cachePlacemark(item.placemark, for: location.title)
                     lock.lock()
                     tempAnnotations.append((location, coordinate))
                     lock.unlock()

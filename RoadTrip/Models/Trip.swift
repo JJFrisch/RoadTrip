@@ -83,15 +83,23 @@ class Trip {
     
     var totalBudget: Double {
         days.reduce(0) { total, day in
-            total + day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+            let activityTotal = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+            let lodging = day.hotel?.pricePerNight ?? 0
+            return total + activityTotal + lodging
         }
     }
     
     func budgetByCategory(_ category: String) -> Double {
         days.reduce(0) { total, day in
-            total + day.activities
+            var subtotal = day.activities
                 .filter { $0.costCategory == category }
                 .reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+
+            if category == "Lodging" {
+                subtotal += day.hotel?.pricePerNight ?? 0
+            }
+
+            return total + subtotal
         }
     }
     

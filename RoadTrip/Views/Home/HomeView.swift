@@ -2,6 +2,7 @@
 import SwiftUI
 import SwiftData
 
+
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
@@ -155,6 +156,7 @@ struct HomeView: View {
                 
                 Spacer(minLength: 40)
             }
+            .constrainedContentWidth()
         }
     }
     
@@ -236,6 +238,7 @@ struct HomeView: View {
                 }
             }
             .padding()
+            .constrainedContentWidth()
         }
     }
     
