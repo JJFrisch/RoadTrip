@@ -469,7 +469,7 @@ struct DayScheduleSection: View {
             AddActivityFromScheduleView(day: day)
         }
         .sheet(isPresented: $showingTemplates) {
-            ActivityTemplatePickerSheet(day: day)
+            TemplatePickerSheet(day: day)
         }
         .sheet(isPresented: $showingHotelBrowser) {
             HotelBrowsingView(day: day)
@@ -1851,8 +1851,8 @@ struct AddActivityAtTimeSheet: View {
     }
 }
 
-// MARK: - Activity Template Picker Sheet
-struct ActivityTemplatePickerSheet: View {
+// MARK: - Template Picker Sheet
+struct TemplatePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     let day: TripDay
