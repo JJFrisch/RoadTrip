@@ -74,7 +74,6 @@ class AuthService: ObservableObject {
         // In a real app, verify credentials with server
         // For demo, we'll accept any valid email/password combo
         
-        let savedEmail = userDefaults.string(forKey: savedUserEmailKey)
         let savedName = userDefaults.string(forKey: savedUserNameKey)
         
         let user = UserAccount(
