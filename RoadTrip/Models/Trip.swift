@@ -70,6 +70,10 @@ class Trip {
         days.reduce(0) { $0 + $1.distance }
     }
     
+    var totalDrivingTime: Double {
+        days.reduce(0) { $0 + $1.drivingTime }
+    }
+    
     // Computed property to get valid days (filters out any corrupted data)
     var validDays: [TripDay] {
         days.filter { $0.dayNumber > 0 }

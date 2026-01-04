@@ -36,18 +36,35 @@ struct OverviewView: View {
                             
                             Divider()
                             
-                            HStack(spacing: 20) {
+                            HStack(spacing: 16) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Total Distance")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     
                                     HStack(spacing: 4) {
-                                        Image(systemName: "location.fill")
+                                        Image(systemName: "road.lanes")
                                             .font(.caption)
-                                            .foregroundStyle(.red)
+                                            .foregroundStyle(.blue)
                                         
                                         Text(String(format: "%.0f mi", trip.totalDistance))
+                                            .font(.headline)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .center, spacing: 4) {
+                                    Text("Drive Time")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "car.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                        
+                                        Text(formatDrivingTime(trip.totalDrivingTime))
                                             .font(.headline)
                                     }
                                 }
@@ -102,6 +119,21 @@ struct OverviewView: View {
         }
         .sheet(item: $editingDay) { day in
             EditTripDayView(day: day)
+        }
+    }
+    
+    private func formatDrivingTime(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h) hr"
+            } else {
+                return "\(h) hr \(m) min"
+            }
         }
     }
     

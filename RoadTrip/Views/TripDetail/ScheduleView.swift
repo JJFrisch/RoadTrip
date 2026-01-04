@@ -156,6 +156,7 @@ struct ScheduleView: View {
 struct DayScheduleSection: View {
     let day: TripDay
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showingAddActivity = false
     
     var completedActivities: [Activity] {
         day.activities.filter { $0.isCompleted }.sorted { a, b in
@@ -277,7 +278,8 @@ struct DayScheduleSection: View {
                 }
                 .padding()
             }
-            .frame(minHeight: 120)
+            .frame(height: 120)
+            .clipped()
             
             // Timeline View
             if completedActivities.isEmpty {
@@ -301,10 +303,32 @@ struct DayScheduleSection: View {
                 CalendarTimelineView(activities: completedActivities)
                     .padding(.vertical, 16)
             }
+            
+            // Add Activity Button
+            Button {
+                showingAddActivity = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                    Text("Add Activity")
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(.blue)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(10)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .sheet(isPresented: $showingAddActivity) {
+            AddActivityFromScheduleView(day: day)
+        }
     }
 }
 
@@ -597,5 +621,170 @@ struct TimelineItemView: View {
         case "Hotel": return .purple
         default: return .gray
         }
+    }
+}
+
+// MARK: - Add Activity From Schedule View
+struct AddActivityFromScheduleView: View {
+    @Environment(\.dismiss) private var dismiss
+    let day: TripDay
+    
+    @State private var activityName = ""
+    @State private var location = ""
+    @State private var category = "Attraction"
+    @State private var includeTime = true
+    @State private var scheduledTime = Date()
+    @State private var duration: Double = 1.0
+    @State private var notes = ""
+    
+    @State private var searchNearLocation = ""
+    @State private var useSearchNear = false
+    
+    let categories = ["Food", "Attraction", "Hotel", "Other"]
+    
+    var isFormValid: Bool {
+        !activityName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !location.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Search Near Location") {
+                    Toggle("Search near specific location", isOn: $useSearchNear)
+                    
+                    if useSearchNear {
+                        LocationSearchField(
+                            title: "Search Near",
+                            location: $searchNearLocation,
+                            icon: "location.magnifyingglass",
+                            iconColor: .orange,
+                            placeholder: "Enter city or address"
+                        )
+                    } else {
+                        HStack {
+                            Image(systemName: "location.circle")
+                                .foregroundStyle(.secondary)
+                            Text("Searching near: \(day.startLocation.isEmpty ? "No location set" : day.startLocation)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
+                Section("Activity Details") {
+                    TextField("Activity Name", text: $activityName)
+                    
+                    LocationSearchField(
+                        title: "Location",
+                        location: $location,
+                        icon: "mappin.circle.fill",
+                        iconColor: .blue,
+                        searchRegionAddress: useSearchNear ? searchNearLocation : day.startLocation
+                    )
+                    
+                    Picker("Category", selection: $category) {
+                        ForEach(categories, id: \.self) { cat in
+                            Text(cat).tag(cat)
+                        }
+                    }
+                }
+                
+                Section("Schedule") {
+                    Toggle("Set Time", isOn: $includeTime)
+                    
+                    if includeTime {
+                        DatePicker("Start Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Duration")
+                                Spacer()
+                                Text(formatDuration(duration))
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Slider(value: $duration, in: 0.0833...8, step: 0.0833)
+                            
+                            // Quick duration buttons
+                            HStack(spacing: 8) {
+                                ForEach([15, 30, 60, 90, 120], id: \.self) { minutes in
+                                    Button {
+                                        duration = Double(minutes) / 60.0
+                                    } label: {
+                                        Text(minutes < 60 ? "\(minutes)m" : "\(minutes/60)h")
+                                            .font(.caption)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Int(duration * 60) == minutes ? Color.blue : Color.gray.opacity(0.2))
+                                            .foregroundStyle(Int(duration * 60) == minutes ? .white : .primary)
+                                            .cornerRadius(6)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Section("Notes") {
+                    TextEditor(text: $notes)
+                        .frame(height: 60)
+                }
+            }
+            .navigationTitle("Add Activity")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addActivity()
+                    }
+                    .disabled(!isFormValid)
+                }
+            }
+        }
+    }
+    
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let h = totalMinutes / 60
+            let m = totalMinutes % 60
+            if m == 0 {
+                return "\(h) hr"
+            } else {
+                return "\(h) hr \(m) min"
+            }
+        }
+    }
+    
+    private func addActivity() {
+        let newActivity = Activity(
+            name: activityName.trimmingCharacters(in: .whitespaces),
+            location: location.trimmingCharacters(in: .whitespaces),
+            category: category
+        )
+        
+        newActivity.order = day.activities.count
+        newActivity.isCompleted = true
+        newActivity.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes
+        
+        if includeTime {
+            let calendar = Calendar.current
+            let timeComponents = calendar.dateComponents([.hour, .minute], from: scheduledTime)
+            newActivity.scheduledTime = calendar.date(bySettingHour: timeComponents.hour ?? 9,
+                                                       minute: timeComponents.minute ?? 0,
+                                                       second: 0,
+                                                       of: day.date)
+            newActivity.duration = duration
+        }
+        
+        day.activities.append(newActivity)
+        dismiss()
     }
 }
