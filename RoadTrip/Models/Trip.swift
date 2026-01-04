@@ -14,6 +14,15 @@ class Trip {
     var coverImage: String? // SF Symbol or image name
     var createdAt: Date
     
+    // Sharing & Collaboration
+    var ownerId: String? // User ID of the trip owner
+    var ownerEmail: String? // Email of trip owner for display
+    var sharedWith: [String] // Array of user IDs who have access
+    var shareCode: String? // Unique code for sharing via link
+    var isShared: Bool // Whether trip is shared with others
+    var lastSyncedAt: Date? // Last time synced to cloud
+    var cloudId: String? // ID in cloud database for sync
+    
     @Relationship(deleteRule: .cascade)
     var days: [TripDay]
     
@@ -24,8 +33,71 @@ class Trip {
         self.endDate = endDate
         self.createdAt = Date()
         self.days = []
+        self.sharedWith = []
+        self.isShared = false
         
         // Generate TripDays for each day between startDate and endDate (inclusive)
+        generateDays(from: startDate, to: endDate)
+    }
+    
+    /// Regenerate days when dates change
+    func updateDates(newStartDate: Date, newEndDate: Date) {
+        let calendar = Calendar.current
+        let oldDays = days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        
+        // Calculate new number of days
+        let newNumberOfDays = max(0, calendar.dateComponents([.day], from: newStartDate, to: newEndDate).day ?? 0) + 1
+        let oldNumberOfDays = oldDays.count
+        
+        // Update existing days with new dates
+        for (index, day) in oldDays.enumerated() {
+            if index < newNumberOfDays {
+                if let newDate = calendar.date(byAdding: .day, value: index, to: newStartDate) {
+                    day.date = newDate
+                    day.dayNumber = index + 1
+                }
+            }
+        }
+        
+        // Add new days if needed
+        if newNumberOfDays > oldNumberOfDays {
+            for i in oldNumberOfDays..<newNumberOfDays {
+                if let date = calendar.date(byAdding: .day, value: i, to: newStartDate) {
+                    let day = TripDay(
+                        dayNumber: i + 1,
+                        date: date,
+                        startLocation: "",
+                        endLocation: "",
+                        distance: 0,
+                        drivingTime: 0,
+                        activities: []
+                    )
+                    days.append(day)
+                }
+            }
+        }
+        
+        // Remove extra days if needed (keep activities by moving to last day)
+        if newNumberOfDays < oldNumberOfDays && newNumberOfDays > 0 {
+            let daysToRemove = oldDays.suffix(oldNumberOfDays - newNumberOfDays)
+            let lastKeptDay = oldDays[newNumberOfDays - 1]
+            
+            for dayToRemove in daysToRemove {
+                // Move activities to the last kept day
+                for activity in dayToRemove.activities {
+                    activity.order = lastKeptDay.activities.count
+                    lastKeptDay.activities.append(activity)
+                }
+                dayToRemove.activities.removeAll()
+                days.removeAll { $0.id == dayToRemove.id }
+            }
+        }
+        
+        startDate = newStartDate
+        endDate = newEndDate
+    }
+    
+    private func generateDays(from startDate: Date, to endDate: Date) {
         let calendar = Calendar.current
         let numberOfDays = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 0
         
