@@ -186,6 +186,7 @@ struct ActivitiesView: View {
                     .buttonStyle(.plain)
                 }
             }
+        }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
@@ -307,8 +308,6 @@ struct ActivitiesView: View {
             act.order = index
         }
     }
-}
-
 }
 
 struct ActivityRowView: View {
