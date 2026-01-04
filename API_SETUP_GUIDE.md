@@ -53,7 +53,7 @@ This guide will help you set up Google Places API and Mapbox for the RoadTrip ap
 
 ### Restrict Your API Key (Security)
 1. In Google Cloud Console, click on your API key
-2. **Important:** This app currently calls the **Google Places Web Service** endpoints via `URLSession` (see `RoadTrip/Services/GooglePlacesService.swift`).
+2. **Important:** This app currently calls the **Places API (New)** HTTP v1 endpoints via `URLSession` (see `RoadTrip/Services/GooglePlacesService.swift`).
    - If you set **Application restrictions → iOS apps**, Google will expect the native iOS key verification fields used by the SDK, and your Web Service requests may be denied.
 3. Recommended restrictions for this implementation:
    - **Application restrictions:** *None* (or use a backend/proxy if you want to lock by IP)

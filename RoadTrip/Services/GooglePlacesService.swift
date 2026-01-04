@@ -11,7 +11,7 @@ import CoreLocation
 final class GooglePlacesService {
     static let shared = GooglePlacesService()
     
-    private let baseURL = "https://maps.googleapis.com/maps/api/place"
+    private let v1BaseURL = "https://places.googleapis.com/v1"
     private let session: URLSession
     
     private init() {
@@ -135,6 +135,187 @@ final class GooglePlacesService {
             case errorMessage = "error_message"
         }
     }
+
+    // MARK: - Places API (New) v1 Models
+
+    private struct GoogleErrorEnvelope: Codable {
+        let error: GoogleAPIError
+    }
+
+    private struct GoogleAPIError: Codable {
+        let code: Int?
+        let message: String?
+        let status: String?
+    }
+
+    private struct V1LatLng: Codable {
+        let latitude: Double
+        let longitude: Double
+    }
+
+    private struct V1LocalizedText: Codable {
+        let text: String?
+    }
+
+    private struct V1Photo: Codable {
+        let name: String
+        let widthPx: Int?
+        let heightPx: Int?
+    }
+
+    private struct V1RegularOpeningHours: Codable {
+        let openNow: Bool?
+        let weekdayDescriptions: [String]?
+    }
+
+    private struct V1Place: Codable {
+        let id: String?
+        let displayName: V1LocalizedText?
+        let formattedAddress: String?
+        let location: V1LatLng?
+        let rating: Double?
+        let userRatingCount: Int?
+        let types: [String]?
+        let photos: [V1Photo]?
+        let regularOpeningHours: V1RegularOpeningHours?
+        let websiteUri: String?
+        let internationalPhoneNumber: String?
+    }
+
+    private struct V1SearchNearbyRequest: Codable {
+        let includedTypes: [String]?
+        let locationRestriction: V1LocationRestriction
+        let maxResultCount: Int?
+    }
+
+    private struct V1LocationRestriction: Codable {
+        let circle: V1Circle
+    }
+
+    private struct V1Circle: Codable {
+        let center: V1LatLng
+        let radius: Double
+    }
+
+    private struct V1SearchNearbyResponse: Codable {
+        let places: [V1Place]?
+    }
+
+    private struct V1SearchTextRequest: Codable {
+        let textQuery: String
+        let includedType: String?
+        let locationBias: V1LocationBias?
+        let maxResultCount: Int?
+    }
+
+    private struct V1LocationBias: Codable {
+        let circle: V1Circle
+    }
+
+    private struct V1SearchTextResponse: Codable {
+        let places: [V1Place]?
+    }
+
+    // MARK: - Helpers
+
+    private func makeV1Request(url: URL, method: String, fieldMask: String, body: Data? = nil) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.httpBody = body
+        request.setValue(Config.googlePlacesAPIKey, forHTTPHeaderField: "X-Goog-Api-Key")
+        request.setValue(fieldMask, forHTTPHeaderField: "X-Goog-FieldMask")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if body != nil {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        return request
+    }
+
+    private func decodeGoogleAPIErrorMessage(from data: Data) -> String? {
+        if let envelope = try? JSONDecoder().decode(GoogleErrorEnvelope.self, from: data) {
+            return envelope.error.message
+        }
+        if let text = String(data: data, encoding: .utf8), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return text
+        }
+        return nil
+    }
+
+    private func mapV1PlaceToLegacyPlace(_ place: V1Place) -> Place? {
+        guard let placeId = place.id,
+              let location = place.location
+        else {
+            return nil
+        }
+
+        let name = place.displayName?.text ?? "Unknown"
+
+        let photos: [Place.Photo]? = place.photos?.map {
+            Place.Photo(
+                photoReference: $0.name,
+                width: $0.widthPx ?? 0,
+                height: $0.heightPx ?? 0
+            )
+        }
+
+        let openingHours: Place.OpeningHours? = {
+            guard let openNow = place.regularOpeningHours?.openNow else { return nil }
+            return Place.OpeningHours(openNow: openNow)
+        }()
+
+        return Place(
+            placeId: placeId,
+            name: name,
+            vicinity: place.formattedAddress,
+            geometry: Place.Geometry(location: Place.Location(lat: location.latitude, lng: location.longitude)),
+            rating: place.rating,
+            types: place.types,
+            photos: photos,
+            openingHours: openingHours
+        )
+    }
+
+    private func mapV1PlaceToLegacyPlaceDetails(_ place: V1Place) -> PlaceDetails? {
+        guard let placeId = place.id,
+              let location = place.location
+        else {
+            return nil
+        }
+
+        let name = place.displayName?.text ?? "Unknown"
+
+        let photos: [Place.Photo]? = place.photos?.map {
+            Place.Photo(
+                photoReference: $0.name,
+                width: $0.widthPx ?? 0,
+                height: $0.heightPx ?? 0
+            )
+        }
+
+        let openingHours: PlaceDetails.DetailedOpeningHours? = {
+            if place.regularOpeningHours?.openNow == nil && place.regularOpeningHours?.weekdayDescriptions == nil {
+                return nil
+            }
+            return PlaceDetails.DetailedOpeningHours(
+                openNow: place.regularOpeningHours?.openNow,
+                weekdayText: place.regularOpeningHours?.weekdayDescriptions
+            )
+        }()
+
+        return PlaceDetails(
+            placeId: placeId,
+            name: name,
+            formattedAddress: place.formattedAddress,
+            geometry: Place.Geometry(location: Place.Location(lat: location.latitude, lng: location.longitude)),
+            rating: place.rating,
+            website: place.websiteUri,
+            phoneNumber: place.internationalPhoneNumber,
+            openingHours: openingHours,
+            photos: photos,
+            reviews: nil,
+            types: place.types
+        )
+    }
     
     // MARK: - API Methods
     
@@ -151,52 +332,72 @@ final class GooglePlacesService {
             throw AppError.networkUnavailable
         }
         
-        var components = URLComponents(string: "\(baseURL)/nearbysearch/json")
-        var queryItems = [
-            URLQueryItem(name: "location", value: "\(location.latitude),\(location.longitude)"),
-            URLQueryItem(name: "radius", value: "\(Int(radius))"),
-            URLQueryItem(name: "key", value: Config.googlePlacesAPIKey)
-        ]
-        
-        if let type = type {
-            queryItems.append(URLQueryItem(name: "type", value: type))
+        let fieldMask = "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.types,places.photos,places.regularOpeningHours.openNow"
+
+        let url: URL
+        let requestBody: Data
+        let request: URLRequest
+
+        if let keyword, !keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            guard let endpoint = URL(string: "\(v1BaseURL)/places:searchText") else {
+                throw AppError.invalidURL
+            }
+            url = endpoint
+            let bias = V1LocationBias(circle: V1Circle(center: V1LatLng(latitude: location.latitude, longitude: location.longitude), radius: radius))
+            let body = V1SearchTextRequest(
+                textQuery: keyword,
+                includedType: type,
+                locationBias: bias,
+                maxResultCount: 20
+            )
+            requestBody = try JSONEncoder().encode(body)
+            request = makeV1Request(url: url, method: "POST", fieldMask: fieldMask, body: requestBody)
+        } else {
+            guard let endpoint = URL(string: "\(v1BaseURL)/places:searchNearby") else {
+                throw AppError.invalidURL
+            }
+            url = endpoint
+            let restriction = V1LocationRestriction(
+                circle: V1Circle(
+                    center: V1LatLng(latitude: location.latitude, longitude: location.longitude),
+                    radius: radius
+                )
+            )
+            let includedTypes: [String]? = {
+                guard let type, !type.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+                return [type]
+            }()
+            let body = V1SearchNearbyRequest(
+                includedTypes: includedTypes,
+                locationRestriction: restriction,
+                maxResultCount: 20
+            )
+            requestBody = try JSONEncoder().encode(body)
+            request = makeV1Request(url: url, method: "POST", fieldMask: fieldMask, body: requestBody)
         }
-        
-        if let keyword = keyword {
-            queryItems.append(URLQueryItem(name: "keyword", value: keyword))
-        }
-        
-        components?.queryItems = queryItems
-        
-        guard let url = components?.url else {
-            throw AppError.invalidURL
-        }
-        
-        let (data, response) = try await session.data(from: url)
+
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AppError.invalidResponse
         }
         
         guard 200...299 ~= httpResponse.statusCode else {
-            throw AppError.apiError("HTTP \(httpResponse.statusCode)")
+            let message = decodeGoogleAPIErrorMessage(from: data) ?? "Google Places request failed (HTTP \(httpResponse.statusCode))."
+            throw AppError.apiError(message)
         }
-        
+
         do {
-            let searchResponse = try JSONDecoder().decode(NearbySearchResponse.self, from: data)
-            
-            switch searchResponse.status {
-            case "OK":
-                return searchResponse.results
-            case "ZERO_RESULTS":
-                throw AppError.noResults
-            case "INVALID_REQUEST":
-                throw AppError.apiError(searchResponse.errorMessage ?? "Invalid request")
-            case "REQUEST_DENIED":
-                let message = searchResponse.errorMessage ?? "Request denied by Google. Check that Places API is enabled, billing is enabled, and key restrictions allow Web Service calls."
-                throw AppError.apiError(message)
-            default:
-                throw AppError.apiError(searchResponse.errorMessage ?? "Unknown error")
+            if request.url?.absoluteString.contains(":searchText") == true {
+                let decoded = try JSONDecoder().decode(V1SearchTextResponse.self, from: data)
+                let places = (decoded.places ?? []).compactMap(mapV1PlaceToLegacyPlace)
+                if places.isEmpty { throw AppError.noResults }
+                return places
+            } else {
+                let decoded = try JSONDecoder().decode(V1SearchNearbyResponse.self, from: data)
+                let places = (decoded.places ?? []).compactMap(mapV1PlaceToLegacyPlace)
+                if places.isEmpty { throw AppError.noResults }
+                return places
             }
         } catch let error as DecodingError {
             throw AppError.decodingFailed(error)
@@ -212,50 +413,50 @@ final class GooglePlacesService {
             throw AppError.networkUnavailable
         }
         
-        var components = URLComponents(string: "\(baseURL)/details/json")
-        components?.queryItems = [
-            URLQueryItem(name: "place_id", value: placeId),
-            URLQueryItem(name: "key", value: Config.googlePlacesAPIKey),
-            URLQueryItem(name: "fields", value: "place_id,name,formatted_address,geometry,rating,website,formatted_phone_number,opening_hours,photos,reviews,types")
-        ]
-        
-        guard let url = components?.url else {
+        guard let url = URL(string: "\(v1BaseURL)/places/\(placeId)") else {
             throw AppError.invalidURL
         }
-        
-        let (data, response) = try await session.data(from: url)
+
+        let fieldMask = "id,displayName,formattedAddress,location,rating,types,photos,websiteUri,internationalPhoneNumber,regularOpeningHours.openNow,regularOpeningHours.weekdayDescriptions"
+        let request = makeV1Request(url: url, method: "GET", fieldMask: fieldMask)
+
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AppError.invalidResponse
         }
         
         guard 200...299 ~= httpResponse.statusCode else {
-            throw AppError.apiError("HTTP \(httpResponse.statusCode)")
+            let message = decodeGoogleAPIErrorMessage(from: data) ?? "Google Places details request failed (HTTP \(httpResponse.statusCode))."
+            throw AppError.apiError(message)
         }
-        
+
         do {
-            let detailsResponse = try JSONDecoder().decode(PlaceDetailsResponse.self, from: data)
-            
-            switch detailsResponse.status {
-            case "OK":
-                return detailsResponse.result
-            case "NOT_FOUND":
-                throw AppError.locationNotFound
-            case "INVALID_REQUEST":
-                throw AppError.apiError(detailsResponse.errorMessage ?? "Invalid request")
-            case "REQUEST_DENIED":
-                let message = detailsResponse.errorMessage ?? "Request denied by Google. Check that Places API is enabled, billing is enabled, and key restrictions allow Web Service calls."
-                throw AppError.apiError(message)
-            default:
-                throw AppError.apiError(detailsResponse.errorMessage ?? "Unknown error")
+            let decoded = try JSONDecoder().decode(V1Place.self, from: data)
+            if let details = mapV1PlaceToLegacyPlaceDetails(decoded) {
+                return details
             }
+            throw AppError.locationNotFound
         } catch let error as DecodingError {
             throw AppError.decodingFailed(error)
         }
     }
     
     func getPhotoURL(photoReference: String, maxWidth: Int = 400) -> URL? {
-        var components = URLComponents(string: "\(baseURL)/photo")
+        // Places API (New): photo reference is typically a resource name like
+        // "places/{placeId}/photos/{photoId}".
+        if photoReference.hasPrefix("places/") {
+            var components = URLComponents(string: "\(v1BaseURL)/\(photoReference)/media")
+            components?.queryItems = [
+                URLQueryItem(name: "maxWidthPx", value: "\(maxWidth)"),
+                // Using query param here so AsyncImage can load without custom headers.
+                URLQueryItem(name: "key", value: Config.googlePlacesAPIKey)
+            ]
+            return components?.url
+        }
+
+        // Backward-compat fallback (legacy photo reference). This may fail if legacy Places API is disabled.
+        var components = URLComponents(string: "https://maps.googleapis.com/maps/api/place/photo")
         components?.queryItems = [
             URLQueryItem(name: "photo_reference", value: photoReference),
             URLQueryItem(name: "maxwidth", value: "\(maxWidth)"),

@@ -18,8 +18,8 @@ class GooglePlacesImporter {
     
     func searchPlaces(near location: CLLocationCoordinate2D, 
                      radius: Double) async throws -> [Place] {
-        let endpoint = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        // Use URLSession with proper error handling
+      let endpoint = "https://places.googleapis.com/v1/places:searchNearby"
+      // Use URLSession with X-Goog-Api-Key + X-Goog-FieldMask
     }
 }
 ```
