@@ -37,6 +37,7 @@
 				Assets.xcassets,
 				Config.swift,
 				Models/Activity.swift,
+				Models/ActivityComment.swift,
 				Models/ActivityTemplate.swift,
 
 				Models/CarRental.swift,
