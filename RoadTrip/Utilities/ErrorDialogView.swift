@@ -253,7 +253,7 @@ extension View {
 }
 
 // MARK: - Error Log Viewer (for Settings/Debug)
-struct ErrorLogView: View {
+struct ErrorLogListView: View {
     @ObservedObject private var errorManager = ErrorRecoveryManager.shared
     @State private var showingClearConfirmation = false
     
@@ -268,7 +268,7 @@ struct ErrorLogView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(errorManager.errors) { error in
-                    ErrorLogRow(error: error)
+                    ErrorLogListRow(error: error)
                 }
             }
         }
@@ -297,7 +297,7 @@ struct ErrorLogView: View {
     }
 }
 
-struct ErrorLogRow: View {
+struct ErrorLogListRow: View {
     let error: ErrorRecoveryManager.RecoveryError
     
     var body: some View {

@@ -15,7 +15,7 @@ class Trip {
     var createdAt: Date
     
     // Budget Tracking
-    var totalBudget: Double? // Total budget for the trip
+    var totalBudget: Double? // User-set budget limit
     var spentAmount: Double = 0 // Total amount spent so far
     var budgetCategories: [String: Double] = [:] // Category-specific budgets
     
@@ -156,9 +156,9 @@ class Trip {
         days.filter { $0.dayNumber > 0 }
     }
     
-    // MARK: - Budget Tracking
-    
-    var totalBudget: Double {
+    // MARK: - Budget Tracking (estimates)
+
+    var estimatedTotalCost: Double {
         days.reduce(0) { total, day in
             let activityTotal = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
             let lodging = day.hotel?.pricePerNight ?? 0

@@ -16,7 +16,7 @@ struct BudgetView: View {
                 budgetSummaryCard
                 
                 // Budget Breakdown Chart
-                if trip.totalBudget > 0 {
+                if trip.estimatedTotalCost > 0 {
                     budgetChartCard
                 }
                 
@@ -62,7 +62,7 @@ struct BudgetView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    Text(String(format: "$%.2f", trip.totalBudget))
+                    Text(String(format: "$%.2f", trip.estimatedTotalCost))
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundStyle(.green)
@@ -75,7 +75,7 @@ struct BudgetView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    let perDay = trip.days.isEmpty ? 0 : trip.totalBudget / Double(trip.days.count)
+                    let perDay = trip.days.isEmpty ? 0 : trip.estimatedTotalCost / Double(trip.days.count)
                     Text(String(format: "$%.2f", perDay))
                         .font(.title2)
                         .fontWeight(.semibold)
