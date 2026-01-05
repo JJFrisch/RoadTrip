@@ -23,7 +23,7 @@ class TripDay {
     var hotel: Hotel?
     
     @Relationship(deleteRule: .cascade, inverse: \Activity.day)
-    var activities: [Activity]? = []
+    var activities: [Activity]
 
     @Relationship(deleteRule: .nullify, inverse: \Trip.days)
     var trip: Trip?

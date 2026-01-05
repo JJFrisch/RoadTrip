@@ -186,7 +186,9 @@ final class DataPersistenceTests: XCTestCase {
         
         // Delete activity
         if let activity = trip.days.first?.activities.first {
-            trip.days.first?.activities.removeAll { $0.id == activity.id }
+            if let day = trip.days.first {
+                day.activities.removeAll { $0.id == activity.id }
+            }
         }
         
         try modelContext.save()
