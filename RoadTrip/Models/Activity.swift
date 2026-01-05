@@ -44,7 +44,6 @@ class Activity {
     
     // Collaboration features
     var comments: [ActivityComment]? // Activity comments
-    var safeComments: [ActivityComment] { comments ?? [] }
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
     
@@ -68,6 +67,8 @@ class Activity {
     var hasCoordinates: Bool {
         latitude != nil && longitude != nil
     }
+    // Computed property for safely accessing comments
+    var safeComments: [ActivityComment] { comments ?? [] }
 }
 
 // MARK: - Activity History for Undo/Redo
