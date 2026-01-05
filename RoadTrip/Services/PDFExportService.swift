@@ -70,9 +70,10 @@ class PDFExportService {
             summary.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: subtitleAttributes)
             yPosition += 15
             
-            // Budget if available
-            if trip.totalBudget > 0 {
-                let budgetStr = String(format: "Estimated Budget: $%.2f", trip.totalBudget)
+            // Budget estimate if available
+            let estimatedBudget = trip.estimatedTotalCost
+            if estimatedBudget > 0 {
+                let budgetStr = String(format: "Estimated Budget: $%.2f", estimatedBudget)
                 budgetStr.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: subtitleAttributes)
                 yPosition += 15
             }
@@ -234,7 +235,7 @@ class PDFExportService {
                 }
                 
                 yPosition += 10
-                let totalLine = String(format: "Total: $%.2f", trip.totalBudget)
+                let totalLine = String(format: "Total: $%.2f", trip.estimatedTotalCost)
                 let totalAttributes: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 14, weight: .bold),
                     .foregroundColor: UIColor.black
