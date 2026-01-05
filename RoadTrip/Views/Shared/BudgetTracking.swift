@@ -101,7 +101,7 @@ struct BudgetSummaryView: View {
                 }
                 .padding(.vertical, 8)
                 
-                if let budget = trip.totalBudget {
+                if trip.totalBudget != nil {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Progress")
