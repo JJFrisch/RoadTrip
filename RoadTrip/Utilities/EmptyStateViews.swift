@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Generic Empty State
-struct EmptyStateView: View {
+struct IllustratedEmptyStateView: View {
     let icon: String
     let title: String
     let message: String

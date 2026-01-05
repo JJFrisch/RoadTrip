@@ -9,7 +9,7 @@ struct HomeView: View {
     @StateObject private var authService = AuthService.shared
     @StateObject private var searchManager = TripSearchManager()
     @StateObject private var onboardingManager = OnboardingManager.shared
-    
+
     @State private var showingNewTripSheet = false
     @State private var tripToDelete: Trip?
     @State private var tripToEdit: Trip?
@@ -20,11 +20,11 @@ struct HomeView: View {
     @State private var showingOnboarding = false
     @State private var showingTutorial = false
     @State private var showingFilters = false
-    
+
     var filteredTrips: [Trip] {
         searchManager.filterAndSort(Array(trips))
     }
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -57,6 +57,12 @@ struct HomeView: View {
                                     .foregroundStyle(.white)
                             }
                         } else {
+                            Image(systemName: "person.circle")
+                                .font(.title3)
+                        }
+                    }
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
                         Button {
@@ -66,22 +72,16 @@ struct HomeView: View {
                                 .font(.title3)
                                 .symbolVariant(searchManager.sortOption != .dateNewest || searchManager.filterByShared != .all ? .fill : .none)
                         }
-                        
+
                         Button {
                             showingJoinTrip = true
                         } label: {
                             Image(systemName: "person.badge.plus")
                                 .font(.title3)
                         }
-                        
+
                         Button {
                             showingNewTripSheet = true
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title2)
-                        }
-                    }
-                }           showingNewTripSheet = true
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
@@ -111,6 +111,7 @@ struct HomeView: View {
                 } label: {
                     Text("Delete")
                 }
+            }
             .alert("Create Sample Trip", isPresented: $showingSampleTripAlert) {
                 Button("Create") {
                     createComprehensiveSampleTrip()
@@ -133,20 +134,11 @@ struct HomeView: View {
             .withToast()
             .withErrorDialog()
         }
-    }           Button("Create") {
-                    createSampleTrip()
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("This will create a sample California Coast road trip to help you explore the app's features.")
-            }
-        }
     }
     
     private var emptyStateView: some View {
         ScrollView {
             VStack(spacing: 32) {
-                // Illustration
                 ZStack {
                     Circle()
                         .fill(LinearGradient(
@@ -155,7 +147,7 @@ struct HomeView: View {
                             endPoint: .bottomTrailing
                         ))
                         .frame(width: 180, height: 180)
-                    
+
                     Image(systemName: "car.fill")
                         .font(.system(size: 60))
                         .foregroundStyle(LinearGradient(
@@ -163,30 +155,30 @@ struct HomeView: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
-                    
-                    // Road decoration
+
                     Image(systemName: "road.lanes")
                         .font(.system(size: 30))
                         .foregroundStyle(.blue.opacity(0.5))
                         .offset(x: 50, y: 50)
-                    
+
                     Image(systemName: "mappin.circle.fill")
                         .font(.system(size: 24))
                         .foregroundStyle(.red)
                         .offset(x: -60, y: -40)
                 }
                 .padding(.top, 40)
-                
+
                 VStack(spacing: 12) {
                     Text("No Trips Yet")
                         .font(.title)
                         .fontWeight(.bold)
-                    
+
                     Text("Start planning your next adventure!\nCreate a trip to organize your itinerary,\ntrack activities, and navigate with ease.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
+
                     Button {
                         showingSampleTripAlert = true
                     } label: {
@@ -198,7 +190,7 @@ struct HomeView: View {
                             .foregroundStyle(.blue)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    
+
                     Button {
                         showingTutorial = true
                     } label: {
@@ -211,35 +203,13 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                 }
-                .padding(.horizontal, 32)s: [.blue, .purple.opacity(0.8)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    
-                    Button {
-                        showingSampleTripAlert = true
-                    } label: {
-                        Label("Explore Sample Trip", systemImage: "sparkles")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(.blue.opacity(0.1))
-                            .foregroundStyle(.blue)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                }
                 .padding(.horizontal, 32)
-                
-                // Features overview
+
                 VStack(alignment: .leading, spacing: 16) {
                     Text("What you can do")
                         .font(.headline)
                         .foregroundStyle(.secondary)
-                    
+
                     FeatureRow(icon: "calendar.badge.clock", title: "Plan Activities", description: "Schedule attractions, meals, and hotels")
                     FeatureRow(icon: "map.fill", title: "Visualize Routes", description: "See your entire trip on an interactive map")
                     FeatureRow(icon: "dollarsign.circle.fill", title: "Track Budget", description: "Monitor expenses by category")
@@ -249,40 +219,13 @@ struct HomeView: View {
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
-                
+
                 Spacer(minLength: 40)
             }
             .constrainedContentWidth()
         }
     }
-    
-    private func createSampleTrip() {
-        let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: 7, to: Date())!
-        let endDate = calendar.date(byAdding: .day, value: 4, to: startDate)!
-        
-        let trip = Trip(name: "California Coast Adventure", startDate: startDate, endDate: endDate)
-        trip.coverImage = "car.fill"
-        
-        // Configure days with sample data
-        let days = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
-        
-        if days.count > 0 {
-            days[0].startLocation = "San Francisco, CA"
-            days[0].endLocation = "Monterey, CA"
-            days[0].distance = 120
-            days[0].drivingTime = 2.5
-            
-            // Add sample activities
-            let activity1 = Activity(name: "Golden Gate Bridge", location: "Golden Gate Bridge, San Francisco", category: "Attraction")
-            activity1.scheduledTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: startDate)
-            activity1.duration = 1.5
-            activity1.estimatedCost = 0
-            activity1.costCategory = "Attractions"
-            activity1.order = 0
-            days[0].activities.append(activity1)
-            
-            let activity2 = Activity(name: "Fisherman's Wharf Lunch", location: "Fisherman's Wharf, San Francisco", category: "Food")
+
     private var tripListView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
@@ -292,41 +235,8 @@ struct HomeView: View {
                     }
                     .padding(.top, 100)
                 }
-                
-                ForEach(filteredTrips) { trip inod"
-            activity2.order = 1
-            days[0].activities.append(activity2)
-        }
-        
-        if days.count > 1 {
-            days[1].startLocation = "Monterey, CA"
-            days[1].endLocation = "Big Sur, CA"
-            days[1].distance = 45
-            days[1].drivingTime = 1.5
-            
-            let activity3 = Activity(name: "Monterey Bay Aquarium", location: "886 Cannery Row, Monterey", category: "Attraction")
-            activity3.scheduledTime = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: calendar.date(byAdding: .day, value: 1, to: startDate)!)
-            activity3.duration = 3.0
-            activity3.estimatedCost = 55
-            activity3.costCategory = "Attractions"
-            activity3.order = 0
-            days[1].activities.append(activity3)
-        }
-        
-        if days.count > 2 {
-            days[2].startLocation = "Big Sur, CA"
-            days[2].endLocation = "San Luis Obispo, CA"
-            days[2].distance = 95
-            days[2].drivingTime = 2.0
-        }
-        
-        modelContext.insert(trip)
-    }
-    
-    private var tripListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(trips) { trip in
+
+                ForEach(filteredTrips) { trip in
                     NavigationLink(destination: TripDetailView(trip: trip)) {
                         TripCardView(trip: trip)
                     }
@@ -337,15 +247,15 @@ struct HomeView: View {
                         } label: {
                             Label("Edit Trip", systemImage: "pencil")
                         }
-                        
+
                         Button {
                             tripToShare = trip
                         } label: {
                             Label("Share Trip", systemImage: "square.and.arrow.up")
                         }
-                        
+
                         Divider()
-                        
+
                         Button(role: .destructive) {
                             tripToDelete = trip
                         } label: {
@@ -358,7 +268,7 @@ struct HomeView: View {
             .constrainedContentWidth()
         }
     }
-    
+
     private func deleteTrip(_ trip: Trip) {
         modelContext.delete(trip)
     }
