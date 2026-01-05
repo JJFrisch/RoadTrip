@@ -23,7 +23,12 @@ class TripDay {
     var hotel: Hotel?
     
     @Relationship(deleteRule: .cascade, inverse: \Activity.day)
-    var activities: [Activity]? = []
+    var activitiesStorage: [Activity]? = []
+
+    var activities: [Activity] {
+        get { activitiesStorage ?? [] }
+        set { activitiesStorage = newValue }
+    }
 
     @Relationship(deleteRule: .nullify, inverse: \Trip.daysStorage)
     var trip: Trip?
