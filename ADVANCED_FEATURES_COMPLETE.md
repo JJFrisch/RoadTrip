@@ -34,10 +34,10 @@ PaginatedActivityList(activities: day.activities)
 - `RoadTrip/Models/Activity.swift` - Already had `estimatedCost` and `costCategory`
 
 ### Files Created
-- `RoadTrip/Views/Shared/BudgetTracking.swift`
+- `RoadTrip/Views/Shared/BudgetTracking.swift`  
 
 ### Features
-- **Total Budget Management**: Set overall trip budget with progress tracking
+- **Total Budget Management**: Set overall trip budget with progress tracking deal
 - **Category Budgets**: Allocate budgets to Gas, Food, Lodging, Attractions, Shopping, Other
 - **Visual Charts**: Bar chart showing spending by category, line chart for daily spending
 - **Budget Alerts**: Red indicators when over budget
