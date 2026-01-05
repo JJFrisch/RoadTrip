@@ -71,6 +71,21 @@ struct Config {
     static let requestTimeout: TimeInterval = 30.0
     static let maxRetryAttempts = 3
     static let retryDelay: TimeInterval = 1.0
+
+    // MARK: - Features
+
+    /// Toggle CloudKit usage. Keep false by default to avoid entitlement crashes in dev builds.
+    static var enableCloudKit: Bool {
+        if let flag = Bundle.main.object(forInfoDictionaryKey: "ENABLE_CLOUDKIT") as? Bool {
+            return flag
+        }
+
+        if let env = ProcessInfo.processInfo.environment["ENABLE_CLOUDKIT"], env == "1" {
+            return true
+        }
+
+        return false
+    }
     
     // MARK: - Validation
     
