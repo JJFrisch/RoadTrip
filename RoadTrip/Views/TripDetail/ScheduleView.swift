@@ -18,7 +18,8 @@ extension Date: @retroactive Identifiable {
 
 struct ScheduleView: View {
     let trip: Trip
-    @State private var selectedDay: TripDay?
+    private struct SelectedDayRef: Identifiable { let id: UUID }
+    @State private var selectedDayRef: SelectedDayRef?
     @State private var isRefreshing = false
     @State private var dayToCopy: TripDay?
     @State private var showingCopyOptions = false
@@ -40,7 +41,7 @@ struct ScheduleView: View {
                         }
                     },
                     onTapDay: {
-                        selectedDay = day
+                        selectedDayRef = SelectedDayRef(id: day.id)
                     }
                 )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -71,8 +72,12 @@ struct ScheduleView: View {
         .refreshable {
             await refreshDrivingTimes()
         }
-        .sheet(item: $selectedDay) { day in
-            DayDetailScheduleView(day: day)
+        .sheet(item: $selectedDayRef) { ref in
+            if let day = trip.days.first(where: { $0.id == ref.id }) {
+                DayDetailScheduleView(day: day)
+            } else {
+                EmptyView()
+            }
         }
         .confirmationDialog("Copy Day Activities", isPresented: $showingCopyOptions, presenting: dayToCopy) { day in
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in

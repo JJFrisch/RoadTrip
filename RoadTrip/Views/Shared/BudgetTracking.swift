@@ -1215,7 +1215,7 @@ struct QuickExpenseView: View {
     @State private var expenseName = ""
     @State private var expenseAmount = ""
     @State private var selectedCategory = "Other"
-    @State private var selectedDay: TripDay?
+    @State private var selectedDayId: UUID?
     @State private var notes = ""
     
     let categories = BudgetManager.shared.categories
@@ -1248,10 +1248,10 @@ struct QuickExpenseView: View {
                 }
                 
                 Section("Day") {
-                    Picker("Select Day", selection: $selectedDay) {
-                        Text("Select a day").tag(nil as TripDay?)
+                    Picker("Select Day", selection: $selectedDayId) {
+                        Text("Select a day").tag(nil as UUID?)
                         ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
-                            Text("Day \(day.dayNumber)").tag(day as TripDay?)
+                            Text("Day \(day.dayNumber)").tag(day.id as UUID?)
                         }
                     }
                 }
@@ -1273,20 +1273,21 @@ struct QuickExpenseView: View {
                         addExpense()
                         dismiss()
                     }
-                    .disabled(expenseName.isEmpty || expenseAmount.isEmpty || selectedDay == nil)
+                    .disabled(expenseName.isEmpty || expenseAmount.isEmpty || selectedDayId == nil)
                 }
             }
             .onAppear {
                 // Default to today's day or first day
                 let today = Date()
-                selectedDay = trip.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) }
-                    ?? trip.days.sorted { $0.dayNumber < $1.dayNumber }.first
+                selectedDayId = trip.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) }?.id
+                    ?? trip.days.sorted { $0.dayNumber < $1.dayNumber }.first?.id
             }
         }
     }
     
     private func addExpense() {
-        guard let day = selectedDay,
+        guard let dayId = selectedDayId,
+              let day = trip.days.first(where: { $0.id == dayId }),
               let amount = Double(expenseAmount) else { return }
         
         let activity = Activity(name: expenseName, location: "", category: "Other")

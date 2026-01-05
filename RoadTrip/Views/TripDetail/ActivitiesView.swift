@@ -196,6 +196,12 @@ struct ActivitiesView: View {
                 EditButton()
             }
         }
+        .environment(\.editMode, $editMode)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                EditButton()
+            }
+        }
         .sheet(isPresented: $showingMap) {
             let allActivities = trip.days.flatMap { $0.activities }
             ActivitiesMapView(activities: allActivities)

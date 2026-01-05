@@ -445,8 +445,16 @@ struct OverviewView: View {
     private func deleteDay(_ day: TripDay) {
         let deletedDayNumber = day.dayNumber
         let calendar = Calendar.current
+
+        // Clear any UI state that may still reference this day
+        if editingDay?.id == day.id { editingDay = nil }
+        if addingActivityDay?.id == day.id { addingActivityDay = nil }
+        if browsingHotelDay?.id == day.id { browsingHotelDay = nil }
         
-        // Delete the day
+        // Remove from the relationship first so we don't keep an invalidated instance in `trip.days`
+        trip.days.removeAll { $0.id == day.id }
+
+        // Delete the day from the store
         modelContext.delete(day)
         
         // Get remaining days sorted
