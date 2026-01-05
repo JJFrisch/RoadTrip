@@ -12,7 +12,7 @@ import SwiftData
 
 @Model
 class Activity {
-        var safeComments: [ActivityComment] { comments ?? [] }
+    // ...existing code...
     var id: UUID = UUID()
     var name: String = ""
     var location: String = ""
@@ -44,6 +44,7 @@ class Activity {
     
     // Collaboration features
     var comments: [ActivityComment]? // Activity comments
+    var safeComments: [ActivityComment] { comments ?? [] }
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
     
