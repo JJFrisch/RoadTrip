@@ -1,4 +1,4 @@
-    var safeDays: [TripDay] { days ?? [] }
+    // ...existing code...
 // Models/Trip.swift
 // Created by Jake Frischmann on 1/1/26.
 
@@ -7,6 +7,7 @@ import SwiftData
 
 @Model
 class Trip {
+        var safeDays: [TripDay] { days ?? [] }
     var id: UUID = UUID()
     var name: String = ""
     var tripDescription: String?
