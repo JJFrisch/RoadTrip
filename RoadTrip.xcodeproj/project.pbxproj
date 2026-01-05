@@ -156,13 +156,6 @@
 				Info.plist,
 			);
 		};
-		DB40F8962F0B58CC0023873E /* Exceptions for "RoadTrip" folder in "Compile Sources" phase from "RoadTrip" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = DB63B9F62F0770D4001B1FDD /* Sources */;
-			membershipExceptions = (
-				RoadTrip.entitlements,
-			);
-		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -180,7 +173,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
-				DB40F8962F0B58CC0023873E /* Exceptions for "RoadTrip" folder in "Compile Sources" phase from "RoadTrip" target */,
 				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
 				DB18043B2F09D54500253A35 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */,
 				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,

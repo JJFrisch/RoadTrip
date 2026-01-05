@@ -102,8 +102,8 @@ class Trip {
                     activity.order = (lastKeptDay.activities ?? []).count
                     lastKeptDay.activities?.append(activity)
                 }
-                dayToRemove.activities.removeAll()
-                days.removeAll { $0.id == dayToRemove.id }
+                dayToRemove.activities?.removeAll()
+                days?.removeAll { $0.id == dayToRemove.id }
             }
         }
         
