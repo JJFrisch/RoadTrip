@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - VoiceOver Support
 
@@ -115,10 +116,8 @@ struct HighContrastButton: View {
     let title: String
     let action: () -> Void
     
-    @Environment(\.accessibilityContrast) private var accessibilityContrast: AccessibilityContrast
-
     private var isHighContrast: Bool {
-        accessibilityContrast == .high
+        UIAccessibility.isDarkerSystemColorsEnabled
     }
     
     var body: some View {

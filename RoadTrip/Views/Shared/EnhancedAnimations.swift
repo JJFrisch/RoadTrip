@@ -77,13 +77,15 @@ struct AnimatedActivityCard: View {
         .frame(height: 80)
         .scaleEffect(isPressed ? 0.98 : 1.0, anchor: .center)
         .onTapGesture { }
-        .onLongPressGesture(minimumDuration: 0.1) { pressed in
+        .onLongPressGesture(minimumDuration: 0.1, maximumDistance: 50, pressing: { pressing in
             if !reduceMotion {
                 withAnimation(.easeInOut(duration: 0.15)) {
-                    isPressed = pressed
+                    isPressed = pressing
                 }
+            } else {
+                isPressed = pressing
             }
-        }
+        }, perform: {})
     }
 }
 
@@ -302,14 +304,13 @@ struct ExpandableActivityItem: View {
                 Divider()
                 
                 VStack(alignment: .leading, spacing: 12) {
-                    if let location = activity.location {
-                        HStack(spacing: 8) {
-                            Image(systemName: "mappin.circle.fill")
-                                .foregroundStyle(.red)
-                            Text(location)
-                        }
-                        .font(.subheadline)
+                    let location = activity.location
+                    HStack(spacing: 8) {
+                        Image(systemName: "mappin.circle.fill")
+                            .foregroundStyle(.red)
+                        Text(location)
                     }
+                    .font(.subheadline)
                     
                     if let notes = activity.notes {
                         HStack(spacing: 8) {

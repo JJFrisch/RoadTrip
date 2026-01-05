@@ -88,8 +88,8 @@ extension View {
     }
     
     func highContrastSupport() -> some View {
+        // Placeholder for high-contrast tweaks; environment key unavailable on older SDKs
         self
-            .environment(\.accessibilityContrast, .high)
     }
 }
 
