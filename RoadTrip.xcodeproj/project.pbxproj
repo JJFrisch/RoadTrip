@@ -38,7 +38,6 @@
 				Config.swift,
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
-				Models/AuthService.swift,
 				Models/CarRental.swift,
 				Models/Hotel.swift,
 				Models/Trip.swift,
