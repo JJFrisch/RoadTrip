@@ -10,18 +10,19 @@ import SwiftData
 
 @Model
 class ActivityComment {
-    var id: UUID
-    var userId: String
-    var userEmail: String
-    var text: String
-    var createdAt: Date
+    var id: UUID = UUID()
+    var userId: String = ""
+    var userEmail: String = ""
+    var text: String = ""
+    var createdAt: Date = Date()
     var updatedAt: Date?
+
+    @Relationship(deleteRule: .nullify, inverse: \Activity.commentsStorage)
+    var activity: Activity?
     
     init(userId: String, userEmail: String, text: String) {
-        self.id = UUID()
         self.userId = userId
         self.userEmail = userEmail
         self.text = text
-        self.createdAt = Date()
     }
 }

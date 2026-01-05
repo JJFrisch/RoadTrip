@@ -10,20 +10,28 @@ import SwiftData
 
 @Model
 class TripDay {
-    var id: UUID
-    var dayNumber: Int
-    var date: Date
-    var startLocation: String
-    var endLocation: String
-    var distance: Double // in miles
-    var drivingTime: Double // in hours
+    var id: UUID = UUID()
+    var dayNumber: Int = 0
+    var date: Date = Date()
+    var startLocation: String = ""
+    var endLocation: String = ""
+    var distance: Double = 0 // in miles
+    var drivingTime: Double = 0 // in hours
     var hotelName: String?
 
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .nullify, inverse: \Hotel.day)
     var hotel: Hotel?
     
-    @Relationship(deleteRule: .cascade)
-    var activities: [Activity]
+    @Relationship(deleteRule: .cascade, inverse: \Activity.day)
+    var activitiesStorage: [Activity]? = []
+
+    var activities: [Activity] {
+        get { activitiesStorage ?? [] }
+        set { activitiesStorage = newValue }
+    }
+
+    @Relationship(deleteRule: .nullify, inverse: \Trip.daysStorage)
+    var trip: Trip?
     
     init(dayNumber: Int, date: Date, startLocation: String, endLocation: String, distance: Double = 0, drivingTime: Double = 0, activities: [Activity] = []) {
         self.id = UUID()

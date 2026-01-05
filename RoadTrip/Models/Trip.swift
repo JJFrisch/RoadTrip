@@ -6,13 +6,13 @@ import SwiftData
 
 @Model
 class Trip {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     var tripDescription: String?
-    var startDate: Date
-    var endDate: Date
+    var startDate: Date = Date()
+    var endDate: Date = Date()
     var coverImage: String? // SF Symbol or image name
-    var createdAt: Date
+    var createdAt: Date = Date()
     
     // Budget Tracking
     var totalBudget: Double? // User-set budget limit
@@ -24,7 +24,7 @@ class Trip {
     var ownerEmail: String? // Email of trip owner for display
     /// Persisted backing store for `sharedWith`.
     /// Stored as JSON to avoid CoreData attempting to materialize Swift `Array` as a transformable Objective-C class.
-    var sharedWithData: Data
+    var sharedWithData: Data = Data()
 
     /// Array of user IDs who have access
     var sharedWith: [String] {
@@ -36,23 +36,25 @@ class Trip {
         }
     }
     var shareCode: String? // Unique code for sharing via link
-    var isShared: Bool // Whether trip is shared with others
+    var isShared: Bool = false // Whether trip is shared with others
     var lastSyncedAt: Date? // Last time synced to cloud
     var cloudId: String? // ID in cloud database for sync
-    
-    @Relationship(deleteRule: .cascade)
-    var days: [TripDay]
+
+    @Relationship(deleteRule: .cascade, inverse: \TripDay.trip)
+    var daysStorage: [TripDay]? = []
+
+    var days: [TripDay] {
+        get { daysStorage ?? [] }
+        set { daysStorage = newValue }
+    }
     
     init(name: String, startDate: Date, endDate: Date) {
-        self.id = UUID()
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
-        self.createdAt = Date()
-        self.days = []
         self.sharedWithData = (try? JSONEncoder().encode([String]())) ?? Data()
         self.isShared = false
-        
+        self.daysStorage = []
         // Generate TripDays for each day between startDate and endDate (inclusive)
         generateDays(from: startDate, to: endDate)
     }
@@ -89,6 +91,7 @@ class Trip {
                         drivingTime: 0,
                         activities: []
                     )
+                    day.trip = self
                     days.append(day)
                 }
             }
@@ -130,6 +133,7 @@ class Trip {
                 drivingTime: 0,
                 activities: []
             )
+            day.trip = self
             self.days.append(day)
             return
         }
@@ -145,6 +149,7 @@ class Trip {
                     drivingTime: 0,
                     activities: []
                 )
+                day.trip = self
                 self.days.append(day)
             }
         }

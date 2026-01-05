@@ -17,12 +17,16 @@ struct RoadTripperApp: App {
             Trip.self,
             TripDay.self,
             Activity.self,
-            ActivityTemplate.self
+            ActivityTemplate.self,
+            ActivityComment.self,
+            Hotel.self,
+            HotelPreferences.self
         ])
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .private // Enable SwiftData <-> CloudKit sync
         )
         
         do {

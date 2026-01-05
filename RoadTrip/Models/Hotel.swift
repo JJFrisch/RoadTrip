@@ -10,13 +10,13 @@ import SwiftData
 
 @Model
 class Hotel {
-    var id: UUID
-    var name: String
-    var address: String
-    var city: String
-    var state: String
-    var zipCode: String
-    var country: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var address: String = ""
+    var city: String = ""
+    var state: String = ""
+    var zipCode: String = ""
+    var country: String = ""
     
     // Location
     var latitude: Double?
@@ -26,11 +26,11 @@ class Hotel {
     var rating: Double? // 0.0 to 5.0
     var reviewCount: Int?
     var starRating: Int? // 1-5 stars
-    var imageURLs: [String]
+    var imageURLs: [String] = []
     var thumbnailURL: String?
     
     // Amenities
-    var amenities: [String]
+    var amenities: [String] = []
     var hasWiFi: Bool = false
     var hasParking: Bool = false
     var hasBreakfast: Bool = false
@@ -53,23 +53,22 @@ class Hotel {
     // Source information
     var sourceType: String? // "booking", "hotels", "expedia", "airbnb", "manual"
     var externalId: String?
-    var lastUpdated: Date
+    var lastUpdated: Date = Date()
     
     // User preferences
     var isFavorite: Bool = false
     var notes: String?
+
+    @Relationship(deleteRule: .nullify, inverse: \TripDay.hotel)
+    var day: TripDay?
     
     init(name: String, address: String, city: String, state: String = "", zipCode: String = "", country: String = "USA") {
-        self.id = UUID()
         self.name = name
         self.address = address
         self.city = city
         self.state = state
         self.zipCode = zipCode
         self.country = country
-        self.imageURLs = []
-        self.amenities = []
-        self.lastUpdated = Date()
     }
 }
 
@@ -163,24 +162,17 @@ struct HotelSearchResult: Identifiable, Codable {
 // MARK: - User Hotel Preferences
 @Model
 class HotelPreferences {
-    var id: UUID
-    var enabledSources: [String] // booking, hotels, expedia, airbnb
-    var defaultSortBy: String // price, rating, distance
+    var id: UUID = UUID()
+    var enabledSources: [String] = ["booking", "hotels", "expedia", "airbnb"] // booking, hotels, expedia, airbnb
+    var defaultSortBy: String = "price" // price, rating, distance
     var maxPricePerNight: Double?
     var minRating: Double?
-    var requiredAmenities: [String]
-    var preferredAmenities: [String]
-    var createdAt: Date
-    var updatedAt: Date
+    var requiredAmenities: [String] = []
+    var preferredAmenities: [String] = []
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
     init() {
-        self.id = UUID()
-        self.enabledSources = ["booking", "hotels", "expedia", "airbnb"]
-        self.defaultSortBy = "price"
-        self.requiredAmenities = []
-        self.preferredAmenities = []
-        self.createdAt = Date()
-        self.updatedAt = Date()
     }
     
     func isSourceEnabled(_ source: HotelSearchResult.BookingSource) -> Bool {

@@ -4,17 +4,17 @@ import SwiftData
 
 @Model
 class ActivityTemplate {
-    var id: UUID
-    var name: String
-    var location: String
-    var category: String
-    var defaultDuration: Double // in hours
+    var id: UUID = UUID()
+    var name: String = ""
+    var location: String = ""
+    var category: String = ""
+    var defaultDuration: Double = 1.0 // in hours
     var notes: String?
     var estimatedCost: Double?
     var costCategory: String?
     var usageCount: Int = 0
     var lastUsed: Date?
-    var createdAt: Date
+    var createdAt: Date = Date()
     
     // Common preset templates
     static let presetNames = [
@@ -24,12 +24,10 @@ class ActivityTemplate {
     ]
     
     init(name: String, location: String = "", category: String, defaultDuration: Double = 1.0) {
-        self.id = UUID()
         self.name = name
         self.location = location
         self.category = category
         self.defaultDuration = defaultDuration
-        self.createdAt = Date()
     }
     
     // Create activity from template

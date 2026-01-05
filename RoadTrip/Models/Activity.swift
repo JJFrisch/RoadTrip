@@ -11,12 +11,12 @@ import SwiftData
 
 @Model
 class Activity {
-    var id: UUID
-    var name: String
-    var location: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var location: String = ""
     var scheduledTime: Date?
     var duration: Double? // in hours
-    var category: String // "Food", "Attraction", "Hotel", "Other"
+    var category: String = "" // "Food", "Attraction", "Hotel", "Other"
     var notes: String?
     var isCompleted: Bool = false
     var order: Int = 0 // For custom ordering within a day
@@ -41,7 +41,13 @@ class Activity {
     var photoThumbnails: [Data] = [] // Thumbnails for gallery
     
     // Collaboration features
-    var comments: [ActivityComment] = [] // Activity comments
+    @Relationship(deleteRule: .cascade, inverse: \ActivityComment.activity)
+    var commentsStorage: [ActivityComment]? = [] // Activity comments
+
+    var comments: [ActivityComment] {
+        get { commentsStorage ?? [] }
+        set { commentsStorage = newValue }
+    }
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
     
@@ -49,9 +55,11 @@ class Activity {
     var isMultiDay: Bool = false
     var endDate: Date? // For multi-day activities like hotel stays
     var spansDays: Int = 1 // Number of days this activity spans
+
+    @Relationship(deleteRule: .nullify, inverse: \TripDay.activitiesStorage)
+    var day: TripDay?
     
     init(name: String, location: String, category: String) {
-        self.id = UUID()
         self.name = name
         self.location = location
         self.category = category
