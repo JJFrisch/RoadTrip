@@ -305,7 +305,7 @@ struct ActivityImportSheet: View {
         
         Task {
             do {
-                let activities = try await viewModel.importActivities(from: url, baseActivityIndex: day.activities.count, modelContext: modelContext)
+                let activities = try await viewModel.importActivities(from: url, baseActivityIndex: (day.activities ?? []).count, modelContext: modelContext)
                 
                 await MainActor.run {
                     // Convert to ImportedPlace for preview
@@ -359,7 +359,7 @@ struct ActivityImportSheet: View {
                 // Use Google Places API for better results
                 let places = try await viewModel.importActivitiesFromGooglePlaces(
                     near: coordinate,
-                    baseActivityIndex: day.activities.count,
+                    baseActivityIndex: (day.activities ?? []).count,
                     modelContext: modelContext,
                     radius: searchRadius
                 )
@@ -406,7 +406,7 @@ struct ActivityImportSheet: View {
         for (index, place) in selected.enumerated() {
             let activity = Activity(name: place.name, location: place.address ?? day.endLocation, category: place.category ?? "Attraction")
             activity.duration = place.typicalDurationHours
-            activity.order = day.activities.count + index
+            activity.order = (day.activities ?? []).count + index
             activity.isCompleted = true
             
             // Use enhanced fields instead of notes
@@ -423,7 +423,8 @@ struct ActivityImportSheet: View {
             activity.phoneNumber = place.phoneNumber
             
             modelContext.insert(activity)
-            day.activities.append(activity)
+            if day.activities == nil { day.activities = [] }
+            day.activities?.append(activity)
         }
         
         dismiss()
