@@ -74,8 +74,8 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
             
             // Update trip with cloud ID
             let recordName = savedRecord.recordID.recordName
+            nonisolated(unsafe) let capturedTrip = trip
             DispatchQueue.main.async { [weak self] in
-                nonisolated(unsafe) let capturedTrip = trip
                 capturedTrip.cloudId = recordName
                 capturedTrip.lastSyncedAt = Date()
                 self?.lastSyncDate = Date()
@@ -142,8 +142,8 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
         let shareCode = String(UUID().uuidString.prefix(8).uppercased())
         
         // Update trip
+        nonisolated(unsafe) let capturedTrip = trip
         DispatchQueue.main.async {
-            nonisolated(unsafe) let capturedTrip = trip
             capturedTrip.shareCode = shareCode
             capturedTrip.isShared = true
         }
@@ -190,7 +190,8 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
         record["ownerEmail"] = trip.ownerEmail as CKRecordValue?
         record["sharedWith"] = trip.sharedWith as CKRecordValue
         record["shareCode"] = trip.shareCode as CKRecordValue?
-        record["isShared"] = trip.isShared ? 1 : 0 as CKRecordValue
+        let isSharedValue: Int = trip.isShared ? 1 : 0
+        record["isShared"] = isSharedValue as CKRecordValue
         
         return record
     }
