@@ -51,7 +51,7 @@ class Activity {
     var endDate: Date? // For multi-day activities like hotel stays
     var spansDays: Int = 1 // Number of days this activity spans
 
-    @Relationship(deleteRule: .nullify, inverse: \TripDay.activitiesStorage)
+    @Relationship(deleteRule: .nullify, inverse: \TripDay.activities)
     var day: TripDay?
     
     init(name: String, location: String, category: String) {
