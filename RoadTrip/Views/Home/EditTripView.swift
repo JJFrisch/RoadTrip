@@ -18,7 +18,7 @@ struct EditTripView: View {
     }
     
     var currentDayCount: Int {
-        (trip.days ?? []).count
+        trip.safeDays.count
     }
     
     var newDayCount: Int {
@@ -35,7 +35,7 @@ struct EditTripView: View {
     
     var removedDaysHaveData: Bool {
         guard daysWillBeRemoved else { return false }
-        let daysToRemove = (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber }).suffix(currentDayCount - newDayCount)
+        let daysToRemove = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).suffix(currentDayCount - newDayCount)
         return daysToRemove.contains { !(($0.activities ?? []).isEmpty) || !$0.startLocation.isEmpty || !$0.endLocation.isEmpty }
     }
     

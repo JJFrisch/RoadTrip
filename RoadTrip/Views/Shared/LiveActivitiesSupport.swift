@@ -54,7 +54,7 @@ class LiveActivityManager {
         let attributes = TripActivityAttributes(
             tripName: trip.name,
             tripDay: day.dayNumber,
-            totalDays: trip.days?.count ?? 0,
+            totalDays: trip.safeDays.count,
             currentLocation: day.startLocation,
             nextLocation: day.endLocation
         )

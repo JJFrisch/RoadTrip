@@ -376,7 +376,7 @@ struct TripCardView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                     
-                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s")")
+                    Text("\(trip.safeDays.count) day\(trip.safeDays.count == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

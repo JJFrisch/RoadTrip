@@ -163,7 +163,7 @@ struct TripMapView: View {
         var locations: [TripLocation] = []
         
         // Collect all unique locations from trip days in order for the route
-        let sortedDays = (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
+        let sortedDays = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
         
         for (index, day) in sortedDays.enumerated() {
             // Add start location

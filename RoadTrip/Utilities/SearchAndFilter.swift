@@ -65,7 +65,7 @@ class TripSearchManager: ObservableObject {
             filtered = filtered.filter { trip in
                 trip.name.localizedCaseInsensitiveContains(searchText) ||
                 (trip.tripDescription?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-                trip.days.contains { day in
+                trip.safeDays.contains { day in
                     day.startLocation.localizedCaseInsensitiveContains(searchText) ||
                     day.endLocation.localizedCaseInsensitiveContains(searchText)
                 }

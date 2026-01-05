@@ -66,7 +66,7 @@ class PDFExportService {
             dateRange.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: subtitleAttributes)
             yPosition += 20
             
-            let summary = "\(trip.days.count) days • \(Int(trip.totalDistance)) miles"
+            let summary = "\(trip.safeDays.count) days • \(Int(trip.totalDistance)) miles"
             summary.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: subtitleAttributes)
             yPosition += 15
             
@@ -108,7 +108,7 @@ class PDFExportService {
                 .foregroundColor: UIColor.black
             ]
             
-            let sortedDays = trip.days.sorted { $0.dayNumber < $1.dayNumber }
+            let sortedDays = trip.safeDays.sorted { $0.dayNumber < $1.dayNumber }
             
             for day in sortedDays {
                 // Check if we need a new page (estimate day block height)

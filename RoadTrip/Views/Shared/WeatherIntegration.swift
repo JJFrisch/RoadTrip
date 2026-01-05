@@ -51,7 +51,7 @@ class WeatherPlanningManager: ObservableObject {
             weatherAlerts.removeAll()
         }
         
-        for day in trip.days {
+        for day in trip.safeDays {
             // Get weather for the day's start location
             if !day.startLocation.isEmpty {
                 if let weather = await WeatherService.shared.fetchWeather(for: day.startLocation, date: day.date) {

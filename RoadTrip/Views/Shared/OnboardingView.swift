@@ -314,7 +314,7 @@ extension HomeView {
         trip.tripDescription = "Explore the stunning California coastline from San Francisco to San Diego"
         trip.coverImage = "car.fill"
         
-        let days = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let days = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
         
         // Day 1: San Francisco
         if days.count > 0 {

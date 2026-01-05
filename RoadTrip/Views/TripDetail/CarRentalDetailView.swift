@@ -249,7 +249,7 @@ struct CarRentalDetailView: View {
     
     private func saveCarRentalToTrip() {
         // Find first day for pick-up location
-        guard let firstDay = (trip.days?.sorted(by: { $0.dayNumber < $1.dayNumber }) ?? []).first else { return }
+        guard let firstDay = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).first else { return }
         
         // Create car rental activity
         let rentalActivity = Activity(

@@ -28,7 +28,7 @@ class BudgetManager: ObservableObject {
     func calculateSpentByCategory(for trip: Trip) -> [String: Double] {
         var spending: [String: Double] = [:]
         
-        for day in trip.days {
+        for day in trip.safeDays {
             for activity in day.activities {
                 if let cost = activity.estimatedCost, let category = activity.costCategory {
                     spending[category, default: 0] += cost
@@ -65,14 +65,14 @@ class BudgetManager: ObservableObject {
     }
     
     func dailyAverage(for trip: Trip) -> Double {
-        let dayCount = max(trip.days.count, 1)
+        let dayCount = max(trip.safeDays.count, 1)
         return calculateTotalSpent(for: trip) / Double(dayCount)
     }
     
     func projectedTotal(for trip: Trip) -> Double {
-        let completedDays = trip.days.filter { $0.date < Date() }.count
+        let completedDays = trip.safeDays.filter { $0.date < Date() }.count
         guard completedDays > 0 else { return calculateTotalSpent(for: trip) }
-        let totalDays = trip.days.count
+        let totalDays = trip.safeDays.count
         let dailyRate = calculateTotalSpent(for: trip) / Double(completedDays)
         return dailyRate * Double(totalDays)
     }
@@ -906,7 +906,7 @@ struct DailySpendingChart: View {
     let animate: Bool
     
     var dailySpending: [(day: Int, amount: Double)] {
-        trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).map { day in
+        trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).map { day in
             let amount = day.activities.compactMap { $0.estimatedCost }.reduce(0, +)
             return (day.dayNumber, amount)
         }
@@ -981,7 +981,7 @@ struct CumulativeSpendingChart: View {
     
     var cumulativeSpending: [(day: Int, amount: Double)] {
         var cumulative: Double = 0
-        return trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).map { day in
+        return trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).map { day in
             let dayAmount = day.activities.compactMap { $0.estimatedCost }.reduce(0, +)
             cumulative += dayAmount
             return (day.dayNumber, cumulative)
@@ -1062,7 +1062,7 @@ struct RecentExpensesCard: View {
     
     var recentExpenses: [(activity: Activity, dayNumber: Int)] {
         var expenses: [(Activity, Int)] = []
-        for day in trip.days {
+        for day in trip.safeDays {
             for activity in day.activities where activity.estimatedCost != nil {
                 expenses.append((activity, day.dayNumber))
             }
@@ -1250,7 +1250,7 @@ struct QuickExpenseView: View {
                 Section("Day") {
                     Picker("Select Day", selection: $selectedDayId) {
                         Text("Select a day").tag(nil as UUID?)
-                        ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
+                        ForEach(trip.safeDays.sorted { $0.dayNumber < $1.dayNumber }) { day in
                             Text("Day \(day.dayNumber)").tag(day.id as UUID?)
                         }
                     }
@@ -1279,15 +1279,15 @@ struct QuickExpenseView: View {
             .onAppear {
                 // Default to today's day or first day
                 let today = Date()
-                selectedDayId = trip.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) }?.id
-                    ?? trip.days.sorted { $0.dayNumber < $1.dayNumber }.first?.id
+                selectedDayId = trip.safeDays.first { Calendar.current.isDate($0.date, inSameDayAs: today) }?.id
+                    ?? trip.safeDays.sorted { $0.dayNumber < $1.dayNumber }.first?.id
             }
         }
     }
     
     private func addExpense() {
         guard let dayId = selectedDayId,
-              let day = trip.days.first(where: { $0.id == dayId }),
+              let day = trip.safeDays.first(where: { $0.id == dayId }),
               let amount = Double(expenseAmount) else { return }
         
         let activity = Activity(name: expenseName, location: "", category: "Other")
@@ -1345,7 +1345,7 @@ struct CategoryDetailView: View {
     
     var categoryExpenses: [(activity: Activity, dayNumber: Int)] {
         var expenses: [(Activity, Int)] = []
-        for day in trip.days {
+        for day in trip.safeDays {
             for activity in day.activities where activity.costCategory == category {
                 expenses.append((activity, day.dayNumber))
             }

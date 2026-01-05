@@ -46,7 +46,7 @@ struct ActivitiesView: View {
                 }
             }
             
-            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+            ForEach(trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
                 let isCollapsed = collapsedDayIDs.contains(day.id)
 
                 Section {
@@ -104,7 +104,7 @@ struct ActivitiesView: View {
                                 .contextMenu {
                                     // Move to day submenu
                                     Menu {
-                                        ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
+                                        ForEach(trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
                                             if targetDay.id != day.id {
                                                 Button {
                                                     moveActivityToDay(activity, from: day, to: targetDay)
@@ -198,7 +198,7 @@ struct ActivitiesView: View {
             }
         }
         .sheet(isPresented: $showingMap) {
-            let allActivities = trip.days.flatMap { $0.activities }
+            let allActivities = trip.safeDays.flatMap { $0.activities }
             ActivitiesMapView(activities: allActivities)
         }
         .sheet(item: $daySheetItem) { item in
@@ -213,7 +213,7 @@ struct ActivitiesView: View {
         }
         .sheet(item: $editingActivity) { activity in
             // Find day once and pass directly - avoid optional binding in sheet content
-            let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) ?? trip.days.first!
+            let day = trip.safeDays.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) ?? trip.safeDays.first!
             EditActivityView(activity: activity, day: day)
         }
         .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
@@ -277,7 +277,7 @@ struct ActivitiesView: View {
         guard let draggedActivity = draggedActivity else { return false }
         
         // Find source day
-        guard let sourceDay = trip.days.first(where: { $0.activities.contains(where: { $0.id == draggedActivity.id }) }) else {
+        guard let sourceDay = trip.safeDays.first(where: { $0.activities.contains(where: { $0.id == draggedActivity.id }) }) else {
             return false
         }
         

@@ -449,7 +449,7 @@ struct OverviewView: View {
 
     private func recomputeDayDates() {
         let calendar = Calendar.current
-        for day in trip.days ?? [] {
+        for day in trip.safeDays {
             if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
                 day.date = newDate
             }
@@ -495,14 +495,14 @@ struct OverviewView: View {
         if addingActivityDay?.id == day.id { addingActivityDay = nil }
         if browsingHotelDay?.id == day.id { browsingHotelDay = nil }
         
-        // Remove from the relationship first so we don't keep an invalidated instance in `trip.days`
-        trip.days = (trip.days ?? []).filter { $0.id != day.id }
+        // Remove from the relationship first so we don't keep an invalidated instance in `trip.safeDays`
+        trip.days = trip.safeDays.filter { $0.id != day.id }
 
         // Delete the day from the store
         modelContext.delete(day)
         
         // Get remaining days sorted
-        let remainingDays = (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
+        let remainingDays = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
         
         // Renumber days after the deleted one
         for remainingDay in remainingDays {
@@ -551,7 +551,7 @@ struct AddDayView: View {
     @State private var dayNumber: Int = 1
     
     var maxDayNumber: Int {
-        trip.days.map { $0.dayNumber }.max() ?? 0
+        trip.safeDays.map { $0.dayNumber }.max() ?? 0
     }
 
     var body: some View {
@@ -645,7 +645,7 @@ struct AddDayView: View {
         let insertAt = dayNumber
         
         // Shift existing days if inserting in the middle
-        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let sortedDays = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
         for day in sortedDays {
             if day.dayNumber >= insertAt {
                 day.dayNumber += 1
@@ -683,7 +683,7 @@ struct AddDayView: View {
         }
 
         // Recompute all day dates from trip.startDate to keep dates consistent
-        for day in trip.days {
+        for day in trip.safeDays {
             if let recomputed = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
                 day.date = recomputed
             }

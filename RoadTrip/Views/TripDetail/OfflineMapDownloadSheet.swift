@@ -218,7 +218,7 @@ struct OfflineMapDownloadSheet: View {
         var minLon = 180.0
         var maxLon = -180.0
         
-        for day in trip.days {
+        for day in trip.safeDays {
             // Try to geocode start and end locations (simplified)
             // In production, cache these coordinates
             if !day.startLocation.isEmpty {

@@ -30,11 +30,11 @@ struct CarRentalBrowsingView: View {
     
     init(trip: Trip) {
         self.trip = trip
-        let firstDay = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).first
+        let firstDay = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).first
         _pickUpLocation = State(initialValue: firstDay?.startLocation ?? "")
-        _dropOffLocation = State(initialValue: trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.endLocation ?? firstDay?.startLocation ?? "")
+        _dropOffLocation = State(initialValue: trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.endLocation ?? firstDay?.startLocation ?? "")
         _pickUpDate = State(initialValue: firstDay?.date ?? Date())
-        _dropOffDate = State(initialValue: trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.date ?? Date())
+        _dropOffDate = State(initialValue: trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.date ?? Date())
     }
     
     var body: some View {

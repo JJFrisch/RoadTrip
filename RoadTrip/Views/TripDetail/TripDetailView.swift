@@ -192,7 +192,7 @@ struct TripDetailView: View {
             // Collect all route pairs from the trip
             var routes: [(from: String, to: String)] = []
             
-            for day in trip.days {
+            for day in trip.safeDays {
                 // Add day route
                 routes.append((from: day.startLocation, to: day.endLocation))
                 // Add activity-to-activity routes for completed activities

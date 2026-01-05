@@ -62,7 +62,7 @@ final class RoadTripTests: XCTestCase {
         let trip = Trip(name: "Day Trip", startDate: today, endDate: today)
         
         XCTAssertEqual(trip.numberOfNights, 0)
-        XCTAssertEqual(trip.days.count, 1)
+        XCTAssertEqual(trip.safeDays.count, 1)
     }
     
     func testMultiDayTrip() throws {
@@ -71,7 +71,7 @@ final class RoadTripTests: XCTestCase {
         let trip = Trip(name: "Week Trip", startDate: startDate, endDate: endDate)
         
         XCTAssertEqual(trip.numberOfNights, 5)
-        XCTAssertEqual(trip.days.count, 6)
+        XCTAssertEqual(trip.safeDays.count, 6)
     }
     
     func testTripDaysAreInOrder() throws {
@@ -79,7 +79,7 @@ final class RoadTripTests: XCTestCase {
         let endDate = Calendar.current.date(byAdding: .day, value: 3, to: startDate)!
         let trip = Trip(name: "Test", startDate: startDate, endDate: endDate)
         
-        for (index, day) in trip.days.enumerated() {
+        for (index, day) in trip.safeDays.enumerated() {
             XCTAssertEqual(day.dayNumber, index + 1)
         }
     }
@@ -94,11 +94,11 @@ final class RoadTripTests: XCTestCase {
     func testTotalDistanceCalculation() throws {
         let trip = Trip(name: "Test", startDate: Date(), endDate: Date().addingTimeInterval(86400 * 2))
         
-        if let day1 = trip.days.first {
+        if let day1 = trip.safeDays.first {
             day1.distance = 100
         }
-        if trip.days.count > 1 {
-            trip.days[1].distance = 150
+        if trip.safeDays.count > 1 {
+            trip.safeDays[1].distance = 150
         }
         
         XCTAssertEqual(trip.totalDistance, 250)
@@ -260,7 +260,7 @@ final class RoadTripTests: XCTestCase {
         let endDate = Calendar.current.date(byAdding: .day, value: 365, to: startDate)!
         let trip = Trip(name: "Year Long Trip", startDate: startDate, endDate: endDate)
         
-        XCTAssertEqual(trip.days.count, 366)
+        XCTAssertEqual(trip.safeDays.count, 366)
     }
     
     func testActivityWithZeroDuration() throws {

@@ -18,7 +18,7 @@ class TripModelTests: XCTestCase {
     func testTripInitialization() {
         XCTAssertEqual(testTrip.name, "Test Trip")
         XCTAssertEqual(testTrip.id.uuidString.count, 36)
-        XCTAssertEqual(testTrip.days.count, 4)
+        XCTAssertEqual(testTrip.safeDays.count, 4)
     }
     
     func testNumberOfNights() {
@@ -31,16 +31,16 @@ class TripModelTests: XCTestCase {
         XCTAssertEqual(testTrip.totalDistance, 0)
         
         // Add a day with distance
-        if let firstDay = testTrip.days.first {
+        if let firstDay = testTrip.safeDays.first {
             firstDay.distance = 100
             XCTAssertEqual(testTrip.totalDistance, 100)
         }
     }
     
     func testTripDayGeneration() {
-        XCTAssertGreaterThan(testTrip.days.count, 0)
+        XCTAssertGreaterThan(testTrip.safeDays.count, 0)
         
-        for (index, day) in testTrip.days.enumerated() {
+        for (index, day) in testTrip.safeDays.enumerated() {
             XCTAssertEqual(day.dayNumber, index + 1)
         }
     }
@@ -130,7 +130,7 @@ class DateCalculationTests: XCTestCase {
         let trip = Trip(name: "Day Trip", startDate: today, endDate: today)
         
         XCTAssertEqual(trip.numberOfNights, 0)
-        XCTAssertEqual(trip.days.count, 1)
+        XCTAssertEqual(trip.safeDays.count, 1)
     }
 }
 

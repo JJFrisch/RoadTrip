@@ -75,7 +75,7 @@ struct BudgetView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    let perDay = trip.days.isEmpty ? 0 : trip.estimatedTotalCost / Double(trip.days.count)
+                    let perDay = trip.safeDays.isEmpty ? 0 : trip.estimatedTotalCost / Double(trip.safeDays.count)
                     Text(String(format: "$%.2f", perDay))
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -192,7 +192,7 @@ struct BudgetView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
+                        ForEach(trip.safeDays.sorted { $0.dayNumber < $1.dayNumber }) { day in
                             if let weather = weatherData[day.id] {
                                 WeatherDayCard(day: day, weather: weather)
                             }
@@ -214,7 +214,7 @@ struct BudgetView: View {
             Text("Daily Costs")
                 .font(.headline)
             
-            ForEach(trip.days.sorted { $0.dayNumber < $1.dayNumber }) { day in
+            ForEach(trip.safeDays.sorted { $0.dayNumber < $1.dayNumber }) { day in
                 let lodgingCost = day.hotel?.pricePerNight ?? 0
                 let activityCost = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
                 let dayCost = activityCost + lodgingCost
