@@ -150,7 +150,7 @@ class WeatherService: ObservableObject {
     func fetchWeatherForTrip(_ trip: Trip) async -> [UUID: WeatherData] {
         var results: [UUID: WeatherData] = [:]
         
-        for day in trip.days ?? [] {
+        for day in trip.safeDays {
             let location = day.startLocation.isEmpty ? day.endLocation : day.startLocation
             guard !location.isEmpty else { continue }
             

@@ -130,7 +130,7 @@ class NotificationService {
         cancelAllNotifications(for: trip)
         
         // Schedule morning summaries and activity reminders
-        for day in trip.days ?? [] {
+        for day in trip.safeDays {
             scheduleMorningSummary(for: trip, day: day)
             
             for activity in (day.activities ?? []) where activity.isCompleted && activity.scheduledTime != nil {
@@ -144,7 +144,7 @@ class NotificationService {
     func cancelAllNotifications(for trip: Trip) {
         var identifiers: [String] = []
         
-        for day in trip.days ?? [] {
+        for day in trip.safeDays {
             identifiers.append("morning-\(day.id.uuidString)")
             
             for activity in (day.activities ?? []) {
