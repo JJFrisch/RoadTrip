@@ -36,6 +36,15 @@ class Activity {
     var website: String?
     var phoneNumber: String?
     
+    // Photo attachments
+    @Attribute(.externalStorage) var photos: [Data] = [] // Store photo data
+    var photoThumbnails: [Data] = [] // Thumbnails for gallery
+    
+    // Collaboration features
+    var comments: [ActivityComment] = [] // Activity comments
+    var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
+    var voteScore: Int { votes.values.reduce(0, +) }
+    
     // Multi-day activity support
     var isMultiDay: Bool = false
     var endDate: Date? // For multi-day activities like hotel stays

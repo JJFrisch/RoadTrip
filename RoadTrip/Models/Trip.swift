@@ -14,6 +14,11 @@ class Trip {
     var coverImage: String? // SF Symbol or image name
     var createdAt: Date
     
+    // Budget Tracking
+    var totalBudget: Double? // Total budget for the trip
+    var spentAmount: Double = 0 // Total amount spent so far
+    var budgetCategories: [String: Double] = [:] // Category-specific budgets
+    
     // Sharing & Collaboration
     var ownerId: String? // User ID of the trip owner
     var ownerEmail: String? // Email of trip owner for display

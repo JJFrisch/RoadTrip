@@ -74,11 +74,11 @@ class AuthService: ObservableObject {
         // In a real app, verify credentials with server
         // For demo, we'll accept any valid email/password combo
         
-        let savedName = userDefaults.string(forKey: savedUserNameKey)
+        let _ = userDefaults.string(forKey: savedUserNameKey)
         
         let user = UserAccount(
             email: email.lowercased(),
-            displayName: savedName ?? email.components(separatedBy: "@").first ?? "User"
+            displayName: userDefaults.string(forKey: savedUserNameKey) ?? email.components(separatedBy: "@").first ?? "User"
         )
         user.cloudUserId = userDefaults.string(forKey: savedUserIdKey) ?? UUID().uuidString
         user.isLoggedIn = true
