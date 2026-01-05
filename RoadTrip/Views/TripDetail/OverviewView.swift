@@ -13,6 +13,8 @@ struct OverviewView: View {
     @State private var showingShareSheet = false
     @State private var sharePDFData: Data?
     @State private var isReordering = false
+    @State private var showingDeleteConfirmation = false
+    @State private var dayToDelete: TripDay?
     
     var sortedDays: [TripDay] {
         trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
@@ -136,9 +138,16 @@ struct OverviewView: View {
                             ForEach(sortedDays) { day in
                                 dayRowCard(day)
                                     .onDrag {
-                                        NSItemProvider(object: day.id.uuidString as NSString)
+                                        let itemProvider = NSItemProvider()
+                                        itemProvider.suggestedName = day.id.uuidString
+                                        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.text", visibility: .all) { completion in
+                                            let data = day.id.uuidString.data(using: .utf8) ?? Data()
+                                            completion(data, nil)
+                                            return nil
+                                        }
+                                        return itemProvider
                                     }
-                                    .onDrop(of: [.text], delegate: DayDropDelegate(
+                                    .onDrop(of: ["public.text"], delegate: DayDropDelegate(
                                         day: day,
                                         days: sortedDays,
                                         trip: trip,
@@ -177,6 +186,18 @@ struct OverviewView: View {
         .sheet(isPresented: $showingShareSheet) {
             if let pdfData = sharePDFData {
                 ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
+            }
+        }
+        .alert("Delete Day \(dayToDelete?.dayNumber ?? 0)?", isPresented: $showingDeleteConfirmation, presenting: dayToDelete) { day in
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteDay(day)
+            }
+        } message: { day in
+            if day.activities.isEmpty {
+                Text("This will permanently delete Day \(day.dayNumber) and renumber subsequent days.")
+            } else {
+                Text("This will delete Day \(day.dayNumber) with \(day.activities.count) activit\(day.activities.count == 1 ? "y" : "ies") and renumber subsequent days.")
             }
         }
     }
@@ -220,7 +241,8 @@ struct OverviewView: View {
 
                 if !isReordering {
                     Button(role: .destructive) {
-                        deleteDay(day)
+                        dayToDelete = day
+                        showingDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash.circle.fill")
                             .foregroundStyle(.red.opacity(0.6))
@@ -421,7 +443,44 @@ struct OverviewView: View {
     }
     
     private func deleteDay(_ day: TripDay) {
+        let deletedDayNumber = day.dayNumber
+        let calendar = Calendar.current
+        
+        // Delete the day
         modelContext.delete(day)
+        
+        // Get remaining days sorted
+        let remainingDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        
+        // Renumber days after the deleted one
+        for remainingDay in remainingDays {
+            if remainingDay.dayNumber > deletedDayNumber {
+                remainingDay.dayNumber -= 1
+                // Update date based on new position
+                if let newDate = calendar.date(byAdding: .day, value: remainingDay.dayNumber - 1, to: trip.startDate) {
+                    remainingDay.date = newDate
+                }
+            }
+        }
+        
+        // Adjust trip dates if first or last day was deleted
+        if deletedDayNumber == 1 && !remainingDays.isEmpty {
+            // First day deleted - move start date forward
+            if let newStartDate = calendar.date(byAdding: .day, value: 1, to: trip.startDate) {
+                trip.startDate = newStartDate
+            }
+        } else if deletedDayNumber == remainingDays.count + 1 && !remainingDays.isEmpty {
+            // Last day deleted - move end date back
+            if let newEndDate = calendar.date(byAdding: .day, value: -1, to: trip.endDate) {
+                trip.endDate = newEndDate
+            }
+        } else if remainingDays.isEmpty {
+            // All days deleted - reset to single day trip
+            trip.endDate = trip.startDate
+        }
+        
+        try? modelContext.save()
+        ToastManager.shared.show("Day \(deletedDayNumber) deleted", type: .info)
     }
 }
 
@@ -437,10 +496,37 @@ struct AddDayView: View {
     @State private var distance: Double = 0
     @State private var drivingTime: Double = 0
     @State private var isCalculatingRoute = false
+    @State private var insertPosition: InsertPosition = .end
+    @State private var customDayNumber: Int = 1
+    
+    enum InsertPosition {
+        case beginning
+        case end
+        case custom
+    }
+    
+    var maxDayNumber: Int {
+        trip.days.map { $0.dayNumber }.max() ?? 0
+    }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Day Position") {
+                    Picker("Insert", selection: $insertPosition) {
+                        Text("At Beginning (Day 1)").tag(InsertPosition.beginning)
+                        Text("At End (Day \(maxDayNumber + 1))").tag(InsertPosition.end)
+                        if maxDayNumber > 0 {
+                            Text("Custom Position").tag(InsertPosition.custom)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    if insertPosition == .custom {
+                        Stepper("Insert as Day \(customDayNumber)", value: $customDayNumber, in: 1...(maxDayNumber + 1))
+                    }
+                }
+                
                 Section("Locations") {
                     LocationSearchField(
                         title: "Start Location",
@@ -513,20 +599,44 @@ struct AddDayView: View {
                     .disabled(startLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || endLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .onAppear {
+                customDayNumber = max(1, maxDayNumber)
+            }
         }
     }
 
     private func addDay() {
-        let nextNumber = (trip.days.map { $0.dayNumber }.max() ?? 0) + 1
-        let nextDate = (trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }).last?.date).map {
-            Calendar.current.date(byAdding: .day, value: 1, to: $0)
-        } ?? Calendar.current.date(byAdding: .day, value: 1, to: trip.endDate)
-
-        let date = nextDate ?? Date()
-
+        let calendar = Calendar.current
+        
+        // Determine insertion position
+        let insertAt: Int
+        switch insertPosition {
+        case .beginning:
+            insertAt = 1
+        case .end:
+            insertAt = maxDayNumber + 1
+        case .custom:
+            insertAt = customDayNumber
+        }
+        
+        // Shift existing days if inserting in the middle
+        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        for day in sortedDays {
+            if day.dayNumber >= insertAt {
+                day.dayNumber += 1
+                // Update date for shifted day
+                if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
+                    day.date = newDate
+                }
+            }
+        }
+        
+        // Calculate date for new day
+        let newDate = calendar.date(byAdding: .day, value: insertAt - 1, to: trip.startDate) ?? Date()
+        
         let newDay = TripDay(
-            dayNumber: nextNumber,
-            date: date,
+            dayNumber: insertAt,
+            date: newDate,
             startLocation: startLocation.trimmingCharacters(in: .whitespacesAndNewlines),
             endLocation: endLocation.trimmingCharacters(in: .whitespacesAndNewlines),
             distance: distance,
@@ -538,8 +648,20 @@ struct AddDayView: View {
         newDay.hotelName = trimmedHotel.isEmpty ? nil : trimmedHotel
 
         trip.days.append(newDay)
-        trip.endDate = max(trip.endDate, date)
+        
+        // Adjust trip dates
+        if insertAt == 1 {
+            // Adding at beginning - move start date back
+            if let newStartDate = calendar.date(byAdding: .day, value: -1, to: trip.startDate) {
+                trip.startDate = newStartDate
+            }
+        } else if insertAt > maxDayNumber {
+            // Adding at end - move end date forward
+            trip.endDate = max(trip.endDate, newDate)
+        }
+        
         try? modelContext.save()
+        ToastManager.shared.show("Day \(insertAt) added", type: .success)
         dismiss()
     }
 
