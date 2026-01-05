@@ -106,7 +106,7 @@ class Trip {
                     if lastKeptDay.activities == nil { lastKeptDay.activities = [] }
                     lastKeptDay.activities?.append(activity)
                 }
-                dayToRemove.activities?.removeAll()
+                dayToRemove.safeActivities.removeAll()
                 days = (days ?? []).filter { $0.id != dayToRemove.id }
             }
         }

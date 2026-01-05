@@ -71,8 +71,6 @@ class Activity {
     var hasCoordinates: Bool {
         latitude != nil && longitude != nil
     }
-    // Computed property for safely accessing comments
-    var safeComments: [ActivityComment] { comments ?? [] }
 }
 
 // MARK: - Activity History for Undo/Redo
