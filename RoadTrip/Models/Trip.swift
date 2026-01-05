@@ -7,6 +7,7 @@ import SwiftData
 
 @Model
 class Trip {
+    @Relationship(deleteRule: .cascade, inverse: \TripDay.trip)
     var days: [TripDay]?
 
     var safeDays: [TripDay] { days ?? [] }
