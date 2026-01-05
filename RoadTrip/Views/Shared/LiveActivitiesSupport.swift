@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import ActivityKit
 import WidgetKit
 
@@ -36,7 +37,7 @@ struct TripActivityAttributes: ActivityAttributes {
 class LiveActivityManager {
     static let shared = LiveActivityManager()
     
-    private var currentActivity: Activity<TripActivityAttributes>?
+    private var currentActivity: ActivityKit.Activity<TripActivityAttributes>?
     
     private init() {}
     
@@ -71,7 +72,7 @@ class LiveActivityManager {
         )
         
         do {
-            currentActivity = try Activity<TripActivityAttributes>.request(
+            currentActivity = try ActivityKit.Activity<TripActivityAttributes>.request(
                 attributes: attributes,
                 contentState: initialContentState,
                 pushType: .token

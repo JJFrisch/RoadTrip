@@ -7,6 +7,8 @@
 
 import Foundation
 import MapKit
+import SwiftUI
+import SwiftData
 
 // MARK: - Route Optimization Service
 class RouteOptimizationService: ObservableObject {
@@ -83,7 +85,6 @@ class RouteOptimizationService: ObservableObject {
         }
         
         // Check cache first
-        let cacheKey = RouteCacheManager.shared.cacheKey(from: from.location, to: to.location)
         if let cached = RouteCacheManager.shared.getCachedRoute(from: from.location, to: to.location) {
             return cached.distance
         }
@@ -161,7 +162,7 @@ class RouteOptimizationService: ObservableObject {
     
     // MARK: - Time Constraints
     private func applyTimeConstraints(to activities: [Activity], on day: TripDay) async throws -> [Activity] {
-        var orderedActivities = activities
+        let orderedActivities = activities
         
         // Separate activities by time constraints
         var scheduled: [(Activity, Date)] = []
@@ -214,9 +215,15 @@ class RouteOptimizationService: ObservableObject {
         let estimatedDuration = current.reduce(0.0) { sum, act in
             sum + (act.duration ?? 1.0)
         }
-        
-        // If we're approaching the scheduled time, insert it
-        return estimatedDuration >= 1.0 // Simple check
+
+        // Compare against time until the scheduled start (in hours)
+        let hoursUntilScheduled = scheduledTime.timeIntervalSinceNow / 3600
+        if hoursUntilScheduled <= 0 {
+            return true // we're past the scheduled time
+        }
+
+        // Insert when the accumulated duration would push us past the scheduled start
+        return estimatedDuration >= hoursUntilScheduled
     }
     
     // MARK: - Smart Suggestions
@@ -352,11 +359,13 @@ struct RouteOptimizationView: View {
     }
     
     func applyOptimization() {
-        for (index, activity) in optimizedActivities.enumerated() {
-            activity.order = index
+        Task { @MainActor in
+            for (index, activity) in optimizedActivities.enumerated() {
+                activity.order = index
+            }
+            day.activities = optimizedActivities
+            ToastManager.shared.show("Route optimized!", type: .success)
         }
-        day.activities = optimizedActivities
-        ToastManager.shared.show("Route optimized!", type: .success)
     }
 }
 
