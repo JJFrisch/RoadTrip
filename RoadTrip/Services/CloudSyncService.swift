@@ -10,7 +10,7 @@ import CloudKit
 import SwiftData
 
 // MARK: - CloudKit Sync Service
-class CloudSyncService: ObservableObject {
+class CloudSyncService: ObservableObject, @unchecked Sendable {
     static let shared = CloudSyncService()
     
     @Published var isSyncing = false
@@ -57,13 +57,13 @@ class CloudSyncService: ObservableObject {
             throw CloudSyncError.accountNotAvailable
         }
         
-        DispatchQueue.main.async {
-            self.isSyncing = true
+        DispatchQueue.main.async { [weak self] in
+            self?.isSyncing = true
         }
         
         defer {
-            DispatchQueue.main.async {
-                self.isSyncing = false
+            DispatchQueue.main.async { [weak self] in
+                self?.isSyncing = false
             }
         }
         
@@ -73,17 +73,19 @@ class CloudSyncService: ObservableObject {
             let savedRecord = try await database.save(record)
             
             // Update trip with cloud ID
-            DispatchQueue.main.async {
-                trip.cloudId = savedRecord.recordID.recordName
-                trip.lastSyncedAt = Date()
-                self.lastSyncDate = Date()
+            let recordName = savedRecord.recordID.recordName
+            DispatchQueue.main.async { [weak self] in
+                nonisolated(unsafe) let capturedTrip = trip
+                capturedTrip.cloudId = recordName
+                capturedTrip.lastSyncedAt = Date()
+                self?.lastSyncDate = Date()
                 
                 ToastManager.shared.show("Trip synced to iCloud", type: .success)
             }
             
         } catch {
-            DispatchQueue.main.async {
-                self.syncError = error.localizedDescription
+            DispatchQueue.main.async { [weak self] in
+                self?.syncError = error.localizedDescription
                 ErrorRecoveryManager.shared.record(
                     title: "Sync Failed",
                     message: error.localizedDescription,
@@ -107,14 +109,14 @@ class CloudSyncService: ObservableObject {
             let result = try await database.records(matching: query)
             let records = result.matchResults.compactMap { try? $0.1.get() }
             
-            DispatchQueue.main.async {
-                self.lastSyncDate = Date()
+            DispatchQueue.main.async { [weak self] in
+                self?.lastSyncDate = Date()
             }
             
             return records
         } catch {
-            DispatchQueue.main.async {
-                self.syncError = error.localizedDescription
+            DispatchQueue.main.async { [weak self] in
+                self?.syncError = error.localizedDescription
             }
             throw error
         }
@@ -137,18 +139,19 @@ class CloudSyncService: ObservableObject {
         }
         
         // Generate share code
-        let shareCode = UUID().uuidString.prefix(8).uppercased()
+        let shareCode = String(UUID().uuidString.prefix(8).uppercased())
         
         // Update trip
         DispatchQueue.main.async {
-            trip.shareCode = String(shareCode)
-            trip.isShared = true
+            nonisolated(unsafe) let capturedTrip = trip
+            capturedTrip.shareCode = shareCode
+            capturedTrip.isShared = true
         }
         
         // Sync to cloud
         try await syncTrip(trip)
         
-        return String(shareCode)
+        return shareCode
     }
     
     func joinTrip(withCode shareCode: String) async throws -> CKRecord? {
