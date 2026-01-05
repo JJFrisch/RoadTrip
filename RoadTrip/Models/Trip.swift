@@ -40,7 +40,7 @@ class Trip {
     var lastSyncedAt: Date? // Last time synced to cloud
     var cloudId: String? // ID in cloud database for sync
 
-    var days: [TripDay]
+    var days: [TripDay]?
     
     init(name: String, startDate: Date, endDate: Date) {
         self.name = name
@@ -48,7 +48,7 @@ class Trip {
         self.endDate = endDate
         self.sharedWithData = (try? JSONEncoder().encode([String]())) ?? Data()
         self.isShared = false
-        self.days = []
+        self.days = nil
         // Generate TripDays for each day between startDate and endDate (inclusive)
         generateDays(from: startDate, to: endDate)
     }
@@ -56,7 +56,7 @@ class Trip {
     /// Regenerate days when dates change
     func updateDates(newStartDate: Date, newEndDate: Date) {
         let calendar = Calendar.current
-        let oldDays = days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let oldDays = (days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
         
         // Calculate new number of days
         let newNumberOfDays = max(0, calendar.dateComponents([.day], from: newStartDate, to: newEndDate).day ?? 0) + 1
@@ -86,7 +86,8 @@ class Trip {
                         activities: []
                     )
                     day.trip = self
-                    days.append(day)
+                    if days == nil { days = [] }
+                    days?.append(day)
                 }
             }
         }
@@ -97,12 +98,13 @@ class Trip {
             let lastKeptDay = oldDays[newNumberOfDays - 1]
             for dayToRemove in daysToRemove {
                 // Move activities to the last kept day
-                for activity in dayToRemove.activities {
-                    activity.order = lastKeptDay.activities.count
-                    lastKeptDay.activities.append(activity)
+                for activity in (dayToRemove.activities ?? []) {
+                    activity.order = (lastKeptDay.activities ?? []).count
+                    if lastKeptDay.activities == nil { lastKeptDay.activities = [] }
+                    lastKeptDay.activities?.append(activity)
                 }
-                dayToRemove.activities.removeAll()
-                days.removeAll { $0.id == dayToRemove.id }
+                dayToRemove.activities?.removeAll()
+                days = (days ?? []).filter { $0.id != dayToRemove.id }
             }
         }
         
@@ -143,7 +145,8 @@ class Trip {
                     activities: []
                 )
                 day.trip = self
-                self.days.append(day)
+                if self.days == nil { self.days = [] }
+                self.days?.append(day)
             }
         }
     }
@@ -154,31 +157,31 @@ class Trip {
     }
     
     var totalDistance: Double {
-        days.reduce(0) { $0 + $1.distance }
+        (days ?? []).reduce(0) { $0 + $1.distance }
     }
     
     var totalDrivingTime: Double {
-        days.reduce(0) { $0 + $1.drivingTime }
+        (days ?? []).reduce(0) { $0 + $1.drivingTime }
     }
     
     // Computed property to get valid days (filters out any corrupted data)
     var validDays: [TripDay] {
-        days.filter { $0.dayNumber > 0 }
+        (days ?? []).filter { $0.dayNumber > 0 }
     }
     
     // MARK: - Budget Tracking (estimates)
 
     var estimatedTotalCost: Double {
-        days.reduce(0) { total, day in
-            let activityTotal = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
+        (days ?? []).reduce(0) { total, day in
+            let activityTotal = (day.activities ?? []).reduce(0) { $0 + ($1.estimatedCost ?? 0) }
             let lodging = day.hotel?.pricePerNight ?? 0
             return total + activityTotal + lodging
         }
     }
     
     func budgetByCategory(_ category: String) -> Double {
-        days.reduce(0) { total, day in
-            var subtotal = day.activities
+        (days ?? []).reduce(0) { total, day in
+            var subtotal = (day.activities ?? [])
                 .filter { $0.costCategory == category }
                 .reduce(0) { $0 + ($1.estimatedCost ?? 0) }
 

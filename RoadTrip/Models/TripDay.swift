@@ -20,7 +20,7 @@ class TripDay {
     var hotelName: String?
 
     var hotel: Hotel?
-    var activities: [Activity]
+    var activities: [Activity]?
     var trip: Trip?
     
     init(dayNumber: Int, date: Date, startLocation: String, endLocation: String, distance: Double = 0, drivingTime: Double = 0, activities: [Activity] = []) {
@@ -33,6 +33,6 @@ class TripDay {
         self.drivingTime = drivingTime
         self.hotelName = nil
         self.hotel = nil
-        self.activities = activities
+        self.activities = activities.isEmpty ? nil : activities
     }
 }

@@ -41,7 +41,7 @@ class Activity {
     var photoThumbnails: [Data] = [] // Thumbnails for gallery
     
     // Collaboration features
-    var comments: [ActivityComment] = [] // Activity comments
+    var comments: [ActivityComment]? // Activity comments
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
     
@@ -56,6 +56,7 @@ class Activity {
         self.name = name
         self.location = location
         self.category = category
+        self.comments = nil
         self.isCompleted = true // Start checked
         self.order = 0
     }
