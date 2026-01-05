@@ -17,14 +17,14 @@ class TripDay {
     var distance: Double = 0 // in miles
     var drivingTime: Double = 0 // in hours
     var hotelName: String?
-    var safeActivities: [Activity] { activities ?? [] }
-
     var hotel: Hotel?
-        var activities: [Activity]?
+    @Relationship(deleteRule: .cascade, inverse: \Activity.day)
+    var activities: [Activity]?
 
-        var trip: Trip?
-    
-        var safeActivities: [Activity] { activities ?? [] }
+    @Relationship(deleteRule: .nullify, inverse: \Trip.days)
+    var trip: Trip?
+
+    var safeActivities: [Activity] { activities ?? [] }
     
     init(dayNumber: Int, date: Date, startLocation: String, endLocation: String, distance: Double = 0, drivingTime: Double = 0, activities: [Activity] = []) {
         self.id = UUID()
