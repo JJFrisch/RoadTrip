@@ -18,19 +18,28 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     @Published var syncError: String?
     @Published var accountStatus: CKAccountStatus = .couldNotDetermine
     
-    private let container: CKContainer
-    private let database: CKDatabase
+    private let container: CKContainer?
+    private let database: CKDatabase?
     private let recordZone = CKRecordZone(zoneName: "TripsZone")
     
     private init() {
-        container = CKContainer(identifier: "iCloud.com.roadtrip.app")
-        database = container.privateCloudDatabase
+        guard Config.enableCloudKit else {
+            container = nil
+            database = nil
+            accountStatus = .restricted
+            return
+        }
+
+        let ckContainer = CKContainer(identifier: "iCloud.com.roadtrip.app")
+        container = ckContainer
+        database = ckContainer.privateCloudDatabase
         
         checkAccountStatus()
     }
     
     // MARK: - Account Status
     func checkAccountStatus() {
+        guard let container else { return }
         container.accountStatus { [weak self] status, error in
             DispatchQueue.main.async {
                 self?.accountStatus = status
@@ -48,12 +57,12 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     }
     
     var isAvailable: Bool {
-        accountStatus == .available
+        Config.enableCloudKit && accountStatus == .available
     }
     
     // MARK: - Sync Trip to Cloud
     func syncTrip(_ trip: Trip) async throws {
-        guard isAvailable else {
+        guard Config.enableCloudKit, let database else {
             throw CloudSyncError.accountNotAvailable
         }
         
@@ -98,7 +107,7 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     
     // MARK: - Fetch Trips from Cloud
     func fetchTrips() async throws -> [CKRecord] {
-        guard isAvailable else {
+        guard Config.enableCloudKit, let database else {
             throw CloudSyncError.accountNotAvailable
         }
         
@@ -124,7 +133,7 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     
     // MARK: - Delete Trip from Cloud
     func deleteTrip(cloudId: String) async throws {
-        guard isAvailable else {
+        guard Config.enableCloudKit, let database else {
             throw CloudSyncError.accountNotAvailable
         }
         
@@ -134,7 +143,7 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     
     // MARK: - Share Trip
     func shareTrip(_ trip: Trip, with userEmail: String) async throws -> String {
-        guard isAvailable else {
+        guard Config.enableCloudKit else {
             throw CloudSyncError.accountNotAvailable
         }
         
@@ -155,7 +164,7 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
     }
     
     func joinTrip(withCode shareCode: String) async throws -> CKRecord? {
-        guard isAvailable else {
+        guard Config.enableCloudKit, let database else {
             throw CloudSyncError.accountNotAvailable
         }
         
