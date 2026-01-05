@@ -129,7 +129,8 @@ class Trip {
                 activities: []
             )
             day.trip = self
-            self.days.append(day)
+            if self.days == nil { self.days = [] }
+            self.days?.append(day)
             return
         }
         

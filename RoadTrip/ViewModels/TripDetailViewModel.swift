@@ -129,6 +129,7 @@ final class TripDetailViewModel: ObservableObject {
     func copyDay(_ day: TripDay, to newDate: Date, into trip: Trip) {
         let newDayNumber = trip.days.count + 1
         let copy = DayCopier.copy(day: day, to: newDate, newDayNumber: newDayNumber)
-        trip.days.append(copy)
+        if trip.days == nil { trip.days = [] }
+        trip.days?.append(copy)
     }
 }

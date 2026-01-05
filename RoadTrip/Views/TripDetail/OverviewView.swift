@@ -668,7 +668,8 @@ struct AddDayView: View {
         let trimmedHotel = hotelName.trimmingCharacters(in: .whitespacesAndNewlines)
         newDay.hotelName = trimmedHotel.isEmpty ? nil : trimmedHotel
 
-        trip.days.append(newDay)
+        if trip.days == nil { trip.days = [] }
+        trip.days?.append(newDay)
         
         // Adjust trip dates (keep existing behavior: Day 1 inserts earlier; otherwise extend the trip)
         if insertAt == 1 {
