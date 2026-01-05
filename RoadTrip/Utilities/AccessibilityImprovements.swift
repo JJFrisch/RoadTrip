@@ -115,7 +115,7 @@ struct HighContrastButton: View {
     let title: String
     let action: () -> Void
     
-    @Environment(\.accessibilityContrast) private var accessibilityContrast
+    @Environment(\.accessibilityContrast) private var accessibilityContrast: AccessibilityContrast
 
     private var isHighContrast: Bool {
         accessibilityContrast == .high
