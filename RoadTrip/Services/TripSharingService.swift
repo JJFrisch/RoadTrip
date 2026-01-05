@@ -1,5 +1,6 @@
 // Services/TripSharingService.swift
 import Foundation
+import SwiftData
 import UIKit
 
 /// Manages trip sharing, collaboration, and invite handling
@@ -91,7 +92,7 @@ class TripSharingService: ObservableObject {
     // MARK: - Join via Share Code
     
     /// Join a shared trip using a share code
-    func joinTrip(withCode code: String) async throws -> TripShareInvite {
+    func joinTrip(withCode code: String, modelContext: ModelContext? = nil) async throws -> TripShareInvite {
         isProcessingInvite = true
         errorMessage = nil
         
@@ -99,17 +100,48 @@ class TripSharingService: ObservableObject {
         
         // Validate code format
         let cleanCode = code.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard cleanCode.count == 6 else {
+        guard (6...8).contains(cleanCode.count) else {
             throw SharingError.invalidCode
         }
+
+        // Fast path: already processed this invite in this session
+        if let existing = pendingInvites.first(where: { $0.shareCode == cleanCode }) {
+            return existing
+        }
         
-        // In a real app, this would query a cloud database
-        // For now, simulate looking up the invite
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-        
-        // Simulate: code not found in cloud
-        // In production, this would return the actual invite from the server
-        throw SharingError.inviteNotFound
+        do {
+            guard let record = try await CloudSyncService.shared.joinTrip(withCode: cleanCode) else {
+                throw SharingError.inviteNotFound
+            }
+
+            guard let trip = CloudSyncService.shared.materializeTrip(from: record, into: modelContext) else {
+                throw SharingError.inviteNotFound
+            }
+
+            let inviterName = trip.ownerEmail?.components(separatedBy: "@").first ?? "Trip Owner"
+            var invite = TripShareInvite(
+                tripId: trip.id,
+                tripName: trip.name,
+                inviterName: inviterName,
+                inviterEmail: trip.ownerEmail ?? "",
+                role: .editor
+            )
+            invite.shareCode = cleanCode
+            pendingInvites.append(invite)
+            return invite
+        } catch let error as CloudSyncError {
+            switch error {
+            case .accountNotAvailable:
+                throw SharingError.accountUnavailable
+            case .recordNotFound:
+                throw SharingError.inviteNotFound
+            case .syncFailed(let message):
+                self.errorMessage = message
+                throw SharingError.networkError
+            }
+        } catch {
+            throw SharingError.networkError
+        }
     }
     
     // MARK: - Manage Collaborators
@@ -168,6 +200,7 @@ class TripSharingService: ObservableObject {
         case inviteExpired
         case alreadyMember
         case networkError
+        case accountUnavailable
         
         var errorDescription: String? {
             switch self {
@@ -181,6 +214,8 @@ class TripSharingService: ObservableObject {
                 return "You're already a member of this trip."
             case .networkError:
                 return "Network error. Please check your connection."
+            case .accountUnavailable:
+                return "iCloud is not available. Please sign in to iCloud and try again."
             }
         }
     }
