@@ -137,22 +137,6 @@ struct OverviewView: View {
                         VStack(spacing: 0) {
                             ForEach(sortedDays) { day in
                                 dayRowCard(day)
-                                    .onDrag {
-                                        let itemProvider = NSItemProvider()
-                                        itemProvider.suggestedName = day.id.uuidString
-                                        itemProvider.registerDataRepresentation(forTypeIdentifier: "public.text", visibility: .all) { completion in
-                                            let data = day.id.uuidString.data(using: .utf8) ?? Data()
-                                            completion(data, nil)
-                                            return nil
-                                        }
-                                        return itemProvider
-                                    }
-                                    .onDrop(of: ["public.text"], delegate: DayDropDelegate(
-                                        day: day,
-                                        days: sortedDays,
-                                        trip: trip,
-                                        isReordering: isReordering
-                                    ))
                                     .opacity(isReordering ? 0.9 : 1.0)
                             }
                         }
@@ -220,11 +204,28 @@ struct OverviewView: View {
     private func dayRowCard(_ day: TripDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                // Drag handle (shown in reorder mode)
                 if isReordering {
-                    Image(systemName: "line.3.horizontal")
-                        .foregroundStyle(.secondary)
-                        .font(.title3)
+                    VStack(spacing: 8) {
+                        Button {
+                            moveDayUp(day)
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .font(.caption)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(day.dayNumber <= 1)
+
+                        Button {
+                            moveDayDown(day)
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(day.dayNumber >= sortedDays.count)
+                    }
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -255,7 +256,7 @@ struct OverviewView: View {
             
             VStack(alignment: .leading, spacing: 8) {
                 Button {
-                    editingDay = day
+                    if !isReordering { editingDay = day }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "location.circle.fill")
@@ -281,9 +282,10 @@ struct OverviewView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .disabled(isReordering)
                 
                 Button {
-                    editingDay = day
+                    if !isReordering { editingDay = day }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "mappin.circle.fill")
@@ -309,6 +311,7 @@ struct OverviewView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .disabled(isReordering)
             }
             
             if day.distance > 0 || day.drivingTime > 0 {
@@ -408,7 +411,40 @@ struct OverviewView: View {
             }
         }
         .onTapGesture {
-            editingDay = day
+            if !isReordering { editingDay = day }
+        }
+    }
+
+    private func moveDayUp(_ day: TripDay) {
+        guard day.dayNumber > 1 else { return }
+        guard let other = trip.days.first(where: { $0.dayNumber == day.dayNumber - 1 }) else { return }
+
+        let current = day.dayNumber
+        day.dayNumber = current - 1
+        other.dayNumber = current
+
+        recomputeDayDates()
+        try? modelContext.save()
+    }
+
+    private func moveDayDown(_ day: TripDay) {
+        guard day.dayNumber < sortedDays.count else { return }
+        guard let other = trip.days.first(where: { $0.dayNumber == day.dayNumber + 1 }) else { return }
+
+        let current = day.dayNumber
+        day.dayNumber = current + 1
+        other.dayNumber = current
+
+        recomputeDayDates()
+        try? modelContext.save()
+    }
+
+    private func recomputeDayDates() {
+        let calendar = Calendar.current
+        for day in trip.days {
+            if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
+                day.date = newDate
+            }
         }
     }
 
@@ -504,14 +540,7 @@ struct AddDayView: View {
     @State private var distance: Double = 0
     @State private var drivingTime: Double = 0
     @State private var isCalculatingRoute = false
-    @State private var insertPosition: InsertPosition = .end
-    @State private var customDayNumber: Int = 1
-    
-    enum InsertPosition {
-        case beginning
-        case end
-        case custom
-    }
+    @State private var dayNumber: Int = 1
     
     var maxDayNumber: Int {
         trip.days.map { $0.dayNumber }.max() ?? 0
@@ -520,19 +549,8 @@ struct AddDayView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Day Position") {
-                    Picker("Insert", selection: $insertPosition) {
-                        Text("At Beginning (Day 1)").tag(InsertPosition.beginning)
-                        Text("At End (Day \(maxDayNumber + 1))").tag(InsertPosition.end)
-                        if maxDayNumber > 0 {
-                            Text("Custom Position").tag(InsertPosition.custom)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    if insertPosition == .custom {
-                        Stepper("Insert as Day \(customDayNumber)", value: $customDayNumber, in: 1...(maxDayNumber + 1))
-                    }
+                Section("Day Number") {
+                    Stepper("Day \(dayNumber)", value: $dayNumber, in: 1...(maxDayNumber + 1))
                 }
                 
                 Section("Locations") {
@@ -608,34 +626,21 @@ struct AddDayView: View {
                 }
             }
             .onAppear {
-                customDayNumber = max(1, maxDayNumber)
+                dayNumber = maxDayNumber + 1
             }
         }
     }
 
     private func addDay() {
         let calendar = Calendar.current
-        
-        // Determine insertion position
-        let insertAt: Int
-        switch insertPosition {
-        case .beginning:
-            insertAt = 1
-        case .end:
-            insertAt = maxDayNumber + 1
-        case .custom:
-            insertAt = customDayNumber
-        }
+
+        let insertAt = dayNumber
         
         // Shift existing days if inserting in the middle
         let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
         for day in sortedDays {
             if day.dayNumber >= insertAt {
                 day.dayNumber += 1
-                // Update date for shifted day
-                if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
-                    day.date = newDate
-                }
             }
         }
         
@@ -657,15 +662,22 @@ struct AddDayView: View {
 
         trip.days.append(newDay)
         
-        // Adjust trip dates
+        // Adjust trip dates (keep existing behavior: Day 1 inserts earlier; otherwise extend the trip)
         if insertAt == 1 {
-            // Adding at beginning - move start date back
             if let newStartDate = calendar.date(byAdding: .day, value: -1, to: trip.startDate) {
                 trip.startDate = newStartDate
             }
-        } else if insertAt > maxDayNumber {
-            // Adding at end - move end date forward
-            trip.endDate = max(trip.endDate, newDate)
+        } else {
+            if let newEndDate = calendar.date(byAdding: .day, value: 1, to: trip.endDate) {
+                trip.endDate = newEndDate
+            }
+        }
+
+        // Recompute all day dates from trip.startDate to keep dates consistent
+        for day in trip.days {
+            if let recomputed = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
+                day.date = recomputed
+            }
         }
         
         try? modelContext.save()
@@ -690,77 +702,6 @@ struct AddDayView: View {
             } catch {
                 await MainActor.run {
                     isCalculatingRoute = false
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Day Drop Delegate
-struct DayDropDelegate: DropDelegate {
-    let day: TripDay
-    let days: [TripDay]
-    let trip: Trip
-    let isReordering: Bool
-    
-    func performDrop(info: DropInfo) -> Bool {
-        guard isReordering else { return false }
-        return true
-    }
-    
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: isReordering ? .move : .cancel)
-    }
-    
-    func dropEntered(info: DropInfo) {
-        guard isReordering else { return }
-        
-        // Extract dragged day ID
-        guard let itemProvider = info.itemProviders(for: [.text]).first else { return }
-        
-        itemProvider.loadItem(forTypeIdentifier: "public.text", options: nil) { (data, error) in
-            guard let data = data as? Data,
-                  let draggedIdString = String(data: data, encoding: .utf8),
-                  let draggedId = UUID(uuidString: draggedIdString),
-                  let draggedDay = days.first(where: { $0.id == draggedId }),
-                  draggedDay.id != day.id else { return }
-            
-            DispatchQueue.main.async {
-                reorderDays(draggedDay: draggedDay, targetDay: day)
-            }
-        }
-    }
-    
-    private func reorderDays(draggedDay: TripDay, targetDay: TripDay) {
-        let fromIndex = draggedDay.dayNumber - 1
-        let toIndex = targetDay.dayNumber - 1
-        
-        if fromIndex == toIndex { return }
-        
-        withAnimation {
-            if fromIndex < toIndex {
-                // Moving forward
-                for day in days {
-                    if day.dayNumber > fromIndex + 1 && day.dayNumber <= toIndex + 1 {
-                        day.dayNumber -= 1
-                    }
-                }
-                draggedDay.dayNumber = toIndex + 1
-            } else {
-                // Moving backward
-                for day in days {
-                    if day.dayNumber >= toIndex + 1 && day.dayNumber < fromIndex + 1 {
-                        day.dayNumber += 1
-                    }
-                }
-                draggedDay.dayNumber = toIndex + 1
-            }
-            
-            // Update dates based on new order
-            let calendar = Calendar.current
-            for day in days.sorted(by: { $0.dayNumber < $1.dayNumber }) {
-                if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
-                    day.date = newDate
                 }
             }
         }
