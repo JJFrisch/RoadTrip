@@ -109,12 +109,13 @@ struct TripSharingView: View {
                     }
                 }
 
-                Section("Message") {
+                Section(
+                    header: Text("Message"),
+                    footer: Text("This message will be included when you share.")
+                ) {
                     TextEditor(text: $inviteMessage)
                         .frame(minHeight: 80)
                         .accessibilityLabel("Invite message")
-                } footer: {
-                    Text("This message will be included when you share.")
                 }
                 
                 // Current Collaborators
