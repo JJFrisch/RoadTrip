@@ -1,4 +1,4 @@
-    var safeComments: [ActivityComment] { comments ?? [] }
+    // ...existing code...
 //
 //  Activity.swift
 //  RoadTrip
@@ -12,6 +12,7 @@ import SwiftData
 
 @Model
 class Activity {
+        var safeComments: [ActivityComment] { comments ?? [] }
     var id: UUID = UUID()
     var name: String = ""
     var location: String = ""
