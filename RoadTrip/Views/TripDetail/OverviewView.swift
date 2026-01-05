@@ -18,12 +18,12 @@ struct OverviewView: View {
     @State private var dayToDelete: TripDay?
     
     var sortedDays: [TripDay] {
-        (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
+        trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            if (trip.days ?? []).isEmpty {
+            if trip.safeDays.isEmpty {
                 emptyDaysView
             } else {
                 ScrollView {
@@ -34,7 +34,7 @@ struct OverviewView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Trip Summary")
                                         .font(.headline)
-                                    Text("\((trip.days ?? []).count) day\((trip.days ?? []).count == 1 ? "" : "s") planned")
+                                    Text("\(trip.safeDays.count) day\(trip.safeDays.count == 1 ? "" : "s") planned")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -100,7 +100,7 @@ struct OverviewView: View {
                                             .font(.caption)
                                             .foregroundStyle(.purple)
                                         
-                                        Text("\((trip.days ?? []).filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
+                                        Text("\(trip.safeDays.filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
                                             .font(.headline)
                                     }
                                 }
@@ -186,10 +186,10 @@ struct OverviewView: View {
                 deleteDay(day)
             }
         } message: { day in
-            if day.activities.isEmpty {
+            if day.safeActivities.isEmpty {
                 Text("This will permanently delete Day \(day.dayNumber) and renumber subsequent days.")
             } else {
-                Text("This will delete Day \(day.dayNumber) with \((day.activities ?? []).count) activit\((day.activities ?? []).count == 1 ? "y" : "ies") and renumber subsequent days.")
+                Text("This will delete Day \(day.dayNumber) with \(day.safeActivities.count) activit\(day.safeActivities.count == 1 ? "y" : "ies") and renumber subsequent days.")
             }
         }
     }
@@ -425,7 +425,7 @@ struct OverviewView: View {
 
     private func moveDayUp(_ day: TripDay) {
         guard day.dayNumber > 1 else { return }
-        guard let other = (trip.days ?? []).first(where: { $0.dayNumber == day.dayNumber - 1 }) else { return }
+        guard let other = trip.safeDays.first(where: { $0.dayNumber == day.dayNumber - 1 }) else { return }
 
         let current = day.dayNumber
         day.dayNumber = current - 1
@@ -437,7 +437,7 @@ struct OverviewView: View {
 
     private func moveDayDown(_ day: TripDay) {
         guard day.dayNumber < sortedDays.count else { return }
-        guard let other = (trip.days ?? []).first(where: { $0.dayNumber == day.dayNumber + 1 }) else { return }
+        guard let other = trip.safeDays.first(where: { $0.dayNumber == day.dayNumber + 1 }) else { return }
 
         let current = day.dayNumber
         day.dayNumber = current + 1

@@ -1,3 +1,4 @@
+    var safeActivities: [Activity] { activities ?? [] }
 //
 //  TripDay.swift
 //  RoadTrip

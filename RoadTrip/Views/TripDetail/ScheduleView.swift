@@ -27,7 +27,7 @@ struct ScheduleView: View {
     
     var body: some View {
         List {
-            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+            ForEach(trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
                 DayScheduleSection(
                     day: day,
                     isCollapsed: collapsedDayIDs.contains(day.id),
@@ -73,14 +73,14 @@ struct ScheduleView: View {
             await refreshDrivingTimes()
         }
         .sheet(item: $selectedDayRef) { ref in
-            if let day = trip.days.first(where: { $0.id == ref.id }) {
+            if let day = trip.safeDays.first(where: { $0.id == ref.id }) {
                 DayDetailScheduleView(day: day)
             } else {
                 EmptyView()
             }
         }
         .confirmationDialog("Copy Day Activities", isPresented: $showingCopyOptions, presenting: dayToCopy) { day in
-            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
+            ForEach(trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
                 if targetDay.id != day.id {
                     Button("Copy to Day \(targetDay.dayNumber)") {
                         copyActivities(from: day, to: targetDay)
@@ -95,22 +95,23 @@ struct ScheduleView: View {
     
     private func duplicateDay(_ day: TripDay) {
         // Create a copy of all activities and add to the same day
-        for activity in day.activities {
+        for activity in day.safeActivities {
             let copy = Activity(name: "\(activity.name) (Copy)", location: activity.location, category: activity.category)
             copy.duration = activity.duration
             copy.notes = activity.notes
             copy.scheduledTime = activity.scheduledTime
             copy.isCompleted = false
-            copy.order = day.activities.count
+            copy.order = day.safeActivities.count
             copy.estimatedCost = activity.estimatedCost
             copy.costCategory = activity.costCategory
-            day.activities.append(copy)
+            if day.activities == nil { day.activities = [] }
+            day.activities?.append(copy)
         }
     }
     
     private func copyActivities(from sourceDay: TripDay, to targetDay: TripDay) {
-        let startOrder = targetDay.activities.count
-        for (index, activity) in sourceDay.activities.enumerated() {
+        let startOrder = targetDay.safeActivities.count
+        for (index, activity) in sourceDay.safeActivities.enumerated() {
             let copy = Activity(name: activity.name, location: activity.location, category: activity.category)
             copy.duration = activity.duration
             copy.notes = activity.notes
@@ -124,7 +125,8 @@ struct ScheduleView: View {
             copy.order = startOrder + index
             copy.estimatedCost = activity.estimatedCost
             copy.costCategory = activity.costCategory
-            targetDay.activities.append(copy)
+            if targetDay.activities == nil { targetDay.activities = [] }
+            targetDay.activities?.append(copy)
         }
     }
     
@@ -133,7 +135,7 @@ struct ScheduleView: View {
         isRefreshing = true
         
         // Recalculate driving times for all days
-        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let sortedDays = trip.safeDays.sorted(by: { $0.dayNumber < $1.dayNumber })
         
         for day in sortedDays {
             guard !day.startLocation.isEmpty && !day.endLocation.isEmpty else { continue }

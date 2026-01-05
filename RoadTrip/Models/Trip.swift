@@ -1,3 +1,4 @@
+    var safeDays: [TripDay] { days ?? [] }
 // Models/Trip.swift
 // Created by Jake Frischmann on 1/1/26.
 
