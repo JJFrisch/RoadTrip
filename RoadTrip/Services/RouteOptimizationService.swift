@@ -22,16 +22,12 @@ class RouteOptimizationService: ObservableObject {
     // MARK: - Main Optimization Function
     @MainActor
     func optimizeDay(_ day: TripDay, considerTime: Bool = true, considerTraffic: Bool = false) async throws -> [Activity] {
-        
-            isOptimizing = true
-            optimizationProgress = 0
-        }
+        isOptimizing = true
+        optimizationProgress = 0
         
         defer {
-            Task { @MainActor in
-                isOptimizing = false
-                optimizationProgress = 0
-            }
+            isOptimizing = false
+            optimizationProgress = 0
         }
         
         // Filter activities with coordinates
@@ -58,6 +54,7 @@ class RouteOptimizationService: ObservableObject {
         await updateProgress(1.0)
         
         return optimizedOrder
+    }
     }
     
     // MARK: - Distance Matrix
