@@ -55,7 +55,6 @@ class RouteOptimizationService: ObservableObject {
         
         return optimizedOrder
     }
-    }
     
     // MARK: - Distance Matrix
     private func buildDistanceMatrix(for activities: [Activity]) async throws -> [[Double]] {
