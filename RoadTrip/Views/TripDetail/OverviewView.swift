@@ -6,6 +6,7 @@ import MapKit
 struct OverviewView: View {
     @Environment(\.modelContext) private var modelContext
     let trip: Trip
+    @Binding var selectedTab: Int
     @State private var showingAddDay = false
     @State private var editingDay: TripDay?
     @State private var addingActivityDay: TripDay?
@@ -39,10 +40,17 @@ struct OverviewView: View {
                                 }
                                 
                                 Spacer()
-                                
-                                Image(systemName: "map.circle.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.blue.gradient)
+
+                                Button {
+                                    withAnimation {
+                                        selectedTab = 4
+                                    }
+                                } label: {
+                                    Image(systemName: "map.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue.gradient)
+                                }
+                                .buttonStyle(.plain)
                             }
                             
                             Divider()

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TripSharingView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     let trip: Trip
     
     @StateObject private var sharingService = TripSharingService.shared
@@ -10,7 +11,8 @@ struct TripSharingView: View {
     
     @State private var shareRole: TripCollaborator.CollaboratorRole = .editor
     @State private var showingShareSheet = false
-    @State private var shareCode: String = ""
+    @State private var shareItems: [Any] = []
+    @State private var inviteMessage: String = ""
     @State private var copiedToClipboard = false
     
     var body: some View {
@@ -106,6 +108,13 @@ struct TripSharingView: View {
                         Label(copiedToClipboard ? "Copied!" : "Copy Invite Link", systemImage: copiedToClipboard ? "checkmark.circle.fill" : "link")
                     }
                 }
+
+                Section("Message") {
+                    TextField("Invite message", text: $inviteMessage, axis: .vertical)
+                        .lineLimit(3...6)
+                } footer: {
+                    Text("This message will be included when you share.")
+                }
                 
                 // Current Collaborators
                 let collaborators = sharingService.getCollaborators(for: trip)
@@ -174,23 +183,45 @@ struct TripSharingView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: shareItems)
+        }
+        .onAppear {
+            if inviteMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                inviteMessage = "You've been invited to a road trip! Join \"\(trip.name)\" in RoadTrip."
+            }
+        }
     }
     
     private func generateCode() {
         if trip.shareCode == nil || trip.shareCode?.isEmpty == true {
             _ = sharingService.createShareInvite(for: trip, role: shareRole)
+            try? modelContext.save()
         }
     }
     
     private func generateAndShare() {
         generateCode()
-        sharingService.shareTrip(trip)
+
+        let code = trip.shareCode ?? ""
+        let deepLink = code.isEmpty ? "" : "roadtrip://join/\(code)"
+
+        let message = """
+        \(inviteMessage)
+
+        Join with code: \(code)
+        Link: \(deepLink)
+        """
+
+        shareItems = [message]
+        showingShareSheet = true
     }
     
     private func stopSharing() {
         trip.isShared = false
         trip.shareCode = nil
         trip.sharedWith.removeAll()
+        try? modelContext.save()
     }
 }
 

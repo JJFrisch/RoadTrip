@@ -20,7 +20,7 @@ struct TripDetailView: View {
         VStack(spacing: 0) {
             // Tab Content
             TabView(selection: $selectedTab) {
-                OverviewView(trip: trip)
+                OverviewView(trip: trip, selectedTab: $selectedTab)
                     .tag(0)
                 
                 BudgetView(trip: trip)

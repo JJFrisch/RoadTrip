@@ -155,8 +155,8 @@ class TripSharingService: ObservableObject {
     /// Copy share link to clipboard
     func copyShareLink(for trip: Trip) -> Bool {
         guard let invite = createShareInvite(for: trip) else { return false }
-        
-        UIPasteboard.general.string = invite.shareMessage
+
+        UIPasteboard.general.string = invite.shareURL?.absoluteString ?? invite.shareCode
         return true
     }
     

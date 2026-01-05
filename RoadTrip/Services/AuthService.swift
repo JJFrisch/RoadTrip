@@ -40,6 +40,12 @@ class AuthService: ObservableObject {
         guard password.count >= 8 else {
             throw AuthError.weakPassword
         }
+
+        let normalizedEmail = email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existingEmail = userDefaults.string(forKey: savedUserEmailKey)?.lowercased(),
+           existingEmail == normalizedEmail {
+            throw AuthError.accountExists
+        }
         
         // In a real app, this would call a cloud auth service (Firebase, AWS Cognito, etc.)
         // For now, we'll simulate local account creation
@@ -47,7 +53,7 @@ class AuthService: ObservableObject {
         // Simulate network delay
         try await Task.sleep(nanoseconds: 1_000_000_000)
         
-        let user = UserAccount(email: email.lowercased(), displayName: displayName)
+        let user = UserAccount(email: normalizedEmail, displayName: displayName)
         user.cloudUserId = UUID().uuidString
         user.isLoggedIn = true
         user.lastLoginAt = Date()
