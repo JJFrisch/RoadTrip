@@ -26,6 +26,15 @@ struct ActivitiesView: View {
     @State private var daySheetItem: DaySheetItem?
     @State private var collapsedDayIDs: Set<UUID> = []
 
+    private var isReordering: Bool {
+        switch editMode {
+        case .active, .transient:
+            return true
+        default:
+            return false
+        }
+    }
+
     
     var body: some View {
         List {
@@ -56,28 +65,12 @@ struct ActivitiesView: View {
                                 .frame(maxWidth: .infinity, minHeight: 44)
                                 .contentShape(Rectangle())
                                 .onDrop(of: [.text], isTargeted: nil) { providers in
-                                    handleDrop(providers: providers, targetDay: day, targetIndex: 0)
+                                    guard !isReordering else { return false }
+                                    return handleDrop(providers: providers, targetDay: day, targetIndex: 0)
                                 }
                         } else {
                             ForEach(day.activities.sorted(by: { $0.order < $1.order })) { activity in
-                                HStack(spacing: 12) {
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.15)) {
-                                            activity.isCompleted.toggle()
-                                        }
-                                    } label: {
-                                        Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(activity.isCompleted ? .green : .gray)
-                                            .font(.title3)
-                                    }
-                                    .buttonStyle(.plain)
-                                    
-                                    ActivityRowView(activity: activity)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            editingActivity = activity
-                                        }
-                                }
+                                activityRow(activity, in: day)
                                 // MARK: - Swipe Actions
                                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                     Button {
@@ -100,11 +93,13 @@ struct ActivitiesView: View {
                                     }
                                 }
                                 .onDrag {
+                                    guard !isReordering else { return NSItemProvider() }
                                     draggedActivity = activity
                                     return NSItemProvider(object: activity.id.uuidString as NSString)
                                 }
                                 .onDrop(of: [.text], isTargeted: nil) { providers in
-                                    handleDrop(providers: providers, targetDay: day, targetIndex: activity.order)
+                                    guard !isReordering else { return false }
+                                    return handleDrop(providers: providers, targetDay: day, targetIndex: activity.order)
                                 }
                                 .contextMenu {
                                     // Move to day submenu
@@ -235,6 +230,28 @@ struct ActivitiesView: View {
             }
         } message: { activity in
             Text("Are you sure you want to delete \"\(activity.name)\"?")
+        }
+    }
+
+    @ViewBuilder
+    private func activityRow(_ activity: Activity, in day: TripDay) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    activity.isCompleted.toggle()
+                }
+            } label: {
+                Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(activity.isCompleted ? .green : .gray)
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+
+            ActivityRowView(activity: activity)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    editingActivity = activity
+                }
         }
     }
     
