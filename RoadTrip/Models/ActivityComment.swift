@@ -17,7 +17,7 @@ class ActivityComment {
     var createdAt: Date = Date()
     var updatedAt: Date?
 
-    @Relationship(deleteRule: .nullify, inverse: \Activity.commentsStorage)
+    @Relationship(deleteRule: .nullify, inverse: \Activity.comments)
     var activity: Activity?
     
     init(userId: String, userEmail: String, text: String) {

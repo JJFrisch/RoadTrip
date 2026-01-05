@@ -26,7 +26,7 @@ struct RoadTripperApp: App {
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private // Enable SwiftData <-> CloudKit sync
+            cloudKitDatabase: .private("iCloud.jjfrisch.RoadTrip") // Enable SwiftData <-> CloudKit sync
         )
         
         do {
