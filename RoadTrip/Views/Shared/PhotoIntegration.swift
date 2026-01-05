@@ -339,7 +339,7 @@ extension PDFExportService {
             yOffset += 40
             
             // Days and activities with photos
-            for day in trip.days.sorted(by: { $0.dayNumber < $1.dayNumber }) {
+            for day in (trip.days?.sorted(by: { $0.dayNumber < $1.dayNumber }) ?? []) {
                 // Check if we need a new page
                 if yOffset > pageRect.height - 100 {
                     context.beginPage()
