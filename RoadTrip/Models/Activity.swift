@@ -42,12 +42,7 @@ class Activity {
     
     // Collaboration features
     @Relationship(deleteRule: .cascade, inverse: \ActivityComment.activity)
-    var commentsStorage: [ActivityComment]? = [] // Activity comments
-
-    var comments: [ActivityComment] {
-        get { commentsStorage ?? [] }
-        set { commentsStorage = newValue }
-    }
+    var comments: [ActivityComment]? = [] // Activity comments
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
     
