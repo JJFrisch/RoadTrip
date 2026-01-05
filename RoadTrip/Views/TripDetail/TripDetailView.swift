@@ -195,18 +195,15 @@ struct TripDetailView: View {
             for day in trip.days {
                 // Add day route
                 routes.append((from: day.startLocation, to: day.endLocation))
-                
                 // Add activity-to-activity routes for completed activities
-                    let completedActivities = day.safeActivities.filter { $0.isCompleted }.sorted { a, b in
+                let completedActivities = (day.activities?.filter { $0.isCompleted }.sorted { a, b in
                     guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
                         return a.scheduledTime != nil
                     }
                     return timeA < timeB
-                }
-                
+                }) ?? []
                 // Only create routes if we have at least 2 completed activities
                 guard completedActivities.count > 1 else { continue }
-                
                 for i in 0..<(completedActivities.count - 1) {
                     routes.append((
                         from: completedActivities[i].location,

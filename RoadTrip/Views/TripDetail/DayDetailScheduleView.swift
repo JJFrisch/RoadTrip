@@ -26,7 +26,12 @@ struct DayDetailScheduleView: View {
     }
     
     var completedActivities: [Activity] {
-        day.activities.filter { $0.isCompleted }.sorted { a, b in
+        (day.activities?.filter { $0.isCompleted }.sorted { a, b in
+            guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
+                return a.scheduledTime != nil
+            }
+            return timeA < timeB
+        }) ?? []
             guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
                 return a.scheduledTime != nil
             }

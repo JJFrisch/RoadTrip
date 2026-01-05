@@ -94,9 +94,8 @@ final class DataPersistenceTests: XCTestCase {
         try modelContext.save()
         
         // Verify days were created
-        XCTAssertGreaterThan(trip.days.count, 0)
-        
-        let firstDay = trip.days.first
+        XCTAssertGreaterThan((trip.days?.count ?? 0), 0)
+        let firstDay = trip.days?.first
         XCTAssertNotNil(firstDay)
         XCTAssertEqual(firstDay?.dayNumber, 1)
     }
@@ -105,7 +104,7 @@ final class DataPersistenceTests: XCTestCase {
         let trip = Trip(name: "Trip", startDate: Date(), endDate: Date().addingTimeInterval(86400))
         modelContext.insert(trip)
         
-        if let day = trip.days.first {
+        if let day = trip.days?.first {
             day.startLocation = "New York"
             day.endLocation = "Boston"
             day.distance = 215
@@ -129,10 +128,10 @@ final class DataPersistenceTests: XCTestCase {
         let trip = Trip(name: "Trip with Activities", startDate: Date(), endDate: Date().addingTimeInterval(86400))
         modelContext.insert(trip)
         
-        if let day = trip.days.first {
+        if let day = trip.days?.first {
             let activity = Activity(name: "Dinner", location: "Times Square", category: "Food")
             activity.notes = "Make reservation"
-            day.activities.append(activity)
+            day.activities?.append(activity)
         }
         
         try modelContext.save()
@@ -150,9 +149,9 @@ final class DataPersistenceTests: XCTestCase {
         let trip = Trip(name: "Trip", startDate: Date(), endDate: Date().addingTimeInterval(86400))
         modelContext.insert(trip)
         
-        if let day = trip.days.first {
+        if let day = trip.days?.first {
             let activity = Activity(name: "Museum", location: "MoMA", category: "Attraction")
-            day.activities.append(activity)
+            day.activities?.append(activity)
         }
         
         try modelContext.save()
@@ -177,24 +176,24 @@ final class DataPersistenceTests: XCTestCase {
         let trip = Trip(name: "Trip", startDate: Date(), endDate: Date().addingTimeInterval(86400))
         modelContext.insert(trip)
         
-        if let day = trip.days.first {
+        if let day = trip.days?.first {
             let activity = Activity(name: "Activity", location: "Location", category: "Other")
-            day.activities.append(activity)
+            day.activities?.append(activity)
         }
         
         try modelContext.save()
         
         // Delete activity
-        if let activity = trip.days.first?.activities.first {
-            if let day = trip.days.first {
-                day.activities.removeAll { $0.id == activity.id }
+        if let activity = trip.days?.first?.activities?.first {
+            if let day = trip.days?.first {
+                day.activities?.removeAll { $0.id == activity.id }
             }
         }
         
         try modelContext.save()
         
         // Verify deletion
-        let activities = trip.days.first?.activities ?? []
+        let activities = trip.days?.first?.activities ?? []
         XCTAssertEqual(activities.count, 0)
     }
     
@@ -204,25 +203,24 @@ final class DataPersistenceTests: XCTestCase {
         let trip = Trip(name: "Complex Trip", startDate: Date(), endDate: Date().addingTimeInterval(86400 * 2))
         modelContext.insert(trip)
         
-        for (dayIndex, day) in trip.days.enumerated() {
+        for (dayIndex, day) in (trip.days?.enumerated() ?? [].enumerated()) {
             for actIndex in 0..<3 {
                 let activity = Activity(
                     name: "Activity \(actIndex)",
                     location: "Location \(actIndex)",
                     category: actIndex % 2 == 0 ? "Food" : "Attraction"
                 )
-                day.activities.append(activity)
+                day.activities?.append(activity)
             }
         }
         
         try modelContext.save()
         
         // Verify integrity
-        for day in trip.days {
-            XCTAssertEqual(day.activities.count, 3)
+        for day in (trip.days ?? []) {
+            XCTAssertEqual(day.activities?.count ?? 0, 3)
         }
-        
-        let totalActivities = trip.days.reduce(0) { $0 + $1.activities.count }
+        let totalActivities = (trip.days ?? []).reduce(0) { $0 + ($1.activities?.count ?? 0) }
         XCTAssertEqual(totalActivities, 6)
     }
     

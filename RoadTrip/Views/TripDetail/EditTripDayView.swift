@@ -175,7 +175,7 @@ struct EditTripDayView: View {
         // Auto-set next day's start location to this day's end location
         if let trip = findParentTrip(),
            !endLocation.isEmpty {
-            let sortedDays = trip.days.sorted { $0.dayNumber < $1.dayNumber }
+            let sortedDays = (trip.days?.sorted { $0.dayNumber < $1.dayNumber } ?? [])
             if let currentIndex = sortedDays.firstIndex(where: { $0.id == day.id }),
                currentIndex + 1 < sortedDays.count {
                 let nextDay = sortedDays[currentIndex + 1]
@@ -191,7 +191,7 @@ struct EditTripDayView: View {
         // Find the trip that contains this day
         let fetchDescriptor = FetchDescriptor<Trip>()
         let trips = (try? modelContext.fetch(fetchDescriptor)) ?? []
-        return trips.first { $0.days.contains(where: { $0.id == day.id }) }
+        return trips.first { ($0.days?.contains(where: { $0.id == day.id }) ?? false) }
     }
     
     private func calculateRoute() {
