@@ -341,10 +341,10 @@ struct ExpandableActivityItem: View {
 
 // MARK: - Shared Transition Effects
 
-struct SharedElementTransition<ID: Hashable>: View {
+struct SharedElementTransition<ID: Hashable, Content: View>: View {
     let item: ID
     let namespace: Namespace.ID
-    @ViewBuilder let content: () -> some View
+    @ViewBuilder let content: () -> Content
     
     var body: some View {
         content()

@@ -89,7 +89,7 @@ extension View {
     
     func highContrastSupport() -> some View {
         self
-            .environment(\.isHighContrast, true)
+            .environment(\.accessibilityContrast, .high)
     }
 }
 
