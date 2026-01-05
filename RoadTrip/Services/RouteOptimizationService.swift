@@ -34,24 +34,24 @@ class RouteOptimizationService: ObservableObject {
         let activities = day.activities.filter { $0.hasCoordinates }
         guard activities.count > 1 else { return activities }
         
-        await updateProgress(0.2)
+        updateProgress(0.2)
         
         // Build distance matrix
         let distanceMatrix = try await buildDistanceMatrix(for: activities)
         
-        await updateProgress(0.5)
+        updateProgress(0.5)
         
         // Find optimal order using nearest neighbor algorithm
         var optimizedOrder = nearestNeighborTSP(activities: activities, distanceMatrix: distanceMatrix)
         
-        await updateProgress(0.7)
+        updateProgress(0.7)
         
         // Apply time-based constraints if needed
         if considerTime {
             optimizedOrder = try await applyTimeConstraints(to: optimizedOrder, on: day)
         }
         
-        await updateProgress(1.0)
+        updateProgress(1.0)
         
         return optimizedOrder
     }
@@ -158,7 +158,7 @@ class RouteOptimizationService: ObservableObject {
     }
     
     // MARK: - Time Constraints
-    private func applyTimeConstraints(to activities: [Activity], on day: TripDay) async throws -> [Activity] {
+    nonisolated private func applyTimeConstraints(to activities: [Activity], on day: TripDay) async throws -> [Activity] {
         let orderedActivities = activities
         
         // Separate activities by time constraints

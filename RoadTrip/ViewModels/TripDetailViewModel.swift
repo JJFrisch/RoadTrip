@@ -17,7 +17,7 @@ final class TripDetailViewModel: ObservableObject {
 
     private let importer = ActivityImporter.shared
 
-    func importActivities(from url: URL, into day: TripDay, modelContext: ModelContext) async throws -> [Activity] {
+    func importActivities(from url: URL, baseActivityIndex: Int = 0, modelContext: ModelContext) async throws -> [Activity] {
         isImporting = true
         defer { isImporting = false }
         
@@ -52,7 +52,7 @@ final class TripDetailViewModel: ObservableObject {
         for (index, place) in imported.enumerated() {
             let activity = Activity(name: place.name, location: place.address ?? "", category: place.category ?? "Attraction")
             activity.duration = place.typicalDurationHours
-            activity.order = day.activities.count + index
+            activity.order = baseActivityIndex + index
             activity.isCompleted = true
             
             // Enhanced fields
@@ -73,15 +73,14 @@ final class TripDetailViewModel: ObservableObject {
                 activity.notes = blurb
             }
 
-            modelContext.insert(activity)
-            day.activities.append(activity)
+            // Don't insert into modelContext yet - let caller decide when to persist
             created.append(activity)
         }
 
         return created
     }
     
-    func importActivitiesFromGooglePlaces(near location: CLLocationCoordinate2D, into day: TripDay, modelContext: ModelContext, radius: Double = 2000) async throws -> [Activity] {
+    func importActivitiesFromGooglePlaces(near location: CLLocationCoordinate2D, baseActivityIndex: Int = 0, modelContext: ModelContext, radius: Double = 2000) async throws -> [Activity] {
         isImporting = true
         defer { isImporting = false }
         
@@ -95,7 +94,7 @@ final class TripDetailViewModel: ObservableObject {
         for (index, place) in imported.enumerated() {
             let activity = Activity(name: place.name, location: place.address ?? "", category: place.category ?? "Attraction")
             activity.duration = place.typicalDurationHours
-            activity.order = day.activities.count + index
+            activity.order = baseActivityIndex + index
             activity.isCompleted = true
             
             // Enhanced fields
@@ -116,8 +115,7 @@ final class TripDetailViewModel: ObservableObject {
                 activity.notes = blurb
             }
             
-            modelContext.insert(activity)
-            day.activities.append(activity)
+            // Don't insert into modelContext yet - let caller decide when to persist
             created.append(activity)
         }
         

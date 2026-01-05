@@ -305,8 +305,7 @@ struct ActivityImportSheet: View {
         
         Task {
             do {
-                let dummyDay = TripDay(dayNumber: 1, date: Date(), startLocation: "", endLocation: "")
-                let activities = try await viewModel.importActivities(from: url, into: dummyDay, modelContext: modelContext)
+                let activities = try await viewModel.importActivities(from: url, baseActivityIndex: day.activities.count, modelContext: modelContext)
                 
                 await MainActor.run {
                     // Convert to ImportedPlace for preview
@@ -328,9 +327,6 @@ struct ActivityImportSheet: View {
                     // Select all by default
                     selectedPlaces = Set(importedPlaces.map { $0.name })
                     isImporting = false
-                    
-                    // Clean up dummy day
-                    modelContext.delete(dummyDay)
                 }
             } catch {
                 await MainActor.run {
@@ -363,7 +359,7 @@ struct ActivityImportSheet: View {
                 // Use Google Places API for better results
                 let places = try await viewModel.importActivitiesFromGooglePlaces(
                     near: coordinate,
-                    into: day,
+                    baseActivityIndex: day.activities.count,
                     modelContext: modelContext,
                     radius: searchRadius
                 )
@@ -389,12 +385,6 @@ struct ActivityImportSheet: View {
                     
                     selectedPlaces = Set(places.map { $0.name })
                     isImporting = false
-                    
-                    // Remove from day for now - will be re-added if selected
-                    for activity in places {
-                        modelContext.delete(activity)
-                        day.activities.removeAll { $0.id == activity.id }
-                    }
                 }
             } catch let error as AppError {
                 await MainActor.run {

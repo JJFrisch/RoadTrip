@@ -78,7 +78,7 @@ class BudgetManager: ObservableObject {
     }
     
     func getBudgetStatus(for trip: Trip) -> BudgetStatus {
-        guard let budget = trip.totalBudget else { return .noBudget }
+        guard trip.totalBudget != nil else { return .noBudget }
         let progress = budgetProgress(for: trip)
         
         if progress > 1.0 { return .overBudget }
