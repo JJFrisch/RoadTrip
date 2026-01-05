@@ -38,6 +38,7 @@
 				Config.swift,
 				Models/Activity.swift,
 				Models/ActivityTemplate.swift,
+
 				Models/CarRental.swift,
 				Models/Hotel.swift,
 				Models/Trip.swift,
@@ -701,3 +702,4 @@
 	};
 	rootObject = DB63B9F22F0770D4001B1FDD /* Project object */;
 }
+
