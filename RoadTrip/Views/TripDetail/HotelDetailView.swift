@@ -345,7 +345,7 @@ struct HotelDetailView: View {
         hotelActivity.rating = hotel.rating
         hotelActivity.sourceType = "booking"
         
-        day.activities.append(hotelActivity)
+        day.activities?.append(hotelActivity)
         
         showingSaveConfirmation = true
     }

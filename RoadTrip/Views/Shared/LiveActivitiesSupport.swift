@@ -54,7 +54,7 @@ class LiveActivityManager {
         let attributes = TripActivityAttributes(
             tripName: trip.name,
             tripDay: day.dayNumber,
-            totalDays: trip.days.count,
+                totalDays: trip.days?.count ?? 0,
             currentLocation: day.startLocation,
             nextLocation: day.endLocation
         )
@@ -67,19 +67,15 @@ class LiveActivityManager {
             nextActivityDistance: "2.3 miles",
             progressPercentage: calculateProgress(for: day),
             completedCount: countCompletedActivities(in: day),
-            totalCount: day.activities.count,
+                totalCount: day.activities?.count ?? 0,
             estimatedArrivalTime: activity.scheduledTime
         )
         
-        do {
-            currentActivity = try ActivityKit.Activity<TripActivityAttributes>.request(
+            currentActivity = try? ActivityKit.Activity<TripActivityAttributes>.request(
                 attributes: attributes,
                 content: .init(state: initialContentState, staleDate: nil),
                 pushType: .token
             )
-        } catch {
-            print("Failed to start live activity: \(error)")
-        }
     }
     
     /// Update the live activity with new information
@@ -141,17 +137,17 @@ class LiveActivityManager {
     }
     
     private func getNextActivity(in day: TripDay) -> Activity? {
-        day.activities.sorted(by: { $0.order < $1.order }).first(where: { !$0.isCompleted })
+        return (day.activities?.sorted(by: { $0.order < $1.order }) ?? []).first(where: { !$0.isCompleted })
     }
     
     private func calculateProgress(for day: TripDay) -> Double {
-        guard day.activities.count > 0 else { return 0 }
-        let completed = day.activities.filter { $0.isCompleted }.count
-        return Double(completed) / Double(day.activities.count)
+        guard let activities = day.activities, activities.count > 0 else { return 0 }
+        let completed = activities.filter { $0.isCompleted }.count
+        return Double(completed) / Double(activities.count)
     }
     
     private func countCompletedActivities(in day: TripDay) -> Int {
-        day.activities.filter { $0.isCompleted }.count
+        return day.activities?.filter { $0.isCompleted }.count ?? 0
     }
 }
 

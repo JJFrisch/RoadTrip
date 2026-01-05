@@ -355,7 +355,7 @@ extension PDFExportService {
                 yOffset += 30
                 
                 // Activities
-                for activity in day.activities.sorted(by: { $0.order < $1.order }) {
+                for activity in (day.activities?.sorted(by: { $0.order < $1.order }) ?? []) {
                     // Activity name
                     let activityName = activity.name as NSString
                     let activityAttributes: [NSAttributedString.Key: Any] = [
