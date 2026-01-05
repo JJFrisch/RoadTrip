@@ -40,7 +40,6 @@ class Trip {
     var lastSyncedAt: Date? // Last time synced to cloud
     var cloudId: String? // ID in cloud database for sync
 
-    @Relationship(deleteRule: .cascade, inverse: \TripDay.trip)
     var days: [TripDay]
     
     init(name: String, startDate: Date, endDate: Date) {
@@ -96,7 +95,6 @@ class Trip {
         if newNumberOfDays < oldNumberOfDays && newNumberOfDays > 0 {
             let daysToRemove = oldDays.suffix(oldNumberOfDays - newNumberOfDays)
             let lastKeptDay = oldDays[newNumberOfDays - 1]
-            
             for dayToRemove in daysToRemove {
                 // Move activities to the last kept day
                 for activity in dayToRemove.activities {
