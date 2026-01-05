@@ -20,8 +20,9 @@ class RouteOptimizationService: ObservableObject {
     private init() {}
     
     // MARK: - Main Optimization Function
+    @MainActor
     func optimizeDay(_ day: TripDay, considerTime: Bool = true, considerTraffic: Bool = false) async throws -> [Activity] {
-        await MainActor.run {
+        
             isOptimizing = true
             optimizationProgress = 0
         }

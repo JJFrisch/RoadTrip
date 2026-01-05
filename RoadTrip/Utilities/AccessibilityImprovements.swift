@@ -384,7 +384,7 @@ struct AccessibilityChecker {
     }
     
     static func validateAccessibility(_ view: some View) -> [AccessibilityIssue] {
-        var issues: [AccessibilityIssue] = []
+        let issues: [AccessibilityIssue] = []
         
         // This would be implemented with more detailed checks
         // For now, return empty array as placeholder

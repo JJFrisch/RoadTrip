@@ -12,6 +12,11 @@ struct OverviewView: View {
     @State private var browsingHotelDay: TripDay?
     @State private var showingShareSheet = false
     @State private var sharePDFData: Data?
+    @State private var isReordering = false
+    
+    var sortedDays: [TripDay] {
+        trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -97,10 +102,49 @@ struct OverviewView: View {
                         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
                         .padding()
                         
+                        // Days List Header
+                        HStack {
+                            Text("Trip Days")
+                                .font(.headline)
+                                .padding(.leading, 16)
+                            
+                            Spacer()
+                            
+                            Button {
+                                withAnimation {
+                                    isReordering.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: isReordering ? "checkmark" : "arrow.up.arrow.down")
+                                        .font(.caption)
+                                    Text(isReordering ? "Done" : "Reorder")
+                                        .font(.caption)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(isReordering ? Color.blue : Color.gray.opacity(0.2))
+                                .foregroundStyle(isReordering ? .white : .primary)
+                                .cornerRadius(8)
+                            }
+                            .padding(.trailing, 16)
+                        }
+                        .padding(.top, 8)
+                        
                         // Days List
                         VStack(spacing: 0) {
-                            ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
+                            ForEach(sortedDays) { day in
                                 dayRowCard(day)
+                                    .onDrag {
+                                        NSItemProvider(object: day.id.uuidString as NSString)
+                                    }
+                                    .onDrop(of: [.text], delegate: DayDropDelegate(
+                                        day: day,
+                                        days: sortedDays,
+                                        trip: trip,
+                                        isReordering: isReordering
+                                    ))
+                                    .opacity(isReordering ? 0.9 : 1.0)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -155,6 +199,13 @@ struct OverviewView: View {
     private func dayRowCard(_ day: TripDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
+                // Drag handle (shown in reorder mode)
+                if isReordering {
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.secondary)
+                        .font(.title3)
+                }
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Day \(day.dayNumber)")
                         .font(.title3)
@@ -167,12 +218,14 @@ struct OverviewView: View {
 
                 Spacer()
 
-                Button(role: .destructive) {
-                    deleteDay(day)
-                } label: {
-                    Image(systemName: "trash.circle.fill")
-                        .foregroundStyle(.red.opacity(0.6))
-                        .font(.title3)
+                if !isReordering {
+                    Button(role: .destructive) {
+                        deleteDay(day)
+                    } label: {
+                        Image(systemName: "trash.circle.fill")
+                            .foregroundStyle(.red.opacity(0.6))
+                            .font(.title3)
+                    }
                 }
             }
             
@@ -507,6 +560,77 @@ struct AddDayView: View {
             } catch {
                 await MainActor.run {
                     isCalculatingRoute = false
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Day Drop Delegate
+struct DayDropDelegate: DropDelegate {
+    let day: TripDay
+    let days: [TripDay]
+    let trip: Trip
+    let isReordering: Bool
+    
+    func performDrop(info: DropInfo) -> Bool {
+        guard isReordering else { return false }
+        return true
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: isReordering ? .move : .cancel)
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard isReordering else { return }
+        
+        // Extract dragged day ID
+        guard let itemProvider = info.itemProviders(for: [.text]).first else { return }
+        
+        itemProvider.loadItem(forTypeIdentifier: "public.text", options: nil) { (data, error) in
+            guard let data = data as? Data,
+                  let draggedIdString = String(data: data, encoding: .utf8),
+                  let draggedId = UUID(uuidString: draggedIdString),
+                  let draggedDay = days.first(where: { $0.id == draggedId }),
+                  draggedDay.id != day.id else { return }
+            
+            DispatchQueue.main.async {
+                reorderDays(draggedDay: draggedDay, targetDay: day)
+            }
+        }
+    }
+    
+    private func reorderDays(draggedDay: TripDay, targetDay: TripDay) {
+        let fromIndex = draggedDay.dayNumber - 1
+        let toIndex = targetDay.dayNumber - 1
+        
+        if fromIndex == toIndex { return }
+        
+        withAnimation {
+            if fromIndex < toIndex {
+                // Moving forward
+                for day in days {
+                    if day.dayNumber > fromIndex + 1 && day.dayNumber <= toIndex + 1 {
+                        day.dayNumber -= 1
+                    }
+                }
+                draggedDay.dayNumber = toIndex + 1
+            } else {
+                // Moving backward
+                for day in days {
+                    if day.dayNumber >= toIndex + 1 && day.dayNumber < fromIndex + 1 {
+                        day.dayNumber += 1
+                    }
+                }
+                draggedDay.dayNumber = toIndex + 1
+            }
+            
+            // Update dates based on new order
+            let calendar = Calendar.current
+            for day in days.sorted(by: { $0.dayNumber < $1.dayNumber }) {
+                if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
+                    day.date = newDate
                 }
             }
         }

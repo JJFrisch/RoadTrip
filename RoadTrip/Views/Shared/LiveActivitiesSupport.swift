@@ -74,7 +74,7 @@ class LiveActivityManager {
         do {
             currentActivity = try ActivityKit.Activity<TripActivityAttributes>.request(
                 attributes: attributes,
-                contentState: initialContentState,
+                content: .init(state: initialContentState, staleDate: nil),
                 pushType: .token
             )
         } catch {
@@ -106,23 +106,29 @@ class LiveActivityManager {
             estimatedArrivalTime: Date().addingTimeInterval(60 * 30) // 30 min from now
         )
         
-        await activity.update(using: updatedState)
+        await activity.update(.init(state: updatedState, staleDate: nil))
     }
     
     /// End the live activity
     func endTripActivity() async {
         guard let activity = currentActivity else { return }
-        await activity.end(using: TripActivityAttributes.ContentState(
-            currentActivityName: "Trip Complete",
-            currentActivityTime: "Finished",
-            nextActivityName: nil,
-            nextActivityTime: nil,
-            nextActivityDistance: nil,
-            progressPercentage: 1.0,
-            completedCount: 0,
-            totalCount: 0,
-            estimatedArrivalTime: nil
-        ), dismissalPolicy: .immediate)
+        await activity.end(
+            .init(
+                state: TripActivityAttributes.ContentState(
+                    currentActivityName: "Trip Complete",
+                    currentActivityTime: "Finished",
+                    nextActivityName: nil,
+                    nextActivityTime: nil,
+                    nextActivityDistance: nil,
+                    progressPercentage: 1.0,
+                    completedCount: 0,
+                    totalCount: 0,
+                    estimatedArrivalTime: nil
+                ),
+                staleDate: nil
+            ),
+            dismissalPolicy: .immediate
+        )
     }
     
     // MARK: - Helper Methods
