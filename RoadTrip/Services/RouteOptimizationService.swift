@@ -48,7 +48,7 @@ class RouteOptimizationService: ObservableObject {
         
         // Apply time-based constraints if needed
         if considerTime {
-            optimizedOrder = try await applyTimeConstraints(to: optimizedOrder, on: day)
+            optimizedOrder = applyTimeConstraints(to: optimizedOrder, on: day)
         }
         
         updateProgress(1.0)
@@ -158,7 +158,7 @@ class RouteOptimizationService: ObservableObject {
     }
     
     // MARK: - Time Constraints
-    nonisolated private func applyTimeConstraints(to activities: [Activity], on day: TripDay) async throws -> [Activity] {
+    private func applyTimeConstraints(to activities: [Activity], on day: TripDay) -> [Activity] {
         let orderedActivities = activities
         
         // Separate activities by time constraints

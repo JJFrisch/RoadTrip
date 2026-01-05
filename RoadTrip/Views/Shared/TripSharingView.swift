@@ -110,8 +110,9 @@ struct TripSharingView: View {
                 }
 
                 Section("Message") {
-                    TextField("Invite message", text: $inviteMessage, axis: .vertical)
-                        .lineLimit(3...6)
+                    TextEditor(text: $inviteMessage)
+                        .frame(minHeight: 80)
+                        .accessibilityLabel("Invite message")
                 } footer: {
                     Text("This message will be included when you share.")
                 }
