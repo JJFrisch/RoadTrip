@@ -7,7 +7,9 @@ import SwiftData
 
 @Model
 class Trip {
-        var safeDays: [TripDay] { days ?? [] }
+    var days: [TripDay]?
+
+    var safeDays: [TripDay] { days ?? [] }
     var id: UUID = UUID()
     var name: String = ""
     var tripDescription: String?
