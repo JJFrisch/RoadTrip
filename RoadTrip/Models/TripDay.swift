@@ -21,7 +21,10 @@ class TripDay {
     var hotelName: String?
 
     var hotel: Hotel?
+    @Relationship(deleteRule: .cascade, inverse: \Activity.day)
     var activities: [Activity]?
+
+    @Relationship(deleteRule: .nullify, inverse: \Trip.days)
     var trip: Trip?
     
     init(dayNumber: Int, date: Date, startLocation: String, endLocation: String, distance: Double = 0, drivingTime: Double = 0, activities: [Activity] = []) {

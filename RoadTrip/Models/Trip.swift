@@ -42,6 +42,7 @@ class Trip {
     var lastSyncedAt: Date? // Last time synced to cloud
     var cloudId: String? // ID in cloud database for sync
 
+    @Relationship(deleteRule: .cascade, inverse: \TripDay.trip)
     var days: [TripDay]?
     
     init(name: String, startDate: Date, endDate: Date) {

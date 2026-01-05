@@ -32,11 +32,6 @@ struct DayDetailScheduleView: View {
             }
             return timeA < timeB
         }) ?? []
-            guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
-                return a.scheduledTime != nil
-            }
-            return timeA < timeB
-        }
     }
     
     var body: some View {

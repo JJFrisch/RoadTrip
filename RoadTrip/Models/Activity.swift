@@ -43,6 +43,7 @@ class Activity {
     var photoThumbnails: [Data] = [] // Thumbnails for gallery
     
     // Collaboration features
+    @Relationship(deleteRule: .cascade, inverse: \ActivityComment.activity)
     var comments: [ActivityComment]? // Activity comments
     var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
     var voteScore: Int { votes.values.reduce(0, +) }
@@ -52,6 +53,7 @@ class Activity {
     var endDate: Date? // For multi-day activities like hotel stays
     var spansDays: Int = 1 // Number of days this activity spans
 
+    @Relationship(deleteRule: .nullify, inverse: \TripDay.activities)
     var day: TripDay?
     
     init(name: String, location: String, category: String) {
