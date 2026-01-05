@@ -165,6 +165,18 @@ class CloudSyncService: ObservableObject, @unchecked Sendable {
         let result = try await database.records(matching: query)
         return try? result.matchResults.first?.1.get()
     }
+
+    /// Convert a CloudKit record into a local Trip and persist it when a model context is provided.
+    func materializeTrip(from record: CKRecord, into modelContext: ModelContext?) -> Trip? {
+        guard let trip = recordToTrip(record) else { return nil }
+
+        if let context = modelContext {
+            context.insert(trip)
+            try? context.save()
+        }
+
+        return trip
+    }
     
     // MARK: - Helper Methods
     private func tripToRecord(_ trip: Trip) throws -> CKRecord {

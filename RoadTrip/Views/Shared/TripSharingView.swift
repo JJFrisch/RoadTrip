@@ -1,4 +1,5 @@
 // Views/Shared/TripSharingView.swift
+import SwiftData
 import SwiftUI
 
 struct TripSharingView: View {
@@ -14,6 +15,8 @@ struct TripSharingView: View {
     @State private var shareItems: [Any] = []
     @State private var inviteMessage: String = ""
     @State private var copiedToClipboard = false
+    @State private var syncErrorMessage: String = ""
+    @State private var showingSyncError = false
     
     var body: some View {
         NavigationStack {
@@ -94,6 +97,7 @@ struct TripSharingView: View {
                     
                     Button {
                         generateCode()
+                        syncShareCode()
                         if sharingService.copyShareLink(for: trip) {
                             withAnimation {
                                 copiedToClipboard = true
@@ -188,6 +192,11 @@ struct TripSharingView: View {
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(items: shareItems)
         }
+        .alert("Sharing Issue", isPresented: $showingSyncError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(syncErrorMessage)
+        }
         .onAppear {
             if inviteMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 inviteMessage = "You've been invited to a road trip! Join \"\(trip.name)\" in RoadTrip."
@@ -199,11 +208,13 @@ struct TripSharingView: View {
         if trip.shareCode == nil || trip.shareCode?.isEmpty == true {
             _ = sharingService.createShareInvite(for: trip, role: shareRole)
             try? modelContext.save()
+            syncShareCode()
         }
     }
     
     private func generateAndShare() {
         generateCode()
+        syncShareCode()
 
         let code = trip.shareCode ?? ""
         let deepLink = code.isEmpty ? "" : "roadtrip://join/\(code)"
@@ -218,6 +229,23 @@ struct TripSharingView: View {
         shareItems = [message]
         showingShareSheet = true
     }
+
+    private func syncShareCode() {
+        guard CloudSyncService.shared.isAvailable else {
+            syncErrorMessage = "iCloud is not available. Sign in to iCloud to share this trip with others."
+            showingSyncError = true
+            return
+        }
+
+        Task {
+            do {
+                try await CloudSyncService.shared.syncTrip(trip)
+            } catch {
+                syncErrorMessage = error.localizedDescription
+                showingSyncError = true
+            }
+        }
+    }
     
     private func stopSharing() {
         trip.isShared = false
@@ -230,6 +258,7 @@ struct TripSharingView: View {
 // MARK: - Join Trip View (for accepting invites)
 struct JoinTripView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var sharingService = TripSharingService.shared
     
     @State private var shareCode = ""
@@ -315,7 +344,7 @@ struct JoinTripView: View {
         isJoining = true
         Task {
             do {
-                _ = try await sharingService.joinTrip(withCode: shareCode)
+                _ = try await sharingService.joinTrip(withCode: shareCode, modelContext: modelContext)
                 dismiss()
             } catch {
                 errorMessage = error.localizedDescription
