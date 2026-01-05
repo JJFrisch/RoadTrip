@@ -133,7 +133,7 @@ class NotificationService {
         for day in trip.days ?? [] {
             scheduleMorningSummary(for: trip, day: day)
             
-            for activity in day.activities where activity.isCompleted && activity.scheduledTime != nil {
+            for activity in (day.activities ?? []) where activity.isCompleted && activity.scheduledTime != nil {
                 scheduleActivityReminder(activity: activity, minutesBefore: 30, dayDate: day.date)
             }
         }
@@ -147,7 +147,7 @@ class NotificationService {
         for day in trip.days ?? [] {
             identifiers.append("morning-\(day.id.uuidString)")
             
-            for activity in day.activities {
+            for activity in (day.activities ?? []) {
                 identifiers.append("activity-\(activity.id.uuidString)")
             }
         }
