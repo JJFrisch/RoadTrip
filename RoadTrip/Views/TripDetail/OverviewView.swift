@@ -18,12 +18,12 @@ struct OverviewView: View {
     @State private var dayToDelete: TripDay?
     
     var sortedDays: [TripDay] {
-        trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            if trip.days.isEmpty {
+            if (trip.days ?? []).isEmpty {
                 emptyDaysView
             } else {
                 ScrollView {
@@ -34,7 +34,7 @@ struct OverviewView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Trip Summary")
                                         .font(.headline)
-                                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
+                                    Text("\((trip.days ?? []).count) day\((trip.days ?? []).count == 1 ? "" : "s") planned")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -100,7 +100,7 @@ struct OverviewView: View {
                                             .font(.caption)
                                             .foregroundStyle(.purple)
                                         
-                                        Text("\(trip.days.filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
+                                        Text("\((trip.days ?? []).filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
                                             .font(.headline)
                                     }
                                 }
@@ -189,7 +189,7 @@ struct OverviewView: View {
             if day.activities.isEmpty {
                 Text("This will permanently delete Day \(day.dayNumber) and renumber subsequent days.")
             } else {
-                Text("This will delete Day \(day.dayNumber) with \(day.activities.count) activit\(day.activities.count == 1 ? "y" : "ies") and renumber subsequent days.")
+                Text("This will delete Day \(day.dayNumber) with \((day.activities ?? []).count) activit\((day.activities ?? []).count == 1 ? "y" : "ies") and renumber subsequent days.")
             }
         }
     }
@@ -425,7 +425,7 @@ struct OverviewView: View {
 
     private func moveDayUp(_ day: TripDay) {
         guard day.dayNumber > 1 else { return }
-        guard let other = trip.days.first(where: { $0.dayNumber == day.dayNumber - 1 }) else { return }
+        guard let other = (trip.days ?? []).first(where: { $0.dayNumber == day.dayNumber - 1 }) else { return }
 
         let current = day.dayNumber
         day.dayNumber = current - 1
@@ -437,7 +437,7 @@ struct OverviewView: View {
 
     private func moveDayDown(_ day: TripDay) {
         guard day.dayNumber < sortedDays.count else { return }
-        guard let other = trip.days.first(where: { $0.dayNumber == day.dayNumber + 1 }) else { return }
+        guard let other = (trip.days ?? []).first(where: { $0.dayNumber == day.dayNumber + 1 }) else { return }
 
         let current = day.dayNumber
         day.dayNumber = current + 1
@@ -449,7 +449,7 @@ struct OverviewView: View {
 
     private func recomputeDayDates() {
         let calendar = Calendar.current
-        for day in trip.days {
+        for day in trip.days ?? [] {
             if let newDate = calendar.date(byAdding: .day, value: day.dayNumber - 1, to: trip.startDate) {
                 day.date = newDate
             }
@@ -496,13 +496,13 @@ struct OverviewView: View {
         if browsingHotelDay?.id == day.id { browsingHotelDay = nil }
         
         // Remove from the relationship first so we don't keep an invalidated instance in `trip.days`
-        trip.days.removeAll { $0.id == day.id }
+        trip.days = (trip.days ?? []).filter { $0.id != day.id }
 
         // Delete the day from the store
         modelContext.delete(day)
         
         // Get remaining days sorted
-        let remainingDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let remainingDays = (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
         
         // Renumber days after the deleted one
         for remainingDay in remainingDays {

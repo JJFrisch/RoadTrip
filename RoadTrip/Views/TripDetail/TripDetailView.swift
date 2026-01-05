@@ -197,7 +197,7 @@ struct TripDetailView: View {
                 routes.append((from: day.startLocation, to: day.endLocation))
                 
                 // Add activity-to-activity routes for completed activities
-                let completedActivities = day.activities.filter { $0.isCompleted }.sorted { a, b in
+                let completedActivities = (day.activities ?? []).filter { $0.isCompleted }.sorted { a, b in
                     guard let timeA = a.scheduledTime, let timeB = b.scheduledTime else {
                         return a.scheduledTime != nil
                     }

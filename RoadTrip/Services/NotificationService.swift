@@ -76,7 +76,7 @@ class NotificationService {
             return
         }
         
-        let completedActivities = day.activities.filter { $0.isCompleted }
+        let completedActivities = (day.activities ?? []).filter { $0.isCompleted }
         let activityCount = completedActivities.count
         
         let content = UNMutableNotificationContent()
@@ -130,7 +130,7 @@ class NotificationService {
         cancelAllNotifications(for: trip)
         
         // Schedule morning summaries and activity reminders
-        for day in trip.days {
+        for day in trip.days ?? [] {
             scheduleMorningSummary(for: trip, day: day)
             
             for activity in day.activities where activity.isCompleted && activity.scheduledTime != nil {
@@ -144,7 +144,7 @@ class NotificationService {
     func cancelAllNotifications(for trip: Trip) {
         var identifiers: [String] = []
         
-        for day in trip.days {
+        for day in trip.days ?? [] {
             identifiers.append("morning-\(day.id.uuidString)")
             
             for activity in day.activities {

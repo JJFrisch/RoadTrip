@@ -143,7 +143,7 @@ struct RouteInfoView: View {
         isLoading = true
         routes.removeAll()
         
-        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        let sortedDays = (trip.days ?? []).sorted(by: { $0.dayNumber < $1.dayNumber })
         let group = DispatchGroup()
         var tempRoutes: [RouteInfo] = []
         

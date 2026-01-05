@@ -132,7 +132,7 @@ struct ActivityCommentsView: View {
             // Comments List
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
-                    if activity.comments.isEmpty {
+                    if (activity.comments ?? []).isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .font(.system(size: 48))
@@ -147,7 +147,7 @@ struct ActivityCommentsView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                     } else {
-                        ForEach(activity.comments.sorted(by: { $0.createdAt > $1.createdAt }), id: \.id) { comment in
+                        ForEach((activity.comments ?? []).sorted(by: { $0.createdAt > $1.createdAt }), id: \.id) { comment in
                             CommentRow(comment: comment, currentUserId: currentUserId)
                         }
                     }
@@ -183,7 +183,8 @@ struct ActivityCommentsView: View {
         guard !trimmed.isEmpty else { return }
         
         let comment = ActivityComment(userId: currentUserId, userEmail: currentUserEmail, text: trimmed)
-        activity.comments.append(comment)
+        if activity.comments == nil { activity.comments = [] }
+        activity.comments?.append(comment)
         newComment = ""
         
         // TODO: Sync to CloudKit for real-time updates
