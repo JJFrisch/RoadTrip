@@ -81,19 +81,6 @@ struct AccountView: View {
                             HStack { Spacer(); Text("Create Account"); Spacer() }
                         }
                     }
-                    
-                    Section {
-                        VStack(alignment: .leading, spacing: 12) {
-                            FeatureBullet(icon: "icloud", text: "Sync trips across all your devices")
-                            FeatureBullet(icon: "person.2", text: "Share & collaborate on trips")
-                            FeatureBullet(icon: "arrow.clockwise", text: "Automatic backup to cloud")
-                        }
-                        .padding(.vertical, 8)
-                    } header: {
-                        Text("Benefits of an Account")
-                    } footer: {
-                        Text("An account is optional. All features work offline without signing in.")
-                    }
                 }
             }
             .navigationTitle("Account")

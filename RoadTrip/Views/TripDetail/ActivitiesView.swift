@@ -3,6 +3,13 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+// Helper struct for location details
+struct LocationPlaceDetails {
+    let website: String?
+    let phoneNumber: String?
+    let openingHours: [String]
+}
+
 // Wrapper to distinguish between add and import sheet presentations
 struct DaySheetItem: Identifiable {
     let id = UUID()
@@ -466,7 +473,7 @@ struct AddActivityView: View {
                     Button {
                         showingKindsOfActivities = true
                     } label: {
-                        Label("Use Kind", systemImage: "doc.on.doc")
+                        Label("Activity Types", systemImage: "doc.on.doc")
                     }
                 }
                 
@@ -518,9 +525,53 @@ struct AddActivityView: View {
                             Text(cat).tag(cat)
                         }
                     }
+                    
+                    // Display location details if available
+                    if let details = locationDetails {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let website = details.website, !website.isEmpty {
+                                Link(destination: URL(string: website.hasPrefix("http") ? website : "https://\(website)")!) {
+                                    HStack {
+                                        Image(systemName: "link.circle.fill")
+                                            .foregroundStyle(.blue)
+                                        Text("Website")
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            
+                            if let phone = details.phoneNumber, !phone.isEmpty {
+                                Link(destination: URL(string: "tel:\(phone.filter { $0.isNumber })")!) {
+                                    HStack {
+                                        Image(systemName: "phone.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text(phone)
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                            
+                            if !details.openingHours.isEmpty {
+                                DisclosureGroup("Hours") {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        ForEach(details.openingHours, id: \.self) { hours in
+                                            Text(hours)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                     .onChange(of: category) { _, newValue in
                         showHotelFields = (newValue == "Hotel")
-                        updateSuggestedTime()
                     }
                     
                     if day.activities.filter({ $0.category == "Hotel" }).isEmpty {
@@ -538,15 +589,7 @@ struct AddActivityView: View {
                     Toggle("Set Time", isOn: $includeTime)
                     
                     if includeTime {
-                        Toggle("Use Smart Suggestion", isOn: $useSuggestedTime)
-                            .onChange(of: useSuggestedTime) { _, newValue in
-                                if newValue {
-                                    updateSuggestedTime()
-                                }
-                            }
-                        
                         DatePicker("Start Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
-                            .disabled(useSuggestedTime)
                             .onChange(of: scheduledTime) { _, newValue in
                                 if lastEditedTimeField != .startTime { return }
                                 // Keep duration fixed, adjust end time
@@ -554,7 +597,6 @@ struct AddActivityView: View {
                             }
                         
                         DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
-                            .disabled(useSuggestedTime)
                             .onChange(of: endTime) { _, newValue in
                                 if lastEditedTimeField != .endTime { return }
                                 // Adjust duration based on start and end time

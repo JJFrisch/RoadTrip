@@ -13,10 +13,8 @@ struct HomeView: View {
     @State private var showingNewTripSheet = false
     @State private var tripToDelete: Trip?
     @State private var tripToEdit: Trip?
-    @State private var tripToShare: Trip?
     @State private var showingSampleTripAlert = false
     @State private var showingAccount = false
-    @State private var showingJoinTrip = false
     @State private var showingOnboarding = false
     @State private var showingTutorial = false
     @State private var showingFilters = false
@@ -58,14 +56,7 @@ struct HomeView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal.decrease.circle")
                                 .font(.title3)
-                                .symbolVariant(searchManager.sortOption != .dateNewest || searchManager.filterByShared != .all ? .fill : .none)
-                        }
-
-                        Button {
-                            showingJoinTrip = true
-                        } label: {
-                            Image(systemName: "person.badge.plus")
-                                .font(.title3)
+                                .symbolVariant(searchManager.sortOption != .dateNewest ? .fill : .none)
                         }
 
                         Button {
@@ -86,9 +77,6 @@ struct HomeView: View {
             
             .sheet(item: $tripToEdit) { trip in
                 EditTripView(trip: trip)
-            }
-            .sheet(item: $tripToShare) { trip in
-                TripSharingView(trip: trip)
             }
             .alert("Delete Trip", isPresented: .constant(tripToDelete != nil), presenting: tripToDelete) { trip in
                 Button(role: .destructive) {
@@ -232,12 +220,6 @@ struct HomeView: View {
                             tripToEdit = trip
                         } label: {
                             Label("Edit Trip", systemImage: "pencil")
-                        }
-
-                        Button {
-                            tripToShare = trip
-                        } label: {
-                            Label("Share Trip", systemImage: "square.and.arrow.up")
                         }
 
                         Divider()

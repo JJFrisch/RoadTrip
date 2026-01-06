@@ -32,28 +32,9 @@ struct FilterSortSheet: View {
                     }
                 }
                 
-                Section("Filter") {
-                    ForEach(TripSearchManager.SharedFilter.allCases, id: \.self) { filter in
-                        Button {
-                            searchManager.filterByShared = filter
-                        } label: {
-                            HStack {
-                                Text(filter.rawValue)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if searchManager.filterByShared == filter {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                        }
-                    }
-                }
-                
                 Section {
                     Button("Reset to Defaults") {
                         searchManager.sortOption = .dateNewest
-                        searchManager.filterByShared = .all
                         searchManager.searchText = ""
                         ToastManager.shared.show("Filters reset", type: .success)
                     }
