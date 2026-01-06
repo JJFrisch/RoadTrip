@@ -9,6 +9,8 @@ import SwiftUI
 
 // Trip sharing / QR-code collaboration is currently disabled.
 
+#if false
+
 // MARK: - Activity Comments View
 struct ActivityCommentsView: View {
     @Bindable var activity: Activity
@@ -199,3 +201,5 @@ struct ActivityVotingView: View {
         }
     }
 }
+
+#endif

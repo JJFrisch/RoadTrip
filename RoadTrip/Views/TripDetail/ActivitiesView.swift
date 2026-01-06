@@ -422,6 +422,12 @@ struct AddActivityView: View {
     @State private var estimatedCost: Double = 0
     @State private var costCategory = "Other"
     
+    // Hotel-specific fields
+    @State private var checkInTime = Date()
+    @State private var checkOutTime = Date()
+    @State private var hotelConfirmation = ""
+    @State private var showHotelFields = false
+    
     // Track which field was last edited to handle auto-adjustments
     @State private var lastEditedTimeField: TimeField = .startTime
     
@@ -513,7 +519,18 @@ struct AddActivityView: View {
                         }
                     }
                     .onChange(of: category) { _, newValue in
+                        showHotelFields = (newValue == "Hotel")
                         updateSuggestedTime()
+                    }
+                    
+                    if day.activities.filter({ $0.category == "Hotel" }).isEmpty {
+                        HStack {
+                            Image(systemName: "bed.double.fill")
+                                .foregroundStyle(.purple)
+                            Text("Tip: Add a Hotel activity to track lodging")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
@@ -617,6 +634,22 @@ struct AddActivityView: View {
                         .frame(height: 80)
                 }
                 
+                if showHotelFields || category == "Hotel" {
+                    Section("Hotel Details") {
+                        DatePicker("Check-In Time", selection: $checkInTime, displayedComponents: .hourAndMinute)
+                        DatePicker("Check-Out Time", selection: $checkOutTime, displayedComponents: .hourAndMinute)
+                        TextField("Confirmation Number", text: $hotelConfirmation)
+                        
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(.blue)
+                            Text("Hotel activities automatically sort to top of schedule")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
                 Section("Budget") {
                     Toggle("Add Estimated Cost", isOn: $includeCost)
                     
@@ -678,6 +711,18 @@ struct AddActivityView: View {
             .onAppear {
                 // Initialize end time based on default duration
                 endTime = Calendar.current.date(byAdding: .minute, value: Int(duration * 60), to: scheduledTime) ?? scheduledTime
+                
+                // Set default hotel check-in/check-out times
+                let calendar = Calendar.current
+                checkInTime = calendar.date(bySettingHour: 15, minute: 0, second: 0, of: day.date) ?? Date()
+                checkOutTime = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: day.date) ?? Date()
+                
+                // Auto-suggest Hotel if this day has no hotel and no activities
+                if day.activities.filter({ $0.category == "Hotel" }).isEmpty && day.activities.isEmpty {
+                    category = "Hotel"
+                    showHotelFields = true
+                    activityName = "Hotel"
+                }
             }
             // Track which time field is being edited
             .onChange(of: scheduledTime) { _, _ in lastEditedTimeField = .startTime }
@@ -720,8 +765,24 @@ struct AddActivityView: View {
                                location: location.trimmingCharacters(in: .whitespaces), 
                                category: category)
         
-        // Set order to be at the end
-        activity.order = day.activities.count
+        // Hotel activities get special ordering to appear at top
+        if category == "Hotel" {
+            activity.order = -1000 // Negative order sorts to top
+            
+            // Set hotel-specific times
+            let calendar = Calendar.current
+            if showHotelFields {
+                let checkInComponents = calendar.dateComponents([.hour, .minute], from: checkInTime)
+                activity.checkInTime = calendar.date(bySettingHour: checkInComponents.hour ?? 15, minute: checkInComponents.minute ?? 0, second: 0, of: day.date)
+                
+                let checkOutComponents = calendar.dateComponents([.hour, .minute], from: checkOutTime)
+                activity.checkOutTime = calendar.date(bySettingHour: checkOutComponents.hour ?? 11, minute: checkOutComponents.minute ?? 0, second: 0, of: day.date)
+                
+                activity.hotelConfirmation = hotelConfirmation.trimmingCharacters(in: .whitespaces).isEmpty ? nil : hotelConfirmation
+            }
+        } else {
+            activity.order = day.activities.count
+        }
         
         if includeTime {
             // Combine day's date with selected time

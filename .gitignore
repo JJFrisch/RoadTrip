@@ -93,6 +93,7 @@ iOSInjectionProject/
 # IMPORTANT: Never commit API keys or secrets to version control!
 RoadTrip/Info.plist
 Config.swift
+Info.plist
 
 # macOS
 .DS_Store

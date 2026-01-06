@@ -54,14 +54,14 @@ class WeatherPlanningManager: ObservableObject {
         for day in trip.days {
             // Get weather for the day's start location
             if !day.startLocation.isEmpty {
-                if let weather = try? await WeatherService.shared.fetchWeather(for: day.startLocation, on: day.date) {
+                if let weather = await WeatherService.shared.fetchWeather(for: day.startLocation, date: day.date) {
                     await analyzeWeatherConditions(weather: weather, for: day)
                 }
             }
             
             // Analyze activities
             for activity in day.activities {
-                if let weather = try? await WeatherService.shared.fetchWeather(for: activity.location, on: day.date) {
+                if let weather = await WeatherService.shared.fetchWeather(for: activity.location, date: day.date) {
                     await suggestIndoorAlternatives(for: activity, weather: weather, day: day)
                 }
             }
@@ -179,7 +179,7 @@ struct WeatherForecastView: View {
         // Get 7-day forecast starting from day's date
         for i in 0..<7 {
             if let forecastDate = Calendar.current.date(byAdding: .day, value: i, to: day.date) {
-                if let weather = try? await weatherService.fetchWeather(for: day.startLocation, on: forecastDate) {
+                if let weather = await weatherService.fetchWeather(for: day.startLocation, date: forecastDate) {
                     newForecast.append(weather)
                 }
             }

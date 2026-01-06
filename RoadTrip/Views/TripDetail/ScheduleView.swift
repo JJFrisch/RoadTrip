@@ -837,7 +837,7 @@ struct CalendarTimelineView: View {
                                         .foregroundStyle(.white)
                                         .cornerRadius(8)
                                 }
-                                .dropDestination(for: String.self) { items, _ in
+                                .dropDestination(for: String.self) { items, location in
                                     guard let droppedIdString = items.first,
                                           let droppedId = UUID(uuidString: droppedIdString),
                                           let droppedActivity = activities.first(where: { $0.id == droppedId }),
@@ -845,16 +845,33 @@ struct CalendarTimelineView: View {
                                         return false
                                     }
                                     
-                                    // Swap scheduled times
-                                    let targetTime = activity.scheduledTime
-                                    activity.scheduledTime = droppedActivity.scheduledTime
-                                    droppedActivity.scheduledTime = targetTime
+                                    // Update dragged activity's time to match drop location
+                                    droppedActivity.scheduledTime = activity.scheduledTime
                                     return true
                                 }
+                                .gesture(
+                                    DragGesture()
+                                        .onEnded { value in
+                                            // Calculate new time based on drag offset
+                                            let hourOffset = value.translation.height / hourHeight
+                                            if let currentTime = activity.scheduledTime {
+                                                let newTime = currentTime.addingTimeInterval(hourOffset * 3600)
+                                                activity.scheduledTime = newTime
+                                            }
+                                        }
+                                )
                                 
-                                // Travel time indicator
-                                if index < activities.count - 1, let travelTime = travelTimes[activity.id] {
-                                    TravelTimeIndicator(travelTime: travelTime)
+                                // Travel time indicator - only show if next activity is checked
+                                if index < activities.count - 1 {
+                                    let nextActivity = activities[index + 1]
+                                    if nextActivity.isCompleted, let travelTime = travelTimes[activity.id] {
+                                        let arrivalTime: Date? = {
+                                            guard let activityEnd = activity.scheduledTime,
+                                                  let duration = activity.duration else { return nil }
+                                            return activityEnd.addingTimeInterval(duration * 3600 + travelTime)
+                                        }()
+                                        TravelTimeIndicator(travelTime: travelTime, arrivalTime: arrivalTime, hourHeight: hourHeight)
+                                    }
                                 }
                             }
                             .offset(y: calculateOffset(for: startTime))
@@ -1143,21 +1160,34 @@ struct EnhancedActivityBlock: View {
 // MARK: - Travel Time Indicator
 struct TravelTimeIndicator: View {
     let travelTime: TimeInterval
+    let arrivalTime: Date?
+    let hourHeight: CGFloat
+    
+    private var driveHeightInHours: Double {
+        travelTime / 3600.0 // Convert seconds to hours
+    }
     
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "car.fill")
                 .font(.caption2)
-            Text(formatTravelTime(travelTime))
-                .font(.caption2)
-                .fontWeight(.medium)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(formatTravelTime(travelTime))
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                if let arrival = arrivalTime {
+                    Text("Arrive: \(arrival.formatted(date: .omitted, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(Color(.systemGray6))
         .cornerRadius(12)
-        .padding(.vertical, 4)
+        .frame(height: max(30, CGFloat(driveHeightInHours) * hourHeight))
     }
     
     private func formatTravelTime(_ seconds: TimeInterval) -> String {

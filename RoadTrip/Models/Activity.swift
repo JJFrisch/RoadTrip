@@ -21,6 +21,13 @@ class Activity {
     var isCompleted: Bool = false
     var order: Int = 0 // For custom ordering within a day
     
+    // Hotel-specific fields
+    var checkInTime: Date? // For Hotel category
+    var checkOutTime: Date? // For Hotel category
+    var hotelConfirmation: String? // Reservation confirmation number
+    var hotelPhoneNumber: String? // Hotel contact
+    var hotelWebsite: String? // Hotel booking site
+    
     // Budget tracking
     var estimatedCost: Double? // in dollars
     var costCategory: String? // "Gas", "Food", "Lodging", "Attractions", "Other"
@@ -39,11 +46,6 @@ class Activity {
     // Photo attachments
     @Attribute(.externalStorage) var photos: [Data] = [] // Store photo data
     var photoThumbnails: [Data] = [] // Thumbnails for gallery
-    
-    // Collaboration features
-    var comments: [ActivityComment] = [] // Activity comments
-    var votes: [String: Int] = [:] // userId: voteValue (1 or -1)
-    var voteScore: Int { votes.values.reduce(0, +) }
     
     // Multi-day activity support
     var isMultiDay: Bool = false
