@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>RAPIDAPI_KEY</key>
+    <string>876258fbf6mshab8de6e5cbf66edp188ec4jsnfb9851109a0a</string>
+    <key>MAPBOX_ACCESS_TOKEN</key>
+    <string>pk.eyJ1IjoiampmcmlzY2giLCJhIjoiY21qenkyZ25jMDRoeDNwb3EzNW4zeWRyeSJ9.U4JL4my32DUSmsSCps6POA</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>MKDirectionsRequest</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.apple.maps.directionsrequest</string>
+            </array>
+        </dict>
+    </array>
+    <key>MKDirectionsApplicationSupportedModes</key>
+    <array>
+        <string>MKDirectionsModeBike</string>
+        <string>MKDirectionsModeBus</string>
+        <string>MKDirectionsModeCar</string>
+        <string>MKDirectionsModeFerry</string>
+        <string>MKDirectionsModeOther</string>
+        <string>MKDirectionsModePedestrian</string>
+        <string>MKDirectionsModePlane</string>
+        <string>MKDirectionsModeRideShare</string>
+        <string>MKDirectionsModeStreetCar</string>
+        <string>MKDirectionsModeSubway</string>
+        <string>MKDirectionsModeTaxi</string>
+        <string>MKDirectionsModeTrain</string>
+    </array>
+    <key>GOOGLE_PLACES_API_KEY</key>
+    <string>AIzaSyAWB54M-VtBYHKhsQTbmgjjgdXCHx91lOU</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>RoadTrip needs access to your location to search for nearby points of interest and provide accurate directions.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>RoadTrip needs access to your location to search for nearby points of interest and provide accurate directions.</string>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDefault</string>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <false/>
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>AccentColor</string>
+    </dict>
+</dict>
+</plist>
+
