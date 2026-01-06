@@ -22,23 +22,11 @@ class Trip {
     // Sharing & Collaboration
     var ownerId: String? // User ID of the trip owner
     var ownerEmail: String? // Email of trip owner for display
-    /// Persisted backing store for `sharedWith`.
-    /// Stored as JSON to avoid CoreData attempting to materialize Swift `Array` as a transformable Objective-C class.
-    var sharedWithData: Data
-
     /// Array of user IDs who have access
-    var sharedWith: [String] {
-        get {
-            (try? JSONDecoder().decode([String].self, from: sharedWithData)) ?? []
-        }
-        set {
-            sharedWithData = (try? JSONEncoder().encode(newValue)) ?? Data()
-        }
-    }
+    var sharedWith: [String] = []
     var shareCode: String? // Unique code for sharing via link
     var isShared: Bool // Whether trip is shared with others
-    var lastSyncedAt: Date? // Last time synced to cloud
-    var cloudId: String? // ID in cloud database for sync
+    // Removed CloudKit sync properties: lastSyncedAt, cloudId
     
     @Relationship(deleteRule: .cascade)
     var days: [TripDay]
@@ -50,7 +38,7 @@ class Trip {
         self.endDate = endDate
         self.createdAt = Date()
         self.days = []
-        self.sharedWithData = (try? JSONEncoder().encode([String]())) ?? Data()
+        self.sharedWith = []
         self.isShared = false
         
         // Generate TripDays for each day between startDate and endDate (inclusive)

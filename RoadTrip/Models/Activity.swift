@@ -28,8 +28,8 @@ class Activity {
     // Enhanced location data
     var latitude: Double?
     var longitude: Double?
-    var placeId: String? // Google Places ID or other external ID
-    var sourceType: String? // "google", "tripadvisor", "manual", "mapbox"
+    var placeId: String? // External place ID (Google, Mapbox, etc.)
+    var sourceType: String? // "google", "tripadvisor", "manual", "mapbox" (local only)
     var importedAt: Date?
     var rating: Double? // 0.0 to 5.0
     var photoURL: String?
