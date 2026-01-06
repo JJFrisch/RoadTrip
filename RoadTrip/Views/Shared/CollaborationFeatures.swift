@@ -187,7 +187,7 @@ struct ActivityCommentsView: View {
         activity.comments?.append(comment)
         newComment = ""
         
-        // TODO: Sync to CloudKit for real-time updates
+        // Comment sync: local only, no CloudKit
     }
 }
 
@@ -312,7 +312,7 @@ struct ActivityVotingView: View {
             activity.votes[currentUserId] = value
         }
         
-        // TODO: Sync to CloudKit for real-time updates
+        // Vote sync: local only, no CloudKit
     }
 }
 
@@ -325,9 +325,8 @@ class CollaborationSyncManager: ObservableObject {
     
     private init() {}
     
-    // TODO: Implement CloudKit subscriptions for real-time updates
+    // Real-time sync: local only, no CloudKit
     func startListening(for trip: Trip) {
-        // Subscribe to CloudKit changes for this trip
         isConnected = true
     }
     
@@ -336,12 +335,12 @@ class CollaborationSyncManager: ObservableObject {
     }
     
     func syncComment(_ comment: ActivityComment, for activity: Activity) {
-        // Push comment to CloudKit
+        // Sync comment: local only, no CloudKit
         lastSyncTime = Date()
     }
-    
+
     func syncVote(userId: String, value: Int, for activity: Activity) {
-        // Push vote to CloudKit
+        // Sync vote: local only, no CloudKit
         lastSyncTime = Date()
     }
 }

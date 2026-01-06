@@ -7,10 +7,6 @@ import SwiftData
 
 @Model
 class Trip {
-    @Relationship(deleteRule: .cascade, inverse: \TripDay.trip)
-    var days: [TripDay]?
-
-    var safeDays: [TripDay] { days ?? [] }
     var id: UUID = UUID()
     var name: String = ""
     var tripDescription: String?
@@ -32,26 +28,23 @@ class Trip {
     var sharedWithData: Data = Data()
 
     /// Array of user IDs who have access
-    var sharedWith: [String] {
-        get {
-            (try? JSONDecoder().decode([String].self, from: sharedWithData)) ?? []
-        }
-        set {
-            sharedWithData = (try? JSONEncoder().encode(newValue)) ?? Data()
-        }
-    }
+    var sharedWith: [String] = []
     var shareCode: String? // Unique code for sharing via link
-    var isShared: Bool = false // Whether trip is shared with others
-    var lastSyncedAt: Date? // Last time synced to cloud
-    var cloudId: String? // ID in cloud database for sync
+    var isShared: Bool // Whether trip is shared with others
+    // Removed CloudKit sync properties: lastSyncedAt, cloudId
+    
+    @Relationship(defaultRule: .cascade)
+    var days: [TripDay]
     
     init(name: String, startDate: Date, endDate: Date) {
+        self.id = UUID()
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
-        self.sharedWithData = (try? JSONEncoder().encode([String]())) ?? Data()
+        self.createdAt = Date()
+        self.days = []
+        self.sharedWith = []
         self.isShared = false
-        self.days = nil
         // Generate TripDays for each day between startDate and endDate (inclusive)
         generateDays(from: startDate, to: endDate)
     }
