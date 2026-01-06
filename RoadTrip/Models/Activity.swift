@@ -40,7 +40,7 @@ class Activity {
     
     // Photo attachments
     @Attribute(.externalStorage) var photos: [Data] = [] // Store photo data
-    var photoThumbnails: [Data] = [] // Thumbnails for gallery
+    var photoThumbnails: [Data] = [] // Thumbnails for gallery of activity
     
     // Collaboration features
     @Relationship(deleteRule: .cascade, inverse: \ActivityComment.activity)
