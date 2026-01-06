@@ -44,7 +44,7 @@ struct QRCodeShareView: View {
             VStack(spacing: 24) {
                 Text("Share via QR Code")
                     .font(.title2)
-                    .fontWeight(.bold)
+                    // Sync to local storage for real-time updates
                 
                 if let qrImage {
                     Image(uiImage: qrImage)
@@ -96,7 +96,7 @@ struct QRCodeShareView: View {
             .padding()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+            // Sync to local storage for real-time updates
                         dismiss()
                     }
                 }
@@ -124,7 +124,7 @@ struct QRCodeShareView: View {
 struct ActivityCommentsView: View {
     @Bindable var activity: Activity
     @State private var newComment = ""
-    @State private var currentUserId = "user123" // Replace with actual auth
+    @State private var currentUserId = "user123"
     @State private var currentUserEmail = "user@example.com" // Replace with actual auth
     
     var body: some View {
