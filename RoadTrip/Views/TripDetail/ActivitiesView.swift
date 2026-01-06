@@ -464,7 +464,7 @@ struct AddActivityView: View {
             Form {
                 Section {
                     Button {
-                        showingTemplates = true
+                        showingKindsOfActivities = true
                     } label: {
                         Label("Use Kind", systemImage: "doc.on.doc")
                     }

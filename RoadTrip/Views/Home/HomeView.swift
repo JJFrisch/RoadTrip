@@ -6,7 +6,7 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
-    @StateObject private var authService = AuthService.shared
+    // AuthService disabled; account button shows generic icon
     @StateObject private var searchManager = TripSearchManager()
     @StateObject private var onboardingManager = OnboardingManager.shared
 
@@ -46,20 +46,8 @@ struct HomeView: View {
                     Button {
                         showingAccount = true
                     } label: {
-                        if authService.isLoggedIn, let user = authService.currentUser {
-                            ZStack {
-                                Circle()
-                                    .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .frame(width: 32, height: 32)
-                                Text(user.displayName.prefix(1).uppercased())
-                                    .font(.subheadline)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.white)
-                            }
-                        } else {
-                            Image(systemName: "person.circle")
-                                .font(.title3)
-                        }
+                        Image(systemName: "person.circle")
+                            .font(.title3)
                     }
                 }
 
@@ -95,9 +83,7 @@ struct HomeView: View {
             .sheet(isPresented: $showingAccount) {
                 AccountView()
             }
-            .sheet(isPresented: $showingJoinTrip) {
-                JoinTripView()
-            }
+            
             .sheet(item: $tripToEdit) { trip in
                 EditTripView(trip: trip)
             }
@@ -315,11 +301,6 @@ struct TripCardView: View {
                             .fontWeight(.bold)
                             .lineLimit(1)
                         
-                        if trip.isShared {
-                            Image(systemName: "person.2.fill")
-                                .font(.caption)
-                                .foregroundStyle(.blue)
-                        }
                     }
                     
                     Text("\(trip.numberOfNights) night\(trip.numberOfNights == 1 ? "" : "s")")
@@ -384,16 +365,7 @@ struct TripCardView: View {
             }
             
             // Show collaborators indicator
-            if trip.isShared && !trip.sharedWith.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2")
-                        .font(.caption2)
-                        .foregroundStyle(.blue)
-                    Text("\(trip.sharedWith.count + 1) collaborator\(trip.sharedWith.count == 0 ? "" : "s")")
-                        .font(.caption2)
-                        .foregroundStyle(.blue)
-                }
-            }
+            
         }
         .padding()
         .background(.ultraThinMaterial)

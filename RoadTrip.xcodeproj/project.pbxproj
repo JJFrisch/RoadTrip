@@ -114,6 +114,7 @@
 				Views/TripDetail/HotelSourceSettingsSheet.swift,
 				Views/TripDetail/LocationSearchField.swift,
 				Views/TripDetail/OfflineMapDownloadSheet.swift,
+				Views/TripDetail/OverviewMiniMapView.swift,
 				Views/TripDetail/OverviewView.swift,
 				Views/TripDetail/RouteInfoView.swift,
 				Views/TripDetail/ScheduleView.swift,
@@ -127,7 +128,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
-				info.plist,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
 		};
@@ -147,16 +147,6 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		DB0FBBB22F0DB80C00603D74 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = DB63BA072F0770D5001B1FDD /* Resources */;
-			membershipExceptions = (
-				info.plist,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB63BA0C2F0770D5001B1FDD /* RoadTripTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -173,12 +163,8 @@
 			exceptions = (
 				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
 				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
-				DB0FBBB22F0DB80C00603D74 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */,
 				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,
 			);
-			explicitFileTypes = {
-				info.plist = sourcecode.c.objc;
-			};
 			path = RoadTrip;
 			sourceTree = "<group>";
 		};

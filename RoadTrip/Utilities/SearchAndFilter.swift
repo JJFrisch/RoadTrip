@@ -50,9 +50,9 @@ class TripSearchManager: ObservableObject {
             case .all:
                 return trips
             case .sharedOnly:
-                return trips.filter { $0.isShared }
+                return trips
             case .privateOnly:
-                return trips.filter { !$0.isShared }
+                return trips
             }
         }
     }
