@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>RAPIDAPI_KEY</key>
-    <string>876258fbf6mshab8de6e5cbf66edp188ec4jsnfb9851109a0a</string>
+    <string></string>
     <key>MAPBOX_ACCESS_TOKEN</key>
-    <string>pk.eyJ1IjoiampmcmlzY2giLCJhIjoiY21qenkyZ25jMDRoeDNwb3EzNW4zeWRyeSJ9.U4JL4my32DUSmsSCps6POA</string>
+    <string></string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleExecutable</key>
@@ -60,7 +60,7 @@
         <string>MKDirectionsModeTrain</string>
     </array>
     <key>GOOGLE_PLACES_API_KEY</key>
-    <string>AIzaSyAWB54M-VtBYHKhsQTbmgjjgdXCHx91lOU</string>
+    <string></string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>NSLocationWhenInUseUsageDescription</key>
