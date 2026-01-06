@@ -33,7 +33,7 @@ class Activity {
     var importedAt: Date?
     var rating: Double? // 0.0 to 5.0
     var photoURL: String?
-    var website: String?
+    var website: String? // Official website
     var phoneNumber: String?
     
     // Photo attachments
