@@ -80,29 +80,29 @@ struct QRCodeShareView: View {
                             UIPasteboard.general.string = shareCode
                             ToastManager.shared.show("Code copied!", type: .success)
                         }
-                    } label: {
-                        Label("Copy Code", systemImage: "doc.on.doc")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                dismiss()
+                            }
+                        }
                     }
-                    .buttonStyle(.bordered)
-                    
-                    ShareLink(item: generateShareMessage(), subject: Text("Join my trip!")) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(.borderedProminent)
                 }
-                
-                Spacer()
-            }
-            .padding()
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
+                .task {
+                    if let shareCode = trip.shareCode {
+                        qrImage = QRCodeGenerator.shared.generateQRCode(from: shareCode)
                     }
                 }
             }
-                    }
-                }
+
+            func generateShareMessage() -> String {
+                """
+                Join my RoadTrip: \(trip.name)
+
+                Use code: \(trip.shareCode ?? "")
+
+                Dates: \(trip.startDate.formatted(date: .abbreviated, time: .omitted)) - \(trip.endDate.formatted(date: .abbreviated, time: .omitted))
+                """
             }
         }
         .task {
