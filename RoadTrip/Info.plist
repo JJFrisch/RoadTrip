@@ -60,7 +60,7 @@
         <string>MKDirectionsModeTrain</string>
     </array>
     <key>GOOGLE_PLACES_API_KEY</key>
-    <string>AIzaSyAWB54M-VtBYHKhsQTbmgjjgdXCHx91lOU</string>
+    <string></string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>NSLocationWhenInUseUsageDescription</key>
