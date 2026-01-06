@@ -47,7 +47,6 @@
 				Services/AuthService.swift,
 				Services/BookingDestinationService.swift,
 				Services/CarRentalSearchService.swift,
-				Services/CloudSyncService.swift,
 				Services/GeocodingService.swift,
 				Services/GooglePlacesService.swift,
 				Services/HotelSearchService.swift,
@@ -128,7 +127,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
-				Info.plist,
+				info.plist,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
 		};
@@ -149,11 +148,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		DB18043B2F09D54500253A35 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */ = {
+		DB0FBBB22F0DB80C00603D74 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = DB63BA072F0770D5001B1FDD /* Resources */;
 			membershipExceptions = (
-				Info.plist,
+				info.plist,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -174,11 +173,11 @@
 			exceptions = (
 				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
 				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
-				DB18043B2F09D54500253A35 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */,
+				DB0FBBB22F0DB80C00603D74 /* Exceptions for "RoadTrip" folder in "Copy Bundle Resources" phase from "RoadTripTests" target */,
 				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,
 			);
 			explicitFileTypes = {
-				Info.plist = sourcecode.c.objc.preprocessed;
+				info.plist = sourcecode.c.objc;
 			};
 			path = RoadTrip;
 			sourceTree = "<group>";
