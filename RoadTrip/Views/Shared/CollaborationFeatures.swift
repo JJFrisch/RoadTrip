@@ -44,7 +44,7 @@ struct QRCodeShareView: View {
             VStack(spacing: 24) {
                 Text("Share via QR Code")
                     .font(.title2)
-                    .fontWeight(.bold)
+                    // Sync to local storage for real-time updates
                 
                 if let qrImage {
                     Image(uiImage: qrImage)
@@ -96,7 +96,7 @@ struct QRCodeShareView: View {
             .padding()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+            // Sync to local storage for real-time updates
                         dismiss()
                     }
                 }
