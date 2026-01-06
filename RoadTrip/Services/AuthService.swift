@@ -1,4 +1,5 @@
 // Services/AuthService.swift
+#if false
 import Foundation
 import SwiftData
 import Combine
@@ -200,3 +201,4 @@ class AuthService: ObservableObject {
         }
     }
 }
+#endif

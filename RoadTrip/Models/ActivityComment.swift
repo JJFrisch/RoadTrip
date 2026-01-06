@@ -8,6 +8,9 @@
 import Foundation
 import SwiftData
 
+// Collaboration features currently disabled
+#if false
+
 @Model
 class ActivityComment {
     var id: UUID
@@ -25,3 +28,5 @@ class ActivityComment {
         self.createdAt = Date()
     }
 }
+
+#endif
