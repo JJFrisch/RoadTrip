@@ -534,6 +534,7 @@ struct CalendarTimelineView: View {
     @State private var travelTimes: [UUID: TimeInterval] = [:] // Travel time to next activity
     @State private var isCalculatingTravel = false
     @State private var selectedActivityForEdit: Activity?
+    @State private var selectedActivityForFullEdit: Activity?
     @State private var draggedActivity: Activity?
     @State private var showingAddAtTime: Date?
     @State private var zoomScale: CGFloat = 1.0
@@ -827,6 +828,9 @@ struct CalendarTimelineView: View {
                                     hourHeight: hourHeight,
                                     onQuickEdit: {
                                         selectedActivityForEdit = activity
+                                    },
+                                    onTap: {
+                                        selectedActivityForFullEdit = activity
                                     }
                                 )
                                 .draggable(activity.id.uuidString) {
@@ -850,13 +854,30 @@ struct CalendarTimelineView: View {
                                     return true
                                 }
                                 .gesture(
-                                    DragGesture()
+                                    LongPressGesture(minimumDuration: 0.5)
+                                        .sequenced(before: DragGesture())
                                         .onEnded { value in
-                                            // Calculate new time based on drag offset
-                                            let hourOffset = value.translation.height / hourHeight
-                                            if let currentTime = activity.scheduledTime {
-                                                let newTime = currentTime.addingTimeInterval(hourOffset * 3600)
-                                                activity.scheduledTime = newTime
+                                            switch value {
+                                            case .second(true, let drag):
+                                                if let drag = drag {
+                                                    // Calculate new time based on drag offset
+                                                    let hourOffset = drag.translation.height / hourHeight
+                                                    if let currentTime = activity.scheduledTime {
+                                                        var newTime = currentTime.addingTimeInterval(hourOffset * 3600)
+                                                        
+                                                        // Snap to nearest 15-minute interval
+                                                        let calendar = Calendar.current
+                                                        let components = calendar.dateComponents([.hour, .minute], from: newTime)
+                                                        if let minute = components.minute {
+                                                            let snappedMinute = (minute / 15) * 15
+                                                            newTime = calendar.date(bySettingHour: components.hour ?? 0, minute: snappedMinute, second: 0, of: newTime) ?? newTime
+                                                        }
+                                                        
+                                                        activity.scheduledTime = newTime
+                                                    }
+                                                }
+                                            default:
+                                                break
                                             }
                                         }
                                 )
@@ -870,7 +891,22 @@ struct CalendarTimelineView: View {
                                                   let duration = activity.duration else { return nil }
                                             return activityEnd.addingTimeInterval(duration * 3600 + travelTime)
                                         }()
-                                        TravelTimeIndicator(travelTime: travelTime, arrivalTime: arrivalTime, hourHeight: hourHeight)
+                                        
+                                        // Check if drive extends into next activity (conflict)
+                                        let hasDrivingConflict: Bool = {
+                                            guard let activityEnd = activity.scheduledTime,
+                                                  let duration = activity.duration,
+                                                  let nextStart = nextActivity.scheduledTime else { return false }
+                                            let driveEnd = activityEnd.addingTimeInterval(duration * 3600 + travelTime)
+                                            return driveEnd > nextStart
+                                        }()
+                                        
+                                        TravelTimeIndicator(
+                                            travelTime: travelTime,
+                                            arrivalTime: arrivalTime,
+                                            hourHeight: hourHeight,
+                                            hasDrivingConflict: hasDrivingConflict
+                                        )
                                     }
                                 }
                             }
@@ -894,6 +930,9 @@ struct CalendarTimelineView: View {
         }
         .sheet(item: $selectedActivityForEdit) { activity in
             QuickTimeEditSheet(activity: activity, day: day)
+        }
+        .sheet(item: $selectedActivityForFullEdit) { activity in
+            EditActivityView(activity: activity, day: day)
         }
         .sheet(item: $showingAddAtTime) { time in
             AddActivityAtTimeSheet(day: day, suggestedTime: time)
@@ -1022,6 +1061,9 @@ struct ActivityBlock: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: categoryColor.opacity(0.2), radius: 4, y: 2)
+        .onTapGesture {
+            onTap()
+        }
     }
     
     private var categoryColor: Color {
@@ -1058,6 +1100,7 @@ struct EnhancedActivityBlock: View {
     let travelTimeToNext: TimeInterval?
     let hourHeight: CGFloat
     let onQuickEdit: () -> Void
+    let onTap: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -1162,6 +1205,7 @@ struct TravelTimeIndicator: View {
     let travelTime: TimeInterval
     let arrivalTime: Date?
     let hourHeight: CGFloat
+    var hasDrivingConflict: Bool = false
     
     private var driveHeightInHours: Double {
         travelTime / 3600.0 // Convert seconds to hours
@@ -1169,16 +1213,24 @@ struct TravelTimeIndicator: View {
     
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "car.fill")
+            Image(systemName: hasDrivingConflict ? "exclamationmark.triangle.fill" : "car.fill")
                 .font(.caption2)
+                .foregroundStyle(hasDrivingConflict ? .red : .secondary)
             VStack(alignment: .leading, spacing: 2) {
-                Text(formatTravelTime(travelTime))
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                if let arrival = arrivalTime {
-                    Text("Arrive: \(arrival.formatted(date: .omitted, time: .shortened))")
+                if hasDrivingConflict {
+                    Text("Driving Conflict")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.red)
+                } else {
+                    Text(formatTravelTime(travelTime))
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                }
+                if let arrival = arrivalTime {
+                    Text(hasDrivingConflict ? "Overlaps next activity" : "Arrive: \(arrival.formatted(date: .omitted, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(hasDrivingConflict ? .red : .secondary)
                 }
             }
         }

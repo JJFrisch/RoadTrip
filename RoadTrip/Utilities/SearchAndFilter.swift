@@ -12,7 +12,6 @@ import SwiftData
 class TripSearchManager: ObservableObject {
     @Published var searchText = ""
     @Published var sortOption: SortOption = .dateNewest
-    @Published var filterByShared: SharedFilter = .all
     
     enum SortOption: String, CaseIterable {
         case dateNewest = "Newest First"
@@ -40,23 +39,6 @@ class TripSearchManager: ObservableObject {
         }
     }
     
-    enum SharedFilter: String, CaseIterable {
-        case all = "All Trips"
-        case sharedOnly = "Shared Only"
-        case privateOnly = "Private Only"
-        
-        func filter(_ trips: [Trip]) -> [Trip] {
-            switch self {
-            case .all:
-                return trips
-            case .sharedOnly:
-                return trips
-            case .privateOnly:
-                return trips
-            }
-        }
-    }
-    
     func filterAndSort(_ trips: [Trip]) -> [Trip] {
         var filtered = trips
         
@@ -71,9 +53,6 @@ class TripSearchManager: ObservableObject {
                 }
             }
         }
-        
-        // Apply shared filter
-        filtered = filterByShared.filter(filtered)
         
         // Apply sort
         return sortOption.sort(filtered)

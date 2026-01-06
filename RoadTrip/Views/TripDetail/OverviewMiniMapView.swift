@@ -6,6 +6,7 @@ struct OverviewMiniMapView: View {
 
     @State private var position: MapCameraPosition = .automatic
     @State private var pins: [MiniMapPin] = []
+    @State private var selectedPin: MiniMapPin?
 
     var body: some View {
         Map(position: $position, interactionModes: [.pan, .zoom]) {
@@ -17,6 +18,9 @@ struct OverviewMiniMapView: View {
                         .padding(6)
                         .background(.ultraThinMaterial)
                         .clipShape(Circle())
+                        .onTapGesture {
+                            selectedPin = pin
+                        }
                 }
             }
         }
@@ -28,6 +32,39 @@ struct OverviewMiniMapView: View {
         )
         .task {
             await loadPins()
+        }
+        .sheet(item: $selectedPin) { pin in
+            NavigationStack {
+                VStack(spacing: 16) {
+                    Image(systemName: pin.type == .start ? "location.circle.fill" : "mappin.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(pin.type == .start ? .green : .red)
+                    
+                    Text(pin.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    Text("Latitude: \(pin.coordinate.latitude, specifier: "%.4f")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("Longitude: \(pin.coordinate.longitude, specifier: "%.4f")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                }
+                .padding()
+                .navigationTitle("Location Details")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            selectedPin = nil
+                        }
+                    }
+                }
+            }
         }
     }
 

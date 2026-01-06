@@ -42,6 +42,7 @@ class Activity {
     var photoURL: String?
     var website: String? // Official website
     var phoneNumber: String?
+    var openingHours: [String] = [] // e.g., ["Monday: 9:00 AM – 5:00 PM", "Tuesday: 9:00 AM – 5:00 PM", ...]
     
     // Photo attachments
     @Attribute(.externalStorage) var photos: [Data] = [] // Store photo data

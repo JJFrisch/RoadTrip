@@ -15,6 +15,7 @@ struct TripMapView: View {
     ))
     @State private var annotations: [TripLocationAnnotation] = []
     @State private var routeCoordinates: [CLLocationCoordinate2D] = []
+    @State private var routeSegments: [RouteSegment] = []
     @State private var selectedAnnotation: TripLocationAnnotation?
     @State private var isLoading = true
     @State private var hasError = false
@@ -35,6 +36,30 @@ struct TripMapView: View {
                 if routeCoordinates.count >= 2 {
                     MapPolyline(coordinates: routeCoordinates)
                         .stroke(routeColor, lineWidth: 4)
+                }
+                
+                // Add travel time annotations on route segments
+                ForEach(routeSegments, id: \.id) { segment in
+                    Annotation("", coordinate: segment.midpoint) {
+                        Button {
+                            openRouteInMaps(from: segment.from, to: segment.to)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "car.fill")
+                                    .font(.caption2)
+                                Text(formatTravelTime(segment.travelTime))
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.blue)
+                            .foregroundStyle(.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 2)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 
                 ForEach(annotations, id: \.id) { annotation in
@@ -281,6 +306,9 @@ struct TripMapView: View {
                 // Create route coordinates in order
                 routeCoordinates = sorted.map { $0.1 }
                 
+                // Calculate route segments with travel times
+                calculateRouteSegments(from: sorted)
+                
                 zoomToFitAllLocations()
             }
         }
@@ -325,6 +353,74 @@ struct TripMapView: View {
             position = .region(MKCoordinateRegion(center: center, span: span))
         }
     }
+    
+    private func calculateRouteSegments(from locations: [(TripLocation, CLLocationCoordinate2D)]) {
+        routeSegments.removeAll()
+        
+        Task {
+            var segments: [RouteSegment] = []
+            
+            for i in 0..<(locations.count - 1) {
+                let from = locations[i]
+                let to = locations[i + 1]
+                
+                // Calculate midpoint
+                let midLat = (from.1.latitude + to.1.latitude) / 2
+                let midLon = (from.1.longitude + to.1.longitude) / 2
+                let midpoint = CLLocationCoordinate2D(latitude: midLat, longitude: midLon)
+                
+                // Calculate travel time using RouteCalculator
+                if let routeInfo = try? await RouteCalculator.shared.calculateRoute(
+                    from: from.0.title,
+                    to: to.0.title,
+                    transportType: .automobile
+                ) {
+                    segments.append(RouteSegment(
+                        from: from.0.title,
+                        to: to.0.title,
+                        fromCoordinate: from.1,
+                        toCoordinate: to.1,
+                        midpoint: midpoint,
+                        travelTime: routeInfo.estimatedTime
+                    ))
+                }
+            }
+            
+            await MainActor.run {
+                routeSegments = segments
+            }
+        }
+    }
+    
+    private func openRouteInMaps(from: String, to: String) {
+        let fromEncoded = from.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let toEncoded = to.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        if let url = URL(string: "http://maps.apple.com/?saddr=\(fromEncoded)&daddr=\(toEncoded)&dirflg=d") {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    private func formatTravelTime(_ seconds: TimeInterval) -> String {
+        let hours = Int(seconds) / 3600
+        let minutes = (Int(seconds) % 3600) / 60
+        
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+}
+
+struct RouteSegment: Identifiable {
+    let id = UUID()
+    let from: String
+    let to: String
+    let fromCoordinate: CLLocationCoordinate2D
+    let toCoordinate: CLLocationCoordinate2D
+    let midpoint: CLLocationCoordinate2D
+    let travelTime: TimeInterval
 }
 
 struct TripLocation: Identifiable {
