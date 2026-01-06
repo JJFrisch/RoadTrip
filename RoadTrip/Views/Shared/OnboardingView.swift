@@ -304,7 +304,7 @@ struct TutorialStepView: View {
 
 // MARK: - Sample Trip Creator
 extension HomeView {
-    func createComprehensiveSampleTrip() {
+    func createComprehensiveSampleTrip(modelContext: ModelContext) {
         let calendar = Calendar.current
         let startDate = calendar.date(byAdding: .day, value: 7, to: Date())!
         let endDate = calendar.date(byAdding: .day, value: 6, to: startDate)!

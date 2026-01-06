@@ -114,7 +114,7 @@ struct HomeView: View {
             }
             .alert("Create Sample Trip", isPresented: $showingSampleTripAlert) {
                 Button("Create") {
-                    createComprehensiveSampleTrip()
+                    createComprehensiveSampleTrip(modelContext: modelContext)
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {

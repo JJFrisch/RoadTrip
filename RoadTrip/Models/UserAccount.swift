@@ -2,6 +2,9 @@
 import Foundation
 import SwiftData
 
+// Collaboration features currently disabled
+#if false
+
 @Model
 class UserAccount {
     var id: UUID
@@ -83,3 +86,6 @@ struct TripShareInvite: Codable, Identifiable {
         """
     }
 }
+
+
+#endif

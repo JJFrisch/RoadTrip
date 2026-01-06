@@ -1,4 +1,5 @@
 // Services/TripSharingService.swift
+#if false
 import Foundation
 import UIKit
 
@@ -185,3 +186,4 @@ class TripSharingService: ObservableObject {
         }
     }
 }
+#endif
