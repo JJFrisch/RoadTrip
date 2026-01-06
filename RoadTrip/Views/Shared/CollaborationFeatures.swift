@@ -96,8 +96,11 @@ struct QRCodeShareView: View {
             .padding()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-            // Sync to local storage for real-time updates
+                    Button("Done") {
                         dismiss()
+                    }
+                }
+            }
                     }
                 }
             }
