@@ -18,7 +18,7 @@ struct TripMapView: View {
     @State private var selectedAnnotation: TripLocationAnnotation?
     @State private var isLoading = true
     @State private var hasError = false
-    @State private var showingLocationDetail: TripLocation?
+    @State private var showingLocationDetail: TripLocationAnnotation?
     @State private var isRefreshing = false
 
     // Dark mode adaptive route color
@@ -42,7 +42,7 @@ struct TripMapView: View {
                         LocationMapMarker(location: annotation.location, isSelected: selectedAnnotation?.id == annotation.id, colorScheme: colorScheme)
                             .onTapGesture {
                                 selectedAnnotation = annotation
-                                showingLocationDetail = annotation.location
+                                showingLocationDetail = annotation
                             }
                     }
                 }
@@ -134,7 +134,11 @@ struct TripMapView: View {
             fetchLocations()
         }
         .sheet(item: $showingLocationDetail) { location in
-            LocationDetailSheet(location: location)
+            LocationDetailSheet(
+                location: location.location,
+                coordinate: location.coordinate,
+                onCenterOnMap: { centerMap(on: location.coordinate) }
+            )
         }
         .refreshable {
             await refreshRoutesAsync()
@@ -161,76 +165,101 @@ struct TripMapView: View {
         routeCoordinates.removeAll()
         
         var locations: [TripLocation] = []
-        
-        // Collect all unique locations from trip days in order for the route
+
+        // Collect all locations across the entire trip.
+        // Order is day start -> activities -> day end for each day.
         let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
-        
-        for (index, day) in sortedDays.enumerated() {
-            // Add start location
-            locations.append(TripLocation(
-                title: day.startLocation,
-                subtitle: "Day \(day.dayNumber) - Start",
-                type: .dayStart,
-                dayNumber: day.dayNumber,
-                orderIndex: index * 3 // For route ordering
-            ))
-            
-            // Add hotel if available (in between start and end)
-            if let hotelName = day.hotelName, !hotelName.isEmpty {
-                locations.append(TripLocation(
-                    title: hotelName,
-                    subtitle: "Day \(day.dayNumber) - Hotel",
-                    type: .hotel,
+        for (dayIndex, day) in sortedDays.enumerated() {
+            let base = dayIndex * 1000
+
+            locations.append(
+                TripLocation(
+                    title: day.startLocation,
+                    subtitle: "Day \(day.dayNumber) - Start",
+                    type: .dayStart,
                     dayNumber: day.dayNumber,
-                    orderIndex: index * 3 + 1
-                ))
+                    orderIndex: base
+                )
+            )
+
+            let sortedActivities = day.activities.sorted { a, b in
+                switch (a.scheduledTime, b.scheduledTime) {
+                case let (ta?, tb?): return ta < tb
+                case (_?, nil): return true
+                case (nil, _?): return false
+                default: return a.order < b.order
+                }
             }
-            
-            // Add end location for each day
-            locations.append(TripLocation(
-                title: day.endLocation,
-                subtitle: "Day \(day.dayNumber) - End",
-                type: .dayEnd,
-                dayNumber: day.dayNumber,
-                orderIndex: index * 3 + 2
-            ))
+
+            for (activityIndex, activity) in sortedActivities.enumerated() {
+                let trimmed = activity.location.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { continue }
+
+                locations.append(
+                    TripLocation(
+                        title: trimmed,
+                        subtitle: "Day \(day.dayNumber) - \(activity.name)",
+                        type: .activity,
+                        dayNumber: day.dayNumber,
+                        orderIndex: base + 100 + activityIndex
+                    )
+                )
+            }
+
+            locations.append(
+                TripLocation(
+                    title: day.endLocation,
+                    subtitle: "Day \(day.dayNumber) - End",
+                    type: .dayEnd,
+                    dayNumber: day.dayNumber,
+                    orderIndex: base + 999
+                )
+            )
         }
-        
+
         // Remove duplicate consecutive locations (e.g., Day 1 end = Day 2 start)
         var uniqueLocations: [TripLocation] = []
         for location in locations {
-            if uniqueLocations.last?.title.lowercased() != location.title.lowercased() {
+            let key = canonicalLocationKey(location.title)
+            if uniqueLocations.last.map({ canonicalLocationKey($0.title) }) != key {
                 uniqueLocations.append(location)
             }
         }
+
+        // Geocode unique titles once, then apply coordinates back to each location instance.
+        let groupedByKey = Dictionary(grouping: uniqueLocations) { canonicalLocationKey($0.title) }
         
         let group = DispatchGroup()
         var tempAnnotations: [(TripLocation, CLLocationCoordinate2D)] = []
         let lock = NSLock()
         
-        for location in uniqueLocations {
-            guard !location.title.isEmpty else { continue }
+        for (key, groupedLocations) in groupedByKey {
+            guard let title = groupedLocations.first?.title else { continue }
 
-            if let placemark = LocationCache.shared.getCachedPlacemark(for: location.title) {
+            if let placemark = LocationCache.shared.getCachedPlacemark(for: title) {
                 lock.lock()
-                tempAnnotations.append((location, placemark.coordinate))
+                for loc in groupedLocations {
+                    tempAnnotations.append((loc, placemark.coordinate))
+                }
                 lock.unlock()
                 continue
             }
-            
+
             group.enter()
             let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = location.title
+            request.naturalLanguageQuery = title
             let search = MKLocalSearch(request: request)
-            
+
             search.start { response, error in
                 defer { group.leave() }
-                
+
                 if let item = response?.mapItems.first {
                     let coordinate = item.placemark.coordinate
-                    LocationCache.shared.cachePlacemark(item.placemark, for: location.title)
+                    LocationCache.shared.cachePlacemark(item.placemark, for: title)
                     lock.lock()
-                    tempAnnotations.append((location, coordinate))
+                    for loc in groupedLocations {
+                        tempAnnotations.append((loc, coordinate))
+                    }
                     lock.unlock()
                 }
             }
@@ -254,6 +283,21 @@ struct TripMapView: View {
                 
                 zoomToFitAllLocations()
             }
+        }
+    }
+
+    private func canonicalLocationKey(_ title: String) -> String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func centerMap(on coordinate: CLLocationCoordinate2D) {
+        withAnimation(.easeInOut(duration: 0.4)) {
+            position = .region(
+                MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+                )
+            )
         }
     }
     
@@ -294,7 +338,7 @@ struct TripLocation: Identifiable {
     enum LocationType {
         case dayStart
         case dayEnd
-        case hotel
+        case activity
     }
 }
 
@@ -333,10 +377,10 @@ struct LocationMapMarker: View {
             return colorScheme == .dark 
                 ? Color(red: 1.0, green: 0.4, blue: 0.4) 
                 : .red
-        case .hotel: 
-            return colorScheme == .dark 
-                ? Color(red: 0.7, green: 0.5, blue: 1.0) 
-                : .purple
+        case .activity:
+            return colorScheme == .dark
+                ? Color(red: 0.4, green: 0.7, blue: 1.0)
+                : .blue
         }
     }
     
@@ -344,7 +388,7 @@ struct LocationMapMarker: View {
         switch location.type {
         case .dayStart: return "location.circle"
         case .dayEnd: return "mappin.circle"
-        case .hotel: return "bed.double"
+        case .activity: return "star.circle"
         }
     }
     
@@ -388,12 +432,14 @@ struct LocationMapMarker: View {
 struct LocationDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     let location: TripLocation
+    let coordinate: CLLocationCoordinate2D
+    let onCenterOnMap: () -> Void
     
     var markerColor: Color {
         switch location.type {
         case .dayStart: return .green
         case .dayEnd: return .red
-        case .hotel: return .purple
+        case .activity: return .blue
         }
     }
     
@@ -401,7 +447,7 @@ struct LocationDetailSheet: View {
         switch location.type {
         case .dayStart: return "location.circle"
         case .dayEnd: return "mappin.circle"
-        case .hotel: return "bed.double"
+        case .activity: return "star.circle"
         }
     }
     
@@ -409,7 +455,7 @@ struct LocationDetailSheet: View {
         switch location.type {
         case .dayStart: return "Day Start"
         case .dayEnd: return "Day End"
-        case .hotel: return "Hotel"
+        case .activity: return "Activity"
         }
     }
     
@@ -468,6 +514,19 @@ struct LocationDetailSheet: View {
                     }
                     
                     HStack(spacing: 12) {
+                        Button {
+                            onCenterOnMap()
+                            dismiss()
+                        } label: {
+                            Label("Center on Map", systemImage: "scope")
+                                .font(.subheadline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(markerColor.opacity(0.2))
+                                .foregroundStyle(markerColor)
+                                .cornerRadius(8)
+                        }
+
                         Button(action: openInMaps) {
                             Label("Open in Maps", systemImage: "map")
                                 .font(.subheadline)
@@ -486,7 +545,7 @@ struct LocationDetailSheet: View {
     
     private func openInMaps() {
         let query = location.title.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ""
-        if let url = URL(string: "http://maps.apple.com/?q=\(query)") {
+        if let url = URL(string: "http://maps.apple.com/?q=\(query)&ll=\(coordinate.latitude),\(coordinate.longitude)") {
             UIApplication.shared.open(url)
         }
     }

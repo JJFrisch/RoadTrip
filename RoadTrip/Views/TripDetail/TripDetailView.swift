@@ -9,7 +9,6 @@ struct TripDetailView: View {
     @State private var showingEditSheet = false
     @State private var showingOfflineMapSheet = false
     @State private var showingShareSheet = false
-    @State private var showingShareTrip = false
     @State private var showingMoreOptions = false
     @State private var showingCarRentalBrowser = false
     @State private var isPrefetchingRoutes = false
@@ -100,12 +99,6 @@ struct TripDetailView: View {
                         Label("Edit Trip", systemImage: "pencil")
                     }
                     
-                    Button {
-                        showingShareTrip = true
-                    } label: {
-                        Label("Share Trip", systemImage: "square.and.arrow.up")
-                    }
-                    
                     Divider()
                     
                     Button {
@@ -152,9 +145,6 @@ struct TripDetailView: View {
             if let pdfData = pdfData {
                 ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
             }
-        }
-        .sheet(isPresented: $showingShareTrip) {
-            TripSharingView(trip: trip)
         }
         .onAppear {
             prefetchRoutes()

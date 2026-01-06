@@ -22,11 +22,7 @@ class Trip {
     // Sharing & Collaboration
     var ownerId: String? // User ID of the trip owner
     var ownerEmail: String? // Email of trip owner for display
-    var sharedWith: [String] // Array of user IDs who have access
-    var shareCode: String? // Unique code for sharing via link
-    var isShared: Bool // Whether trip is shared with others
-    var lastSyncedAt: Date? // Last time synced to cloud
-    var cloudId: String? // ID in cloud database for sync
+    // Sharing features disabled (coming soon)
     
     @Relationship(deleteRule: .cascade)
     var days: [TripDay]
@@ -38,8 +34,7 @@ class Trip {
         self.endDate = endDate
         self.createdAt = Date()
         self.days = []
-        self.sharedWith = []
-        self.isShared = false
+        // Sharing features disabled
         
         // Generate TripDays for each day between startDate and endDate (inclusive)
         generateDays(from: startDate, to: endDate)
@@ -156,13 +151,13 @@ class Trip {
         days.filter { $0.dayNumber > 0 }
     }
     
-    // MARK: - Budget Tracking (estimates)
+    // MARK: - Budget Tracking Calculations
 
     var estimatedTotalCost: Double {
         days.reduce(0) { total, day in
             let activityTotal = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) }
-            let lodging = day.hotel?.pricePerNight ?? 0
-            return total + activityTotal + lodging
+            // Hotel cost calculation disabled (coming soon)
+            return total + activityTotal
         }
     }
     
@@ -172,9 +167,7 @@ class Trip {
                 .filter { $0.costCategory == category }
                 .reduce(0) { $0 + ($1.estimatedCost ?? 0) }
 
-            if category == "Lodging" {
-                subtotal += day.hotel?.pricePerNight ?? 0
-            }
+            // Lodging category calculation disabled (coming soon)
 
             return total + subtotal
         }

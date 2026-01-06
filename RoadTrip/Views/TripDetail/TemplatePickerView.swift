@@ -6,14 +6,14 @@ struct TemplatePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
-    let templates: [ActivityTemplate]
+    let kindsOfActivities: [ActivityTemplate]
     let onSelect: (ActivityTemplate) -> Void
     
     @State private var showingNewTemplate = false
     
-    var sortedTemplates: [ActivityTemplate] {
+    var sortedKindsOfActivities: [ActivityTemplate] {
         // Sort by use count (most popular first), then by last used
-        let items = templates
+        let items = kindsOfActivities
         return items.sorted { first, second in
             if first.usageCount != second.usageCount {
                 return first.usageCount > second.usageCount
@@ -24,25 +24,25 @@ struct TemplatePickerView: View {
         }
     }
     
-    var commonTemplates: [ActivityTemplate] {
+    var commonKindsOfActivities: [ActivityTemplate] {
         ActivityTemplate.commonTemplates()
     }
     
     var body: some View {
         NavigationStack {
             List {
-                if !templates.isEmpty {
-                    Section("Your Templates") {
-                        ForEach(sortedTemplates) { template in
+                if !kindsOfActivities.isEmpty {
+                    Section("Your Kinds of Activities") {
+                        ForEach(sortedKindsOfActivities) { kind in
                             Button {
-                                onSelect(template)
+                                onSelect(kind)
                                 dismiss()
                             } label: {
-                                TemplateRow(template: template)
+                                TemplateRow(template: kind)
                             }
                             .swipeActions {
                                 Button(role: .destructive) {
-                                    modelContext.delete(template)
+                                    modelContext.delete(kind)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -51,29 +51,29 @@ struct TemplatePickerView: View {
                     }
                 }
                 
-                Section("Common Activities") {
-                    ForEach(commonTemplates) { template in
+                Section("Common Kinds of Activities") {
+                    ForEach(commonKindsOfActivities) { kind in
                         Button {
-                            // Save to user templates if used
-                            let newTemplate = ActivityTemplate(
-                                name: template.name,
-                                location: template.location,
-                                category: template.category,
-                                defaultDuration: template.defaultDuration
+                            // Save to user kinds if used
+                            let newKind = ActivityTemplate(
+                                name: kind.name,
+                                location: kind.location,
+                                category: kind.category,
+                                defaultDuration: kind.defaultDuration
                             )
-                            newTemplate.notes = template.notes
-                            newTemplate.estimatedCost = template.estimatedCost
-                            newTemplate.costCategory = template.costCategory
-                            modelContext.insert(newTemplate)
-                            onSelect(newTemplate)
+                            newKind.notes = kind.notes
+                            newKind.estimatedCost = kind.estimatedCost
+                            newKind.costCategory = kind.costCategory
+                            modelContext.insert(newKind)
+                            onSelect(newKind)
                             dismiss()
                         } label: {
-                            TemplateRow(template: template)
+                            TemplateRow(template: kind)
                         }
                     }
                 }
             }
-            .navigationTitle("Activity Templates")
+            .navigationTitle("Kinds of Activities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -172,8 +172,8 @@ struct NewTemplateView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Template Details") {
-                    TextField("Template Name", text: $name)
+                Section("Kind Details") {
+                    TextField("Kind Name", text: $name)
                     
                     Picker("Category", selection: $category) {
                         ForEach(categories, id: \.self) { cat in
@@ -189,7 +189,7 @@ struct NewTemplateView: View {
                         .frame(height: 80)
                 }
             }
-            .navigationTitle("New Template")
+            .navigationTitle("New Kind")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

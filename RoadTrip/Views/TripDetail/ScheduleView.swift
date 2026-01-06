@@ -179,7 +179,6 @@ struct DayScheduleSection: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddActivity = false
     @State private var showingTemplates = false
-    @State private var showingHotelBrowser = false
     @StateObject private var undoManager = ActivityUndoManager.shared
     
     var completedActivities: [Activity] {
@@ -346,32 +345,7 @@ struct DayScheduleSection: View {
                         .foregroundStyle(.white)
                     }
 
-                    if let hotel = day.hotel {
-                        HStack(spacing: 6) {
-                            Image(systemName: "bed.double.fill")
-                                .font(.caption)
-                            Text(hotel.name)
-                                .font(.caption)
-                                .lineLimit(1)
-
-                            if let price = hotel.pricePerNight {
-                                Spacer()
-                                Text(String(format: "$%.0f", price))
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                            }
-                        }
-                        .foregroundStyle(.white.opacity(0.9))
-                    } else if let hotelName = day.hotelName, !hotelName.isEmpty {
-                        HStack(spacing: 6) {
-                            Image(systemName: "bed.double.fill")
-                                .font(.caption)
-                            Text(hotelName)
-                                .font(.caption)
-                                .lineLimit(1)
-                        }
-                        .foregroundStyle(.white.opacity(0.9))
-                    }
+                    // Hotel discovery/browsing is currently disabled (coming soon)
                     
                     if let firstTime = completedActivities.first?.scheduledTime,
                        let lastTime = completedActivities.last?.scheduledTime,
@@ -453,14 +427,14 @@ struct DayScheduleSection: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Templates Button
+                // Kinds of Activities Button
                 Button {
                     showingTemplates = true
                 } label: {
                     HStack {
                         Image(systemName: "doc.on.doc.fill")
                             .font(.body)
-                        Text("Templates")
+                        Text("Kinds")
                             .fontWeight(.medium)
                     }
                     .foregroundStyle(.green)
@@ -471,23 +445,21 @@ struct DayScheduleSection: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Hotel Browser Button
-                Button {
-                    showingHotelBrowser = true
-                } label: {
+                Button {} label: {
                     HStack {
                         Image(systemName: "bed.double.fill")
                             .font(.body)
-                        Text("Hotels")
+                        Text("Hotels (Coming soon)")
                             .fontWeight(.medium)
                     }
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.orange.opacity(0.1))
+                    .background(Color(.systemGray6))
                     .cornerRadius(10)
                 }
                 .buttonStyle(.plain)
+                .disabled(true)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
@@ -534,9 +506,6 @@ struct DayScheduleSection: View {
         }
         .sheet(isPresented: $showingTemplates) {
             TemplatePickerSheet(day: day)
-        }
-        .sheet(isPresented: $showingHotelBrowser) {
-            HotelBrowsingView(day: day)
         }
     }
     
@@ -1970,9 +1939,9 @@ struct TemplatePickerSheet: View {
                     .padding(.vertical, 8)
                 }
                 
-                // Saved Templates
+                // Saved Kinds
                 if !templates.isEmpty {
-                    Section("Saved Templates") {
+                    Section("Saved Kinds") {
                         ForEach(templates) { template in
                             Button {
                                 addFromTemplate(template)
@@ -2014,16 +1983,16 @@ struct TemplatePickerSheet: View {
                     }
                 }
                 
-                // Create New Template
+                // Create New Kind
                 Section {
                     Button {
                         showingCreateTemplate = true
                     } label: {
-                        Label("Create New Template", systemImage: "plus.circle")
+                        Label("Create New Kind", systemImage: "plus.circle")
                     }
                 }
             }
-            .navigationTitle("Activity Templates")
+            .navigationTitle("Kinds of Activities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -2116,8 +2085,8 @@ struct CreateTemplateSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Template Details") {
-                    TextField("Template Name", text: $name)
+                Section("Kind Details") {
+                    TextField("Kind Name", text: $name)
                     TextField("Default Location (optional)", text: $location)
                     
                     Picker("Category", selection: $category) {
@@ -2174,7 +2143,7 @@ struct CreateTemplateSheet: View {
                         .frame(height: 60)
                 }
             }
-            .navigationTitle("New Template")
+            .navigationTitle("New Kind")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

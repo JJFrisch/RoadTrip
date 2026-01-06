@@ -5,123 +5,9 @@
 //  Created by Jake Frischmann on 1/4/26.
 //
 
-import Foundation
 import SwiftUI
-import CoreImage.CIFilterBuiltins
 
-// MARK: - QR Code Generator
-class QRCodeGenerator {
-    static let shared = QRCodeGenerator()
-    
-    private let context = CIContext()
-    private let filter = CIFilter.qrCodeGenerator()
-    
-    func generateQRCode(from shareCode: String) -> UIImage? {
-        filter.message = Data(shareCode.utf8)
-        filter.correctionLevel = "M"
-        
-        guard let outputImage = filter.outputImage else { return nil }
-        
-        let transform = CGAffineTransform(scaleX: 10, y: 10)
-        let scaledImage = outputImage.transformed(by: transform)
-        
-        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
-            return nil
-        }
-        
-        return UIImage(cgImage: cgImage)
-    }
-}
-
-// MARK: - QR Code Share View
-struct QRCodeShareView: View {
-    let trip: Trip
-    @State private var qrImage: UIImage?
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Text("Share via QR Code")
-                    .font(.title2)
-                    // Sync to local storage for real-time updates
-                
-                if let qrImage {
-                    Image(uiImage: qrImage)
-                        .interpolation(.none)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 250, height: 250)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(radius: 4)
-                } else {
-                    ProgressView()
-                        .frame(width: 250, height: 250)
-                }
-                
-                VStack(spacing: 12) {
-                    Text(trip.shareCode ?? "No share code")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .textSelection(.enabled)
-                    
-                    Text("Others can scan this QR code or enter the code above to join your trip")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                
-                HStack(spacing: 16) {
-                    Button {
-                        if let shareCode = trip.shareCode {
-                            UIPasteboard.general.string = shareCode
-                            ToastManager.shared.show("Code copied!", type: .success)
-                        }
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") {
-                                dismiss()
-                            }
-                        }
-                    }
-                }
-                .task {
-                    if let shareCode = trip.shareCode {
-                        qrImage = QRCodeGenerator.shared.generateQRCode(from: shareCode)
-                    }
-                }
-            }
-
-            func generateShareMessage() -> String {
-                """
-                Join my RoadTrip: \(trip.name)
-
-                Use code: \(trip.shareCode ?? "")
-
-                Dates: \(trip.startDate.formatted(date: .abbreviated, time: .omitted)) - \(trip.endDate.formatted(date: .abbreviated, time: .omitted))
-                """
-            }
-        }
-        .task {
-            if let shareCode = trip.shareCode {
-                qrImage = QRCodeGenerator.shared.generateQRCode(from: shareCode)
-            }
-        }
-    }
-    
-    func generateShareMessage() -> String {
-        """
-        Join my RoadTrip: \(trip.name)
-        
-        Use code: \(trip.shareCode ?? "")
-        
-        Dates: \(trip.startDate.formatted(date: .abbreviated, time: .omitted)) - \(trip.endDate.formatted(date: .abbreviated, time: .omitted))
-        """
-    }
-}
+// Trip sharing / QR-code collaboration is currently disabled.
 
 // MARK: - Activity Comments View
 struct ActivityCommentsView: View {
@@ -188,8 +74,6 @@ struct ActivityCommentsView: View {
         let comment = ActivityComment(userId: currentUserId, userEmail: currentUserEmail, text: trimmed)
         activity.comments.append(comment)
         newComment = ""
-        
-        // TODO: Sync to CloudKit for real-time updates
     }
 }
 
@@ -313,37 +197,5 @@ struct ActivityVotingView: View {
             // Add or change vote
             activity.votes[currentUserId] = value
         }
-        
-        // TODO: Sync to CloudKit for real-time updates
-    }
-}
-
-// MARK: - Real-time Sync Manager
-class CollaborationSyncManager: ObservableObject {
-    static let shared = CollaborationSyncManager()
-    
-    @Published var isConnected = false
-    @Published var lastSyncTime: Date?
-    
-    private init() {}
-    
-    // TODO: Implement CloudKit subscriptions for real-time updates
-    func startListening(for trip: Trip) {
-        // Subscribe to CloudKit changes for this trip
-        isConnected = true
-    }
-    
-    func stopListening() {
-        isConnected = false
-    }
-    
-    func syncComment(_ comment: ActivityComment, for activity: Activity) {
-        // Push comment to CloudKit
-        lastSyncTime = Date()
-    }
-    
-    func syncVote(userId: String, value: Int, for activity: Activity) {
-        // Push vote to CloudKit
-        lastSyncTime = Date()
     }
 }

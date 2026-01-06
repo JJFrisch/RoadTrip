@@ -9,7 +9,6 @@ struct OverviewView: View {
     @State private var showingAddDay = false
     @State private var editingDay: TripDay?
     @State private var addingActivityDay: TripDay?
-    @State private var browsingHotelDay: TripDay?
     @State private var showingShareSheet = false
     @State private var sharePDFData: Data?
     
@@ -29,6 +28,12 @@ struct OverviewView: View {
                                     Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+                                    if let desc = trip.tripDescription, !desc.isEmpty {
+                                        Text(desc)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .padding(.top, 2)
+                                    }
                                 }
                                 
                                 Spacer()
@@ -76,7 +81,7 @@ struct OverviewView: View {
                                 Spacer()
                                 
                                 VStack(alignment: .trailing, spacing: 4) {
-                                    Text("Hotel Nights")
+                                    Text("Hotels")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     
@@ -85,8 +90,9 @@ struct OverviewView: View {
                                             .font(.caption)
                                             .foregroundStyle(.purple)
                                         
-                                        Text("\(trip.days.filter { $0.hotel != nil || (($0.hotelName ?? "").isEmpty == false) }.count)")
-                                            .font(.headline)
+                                        Text("Coming soon")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                     }
                                 }
                             }
@@ -96,6 +102,9 @@ struct OverviewView: View {
                         .cornerRadius(12)
                         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
                         .padding()
+
+                        OverviewMiniMapView(trip: trip)
+                            .padding(.horizontal, 16)
                         
                         // Days List
                         VStack(spacing: 0) {
@@ -126,9 +135,6 @@ struct OverviewView: View {
         }
         .sheet(item: $addingActivityDay) { day in
             AddActivityFromScheduleView(day: day)
-        }
-        .sheet(item: $browsingHotelDay) { day in
-            HotelBrowsingView(day: day)
         }
         .sheet(isPresented: $showingShareSheet) {
             if let pdfData = sharePDFData {
@@ -277,22 +283,6 @@ struct OverviewView: View {
                 }
             }
             
-            let hotelDisplayName = day.hotel?.name ?? day.hotelName ?? ""
-            if !hotelDisplayName.isEmpty {
-                Divider()
-                
-                HStack(spacing: 8) {
-                    Image(systemName: "bed.double.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.purple)
-                    
-                    Text(hotelDisplayName)
-                        .font(.subheadline)
-                        .lineLimit(1)
-                    
-                    Spacer()
-                }
-            }
         }
         .padding()
         .background(Color(.systemBackground))
@@ -309,12 +299,6 @@ struct OverviewView: View {
                 addingActivityDay = day
             } label: {
                 Label("Add Activity", systemImage: "plus.circle")
-            }
-
-            Button {
-                browsingHotelDay = day
-            } label: {
-                Label("Add/Change Hotel", systemImage: "bed.double")
             }
 
             Button {

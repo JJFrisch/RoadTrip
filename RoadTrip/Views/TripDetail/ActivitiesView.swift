@@ -412,7 +412,7 @@ struct AddActivityView: View {
     @State private var endTime = Date()
     @State private var duration: Double = 1.0
     @State private var notes = ""
-    @State private var showingTemplates = false
+    @State private var showingKindsOfActivities = false
     @State private var useSuggestedTime = true
     @State private var searchNearLocation = ""
     @State private var useSearchNear = false
@@ -429,7 +429,7 @@ struct AddActivityView: View {
         case startTime, endTime, duration
     }
     
-    @Query private var templates: [ActivityTemplate]
+    @Query private var kindsOfActivities: [ActivityTemplate]
     
     let categories = ["Food", "Attraction", "Hotel", "Other"]
     let costCategories = ["Gas", "Food", "Lodging", "Attractions", "Other"]
@@ -460,7 +460,7 @@ struct AddActivityView: View {
                     Button {
                         showingTemplates = true
                     } label: {
-                        Label("Use Template", systemImage: "doc.on.doc")
+                        Label("Use Kind", systemImage: "doc.on.doc")
                     }
                 }
                 
@@ -670,9 +670,9 @@ struct AddActivityView: View {
                     .disabled(!isFormValid)
                 }
             }
-            .sheet(isPresented: $showingTemplates) {
-                TemplatePickerView(templates: templates, onSelect: { template in
-                    applyTemplate(template)
+            .sheet(isPresented: $showingKindsOfActivities) {
+                TemplatePickerView(kindsOfActivities: kindsOfActivities, onSelect: { kind in
+                    applyTemplate(kind)
                 })
             }
             .onAppear {
