@@ -423,6 +423,7 @@ struct AddActivityView: View {
     @State private var useSuggestedTime = true
     @State private var searchNearLocation = ""
     @State private var useSearchNear = false
+    @State private var locationDetails: LocationPlaceDetails?
     
     // Budget tracking
     @State private var includeCost = false
@@ -525,9 +526,14 @@ struct AddActivityView: View {
                             Text(cat).tag(cat)
                         }
                     }
-                    
-                    // Display location details if available
-                    if let details = locationDetails {
+                    .onChange(of: category) { _, newValue in
+                        showHotelFields = (newValue == "Hotel")
+                    }
+                }
+                
+                // Display location details if available
+                if let details = locationDetails {
+                    Section("Location Information") {
                         VStack(alignment: .leading, spacing: 8) {
                             if let website = details.website, !website.isEmpty {
                                 Link(destination: URL(string: website.hasPrefix("http") ? website : "https://\(website)")!) {
@@ -570,10 +576,9 @@ struct AddActivityView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    .onChange(of: category) { _, newValue in
-                        showHotelFields = (newValue == "Hotel")
-                    }
-                    
+                }
+                
+                Section("Additional Details") {
                     if day.activities.filter({ $0.category == "Hotel" }).isEmpty {
                         HStack {
                             Image(systemName: "bed.double.fill")
