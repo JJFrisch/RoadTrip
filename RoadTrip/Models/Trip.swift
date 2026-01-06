@@ -31,7 +31,6 @@ class Trip {
     var sharedWith: [String] = []
     var shareCode: String? // Unique code for sharing via link
     var isShared: Bool // Whether trip is shared with others
-    // Removed CloudKit sync properties: lastSyncedAt, cloudId
     
     @Relationship(defaultRule: .cascade)
     var days: [TripDay]
