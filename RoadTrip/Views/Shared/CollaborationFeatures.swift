@@ -124,7 +124,7 @@ struct QRCodeShareView: View {
 struct ActivityCommentsView: View {
     @Bindable var activity: Activity
     @State private var newComment = ""
-    @State private var currentUserId = "user123" // Replace with actual auth
+    @State private var currentUserId = "user123"
     @State private var currentUserEmail = "user@example.com" // Replace with actual auth
     
     var body: some View {
