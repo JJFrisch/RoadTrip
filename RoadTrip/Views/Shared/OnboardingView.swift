@@ -355,67 +355,87 @@ extension HomeView {
     }
     
     private func setupDay1(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "San Francisco Airport"
-        day.endLocation = "Downtown San Francisco"
-        day.distance = 15
-        day.drivingTime = 0.5
+        day.startLocation = "San Francisco"
+        day.endLocation = "San Francisco"
+        day.distance = 0
+        day.drivingTime = 0
         
-        addActivity(to: day, name: "Pick up rental car", location: "SFO Airport", category: "Other", hour: 10, minute: 0, duration: 0.5, cost: 250, costCat: "Other", date: startDate, calendar: calendar, order: 0)
-        addActivity(to: day, name: "Golden Gate Bridge", location: "Golden Gate Bridge, SF", category: "Attraction", hour: 12, minute: 0, duration: 2, cost: 0, costCat: "Attractions", date: startDate, calendar: calendar, order: 1)
-        addActivity(to: day, name: "Fisherman's Wharf Lunch", location: "Fisherman's Wharf", category: "Food", hour: 14, minute: 30, duration: 1.5, cost: 60, costCat: "Food", date: startDate, calendar: calendar, order: 2)
-        addActivity(to: day, name: "Hotel Check-in", location: "Union Square Hotel", category: "Hotel", hour: 18, minute: 0, duration: 0.5, cost: 200, costCat: "Lodging", date: startDate, calendar: calendar, order: 3)
+        addActivity(to: day, name: "Pick up rental car", location: "San Francisco Airport", category: "Other", hour: 10, minute: 0, duration: 0.5, cost: 250, costCat: "Other", date: startDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Golden Gate Bridge", location: "Golden Gate Bridge, San Francisco", category: "Attraction", hour: 12, minute: 0, duration: 2, cost: 0, costCat: "Attractions", date: startDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Fisherman's Wharf Lunch", location: "Fisherman's Wharf, San Francisco", category: "Food", hour: 14, minute: 30, duration: 1.5, cost: 60, costCat: "Food", date: startDate, calendar: calendar, order: 2)
+        addActivity(to: day, name: "Hotel Check-in", location: "Union Square, San Francisco", category: "Hotel", hour: 18, minute: 0, duration: 0.5, cost: 200, costCat: "Lodging", date: startDate, calendar: calendar, order: 3)
     }
     
     private func setupDay2(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "San Francisco"
+        day.startLocation = "Monterey"
         day.endLocation = "Monterey"
-        day.distance = 120
-        day.drivingTime = 2.5
+        day.distance = 0
+        day.drivingTime = 0
         
         let dayDate = calendar.date(byAdding: .day, value: 1, to: startDate)!
-        addActivity(to: day, name: "Drive to Monterey", location: "Highway 1", category: "Other", hour: 9, minute: 0, duration: 2.5, cost: 30, costCat: "Gas", date: dayDate, calendar: calendar, order: 0)
-        addActivity(to: day, name: "Monterey Bay Aquarium", location: "886 Cannery Row", category: "Attraction", hour: 12, minute: 0, duration: 3, cost: 55, costCat: "Attractions", date: dayDate, calendar: calendar, order: 1)
-        addActivity(to: day, name: "Cannery Row Dinner", location: "Cannery Row", category: "Food", hour: 18, minute: 0, duration: 1.5, cost: 75, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
+        addActivity(to: day, name: "Monterey Bay Aquarium", location: "Monterey Bay Aquarium, Monterey", category: "Attraction", hour: 10, minute: 0, duration: 3, cost: 55, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Cannery Row Lunch", location: "Cannery Row, Monterey", category: "Food", hour: 13, minute: 30, duration: 1.5, cost: 45, costCat: "Food", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Cannery Row Dinner", location: "Cannery Row, Monterey", category: "Food", hour: 18, minute: 0, duration: 1.5, cost: 75, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func setupDay3(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "Monterey"
+        day.startLocation = "Big Sur"
         day.endLocation = "Big Sur"
-        day.distance = 45
-        day.drivingTime = 1.5
+        day.distance = 0
+        day.drivingTime = 0
         
         let dayDate = calendar.date(byAdding: .day, value: 2, to: startDate)!
-        addActivity(to: day, name: "Bixby Bridge Photo Stop", location: "Bixby Bridge", category: "Attraction", hour: 11, minute: 0, duration: 0.5, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
-        addActivity(to: day, name: "McWay Falls Hike", location: "Julia Pfeiffer Burns SP", category: "Attraction", hour: 13, minute: 0, duration: 1.5, cost: 10, costCat: "Attractions", date: dayDate, calendar: calendar, order: 1)
-        addActivity(to: day, name: "Nepenthe Restaurant", location: "48510 Highway 1", category: "Food", hour: 17, minute: 0, duration: 2, cost: 90, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
+        addActivity(to: day, name: "Bixby Bridge Photo Stop", location: "Bixby Bridge, Big Sur", category: "Attraction", hour: 11, minute: 0, duration: 0.5, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "McWay Falls Hike", location: "Julia Pfeiffer Burns State Park, Big Sur", category: "Attraction", hour: 13, minute: 0, duration: 1.5, cost: 10, costCat: "Attractions", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Nepenthe Restaurant", location: "Nepenthe, Big Sur", category: "Food", hour: 17, minute: 0, duration: 2, cost: 90, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func setupDay4(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "Big Sur"
+        day.startLocation = "San Luis Obispo"
         day.endLocation = "San Luis Obispo"
-        day.distance = 95
-        day.drivingTime = 2
+        day.distance = 0
+        day.drivingTime = 0
+        
+        let dayDate = calendar.date(byAdding: .day, value: 3, to: startDate)!
+        addActivity(to: day, name: "Madonna Inn Visit", location: "Madonna Inn, San Luis Obispo", category: "Attraction", hour: 10, minute: 0, duration: 1, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Farmers Market", location: "Downtown San Luis Obispo", category: "Food", hour: 11, minute: 30, duration: 1.5, cost: 35, costCat: "Food", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Dinner at Local Restaurant", location: "San Luis Obispo", category: "Food", hour: 18, minute: 0, duration: 2, cost: 85, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func setupDay5(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "San Luis Obispo"
+        day.startLocation = "Santa Barbara"
         day.endLocation = "Santa Barbara"
-        day.distance = 100
-        day.drivingTime = 2
+        day.distance = 0
+        day.drivingTime = 0
+        
+        let dayDate = calendar.date(byAdding: .day, value: 4, to: startDate)!
+        addActivity(to: day, name: "Santa Barbara Beach Walk", location: "Stearns Wharf, Santa Barbara", category: "Attraction", hour: 9, minute: 0, duration: 2, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Lunch at Waterfront", location: "Santa Barbara Waterfront", category: "Food", hour: 12, minute: 0, duration: 1.5, cost: 50, costCat: "Food", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Wine Tasting", location: "Santa Barbara Wine Region", category: "Attraction", hour: 15, minute: 0, duration: 2, cost: 40, costCat: "Attractions", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func setupDay6(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "Santa Barbara"
+        day.startLocation = "Los Angeles"
         day.endLocation = "Los Angeles"
-        day.distance = 95
-        day.drivingTime = 2
+        day.distance = 0
+        day.drivingTime = 0
+        
+        let dayDate = calendar.date(byAdding: .day, value: 5, to: startDate)!
+        addActivity(to: day, name: "Hollywood Walk of Fame", location: "Hollywood Boulevard, Los Angeles", category: "Attraction", hour: 9, minute: 0, duration: 2, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Griffith Observatory", location: "Griffith Observatory, Los Angeles", category: "Attraction", hour: 12, minute: 0, duration: 2, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Dinner in Downtown LA", location: "Downtown Los Angeles", category: "Food", hour: 18, minute: 0, duration: 2, cost: 80, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func setupDay7(_ day: TripDay, startDate: Date, calendar: Calendar) {
-        day.startLocation = "Los Angeles"
+        day.startLocation = "San Diego"
         day.endLocation = "San Diego"
-        day.distance = 120
-        day.drivingTime = 2.5
+        day.distance = 0
+        day.drivingTime = 0
+        
+        let dayDate = calendar.date(byAdding: .day, value: 6, to: startDate)!
+        addActivity(to: day, name: "Balboa Park Visit", location: "Balboa Park, San Diego", category: "Attraction", hour: 9, minute: 0, duration: 3, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
+        addActivity(to: day, name: "Lunch at Harbor Area", location: "San Diego Harbor", category: "Food", hour: 12, minute: 30, duration: 1.5, cost: 45, costCat: "Food", date: dayDate, calendar: calendar, order: 1)
+        addActivity(to: day, name: "Beach Sunset", location: "Pacific Beach, San Diego", category: "Attraction", hour: 17, minute: 0, duration: 1.5, cost: 0, costCat: "Attractions", date: dayDate, calendar: calendar, order: 2)
     }
     
     private func addActivity(to day: TripDay, name: String, location: String, category: String, hour: Int, minute: Int, duration: Double, cost: Double, costCat: String, date: Date, calendar: Calendar, order: Int) {
