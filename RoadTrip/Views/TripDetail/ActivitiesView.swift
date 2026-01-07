@@ -528,6 +528,51 @@ struct AddActivityView: View {
                             Text(cat).tag(cat)
                         }
                     }
+                    
+                    // Display location details if available
+                    if let details = locationDetails {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let website = details.website, !website.isEmpty {
+                                Link(destination: URL(string: website.hasPrefix("http") ? website : "https://\(website)")!) {
+                                    HStack {
+                                        Image(systemName: "link.circle.fill")
+                                            .foregroundStyle(.blue)
+                                        Text("Website")
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            
+                            if let phone = details.phoneNumber, !phone.isEmpty {
+                                Link(destination: URL(string: "tel:\(phone.filter { $0.isNumber })")!) {
+                                    HStack {
+                                        Image(systemName: "phone.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text(phone)
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                            
+                            if !details.openingHours.isEmpty {
+                                DisclosureGroup("Hours") {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        ForEach(details.openingHours, id: \.self) { hours in
+                                            Text(hours)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                     .onChange(of: category) { _, newValue in
                         showHotelFields = (newValue == "Hotel")
                     }
