@@ -11,6 +11,9 @@ struct OverviewView: View {
     @State private var addingActivityDay: TripDay?
     @State private var showingShareSheet = false
     @State private var sharePDFData: Data?
+    @State private var dayToDelete: TripDay?
+    @State private var showingDeleteConfirmation = false
+    @State private var showingMap = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -41,6 +44,10 @@ struct OverviewView: View {
                                 Image(systemName: "map.circle.fill")
                                     .font(.title2)
                                     .foregroundStyle(.blue.gradient)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        showingMap = true
+                                    }
                             }
                             
                             Divider()
@@ -81,18 +88,17 @@ struct OverviewView: View {
                                 Spacer()
                                 
                                 VStack(alignment: .trailing, spacing: 4) {
-                                    Text("Hotels")
+                                    Text("Budget")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     
                                     HStack(spacing: 4) {
-                                        Image(systemName: "bed.double.fill")
+                                        Image(systemName: "dollarsign.circle.fill")
                                             .font(.caption)
-                                            .foregroundStyle(.purple)
+                                            .foregroundStyle(.orange)
                                         
-                                        Text("Coming soon")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        Text(String(format: "$%.0f", trip.totalEstimatedCost))
+                                            .font(.headline)
                                     }
                                 }
                             }
@@ -140,6 +146,24 @@ struct OverviewView: View {
             if let pdfData = sharePDFData {
                 ShareSheet(items: [pdfData], fileName: "\(trip.name).pdf")
             }
+        }
+        .sheet(isPresented: $showingMap) {
+            let allActivities = trip.days.flatMap { $0.activities }
+            ActivitiesMapView(activities: allActivities)
+        }
+        .alert("Delete Day", isPresented: $showingDeleteConfirmation, presenting: dayToDelete) { day in
+            Button(role: .destructive) {
+                confirmDeleteDay()
+            } label: {
+                Text("Delete")
+            }
+            Button(role: .cancel) {
+                dayToDelete = nil
+            } label: {
+                Text("Cancel")
+            }
+        } message: { day in
+            Text("This will delete Day \(day.dayNumber) and all its activities. Remaining days will be renumbered.")
         }
     }
     
@@ -352,7 +376,31 @@ struct OverviewView: View {
     }
     
     private func deleteDay(_ day: TripDay) {
-        modelContext.delete(day)
+        dayToDelete = day
+        showingDeleteConfirmation = true
+    }
+    
+    private func confirmDeleteDay() {
+        guard let dayToDelete = dayToDelete else { return }
+        
+        trip.days.removeAll(where: { $0.id == dayToDelete.id })
+        
+        let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+        for (index, day) in sortedDays.enumerated() {
+            day.dayNumber = index + 1
+        }
+        
+        if !trip.days.isEmpty {
+            let calendar = Calendar.current
+            let sortedDays = trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })
+            if let firstDay = sortedDays.first, let lastDay = sortedDays.last {
+                trip.startDate = firstDay.date
+                trip.endDate = lastDay.date
+            }
+        }
+        
+        try? modelContext.save()
+        self.dayToDelete = nil
     }
 }
 
