@@ -570,10 +570,12 @@ struct AddActivityView: View {
                             }
                         }
                         .padding(.vertical, 4)
+                        .onChange(of: category) { _, newValue in
+                            showHotelFields = (newValue == "Hotel")
+                        }
+
                     }
-                    .onChange(of: category) { _, newValue in
-                        showHotelFields = (newValue == "Hotel")
-                    }
+
                 }
                 
                 // Display location details if available
