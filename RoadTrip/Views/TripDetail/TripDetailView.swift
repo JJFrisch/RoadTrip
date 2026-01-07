@@ -102,14 +102,6 @@ struct TripDetailView: View {
                     Divider()
                     
                     Button {
-                        showingCarRentalBrowser = true
-                    } label: {
-                        Label("Rent a Car", systemImage: "car.fill")
-                    }
-                    
-                    Divider()
-                    
-                    Button {
                         exportToPDF()
                     } label: {
                         Label("Export to PDF", systemImage: "doc.fill")

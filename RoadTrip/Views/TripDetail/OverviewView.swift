@@ -376,7 +376,7 @@ struct OverviewView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                     
-                    Text(String(format: "$%.0f", trip.spentAmount))
+                    Text(String(format: "$%.0f", trip.estimatedTotalCost))
                         .font(.headline)
                 }
             }

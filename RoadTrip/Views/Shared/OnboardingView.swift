@@ -386,8 +386,7 @@ extension HomeView {
         
         let dayDate = calendar.date(byAdding: .day, value: 2, to: startDate)!
         addActivity(to: day, name: "Point Lobos State Natural Reserve", location: "Point Lobos, Monterey", category: "Attraction", hour: 9, minute: 0, duration: 2, cost: 10, costCat: "Attractions", date: dayDate, calendar: calendar, order: 0)
-        addActivity(to: day, name: "Kelp Forest Diving", location: "Monterey Bay, Monterey", category: "Attraction", hour: 13, minute: 0, duration: 2, cost: 75, costCat: "Attractions", date: dayDate, calendar: calendar, order: 1)
-        addActivity(to: day, name: "Dinner at Local Restaurant", location: "Monterey", category: "Food", hour: 18, minute: 0, duration: 1.5, cost: 65, costCat: "Food", date: dayDate, calendar: calendar, order: 2)
+        addActivity(to: day, name: "Dinner at Local Restaurant", location: "Monterey", category: "Food", hour: 18, minute: 0, duration: 1.5, cost: 65, costCat: "Food", date: dayDate, calendar: calendar, order: 1)
     }
     
     private func setupDay4(_ day: TripDay, startDate: Date, calendar: Calendar) {
