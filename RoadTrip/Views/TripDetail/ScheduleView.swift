@@ -1061,9 +1061,6 @@ struct ActivityBlock: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: categoryColor.opacity(0.2), radius: 4, y: 2)
-        .onTapGesture {
-            onTap()
-        }
     }
     
     private var categoryColor: Color {
