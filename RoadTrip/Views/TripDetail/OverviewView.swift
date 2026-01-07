@@ -23,91 +23,7 @@ struct OverviewView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         // Summary Card
-                        VStack(spacing: 12) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Trip Summary")
-                                        .font(.headline)
-                                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    if let desc = trip.tripDescription, !desc.isEmpty {
-                                        Text(desc)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .padding(.top, 2)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "map.circle.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.blue.gradient)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        showingMap = true
-                                    }
-                            }
-                            
-                            Divider()
-                            
-                            HStack(spacing: 16) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Total Distance")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "road.lanes")
-                                            .font(.caption)
-                                            .foregroundStyle(.blue)
-                                        
-                                        Text(String(format: "%.0f mi", trip.totalDistance))
-                                            .font(.headline)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                VStack(alignment: .center, spacing: 4) {
-                                    Text("Drive Time")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "car.fill")
-                                            .font(.caption)
-                                            .foregroundStyle(.green)
-                                        
-                                        Text(formatDrivingTime(trip.totalDrivingTime))
-                                            .font(.headline)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                VStack(alignment: .trailing, spacing: 4) {
-                                    Text("Budget")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "dollarsign.circle.fill")
-                                            .font(.caption)
-                                            .foregroundStyle(.orange)
-                                        
-                                        Text(String(format: "$%.0f", trip.totalEstimatedCost))
-                                            .font(.headline)
-                                    }
-                                }
-                            }
-                        }
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-                        .padding()
+                        summaryCardView
 
                         OverviewMiniMapView(trip: trip)
                             .padding(.horizontal, 16)
@@ -373,6 +289,98 @@ struct OverviewView: View {
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var summaryCardView: some View {
+        VStack(spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Trip Summary")
+                        .font(.headline)
+                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let desc = trip.tripDescription, !desc.isEmpty {
+                        Text(desc)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "map.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.blue.gradient)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showingMap = true
+                    }
+            }
+            
+            Divider()
+            
+            summaryStatsView
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding()
+    }
+    
+    private var summaryStatsView: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Total Distance")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "road.lanes")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                    
+                    Text(String(format: "%.0f mi", trip.totalDistance))
+                        .font(.headline)
+                }
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .center, spacing: 4) {
+                Text("Drive Time")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "car.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                    
+                    Text(formatDrivingTime(trip.totalDrivingTime))
+                        .font(.headline)
+                }
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Budget")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    
+                    Text(String(format: "$%.0f", trip.totalEstimatedCost))
+                        .font(.headline)
+                }
+            }
+        }
     }
     
     private func deleteDay(_ day: TripDay) {
