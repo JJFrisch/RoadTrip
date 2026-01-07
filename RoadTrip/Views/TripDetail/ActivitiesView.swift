@@ -242,7 +242,9 @@ struct ActivitiesView: View {
     // MARK: - Helper Methods
     
     private func deleteActivity(_ activity: Activity) {
-        modelContext.delete(activity)
+        if let dayIndex = trip.days.firstIndex(where: { $0.activities.contains(where: { $0.id == activity.id }) }) {
+            trip.days[dayIndex].activities.removeAll(where: { $0.id == activity.id })
+        }
     }
     
     private func moveActivity(in day: TripDay, from source: IndexSet, to destination: Int) {
@@ -422,7 +424,7 @@ struct AddActivityView: View {
     @State private var showingKindsOfActivities = false
     @State private var useSuggestedTime = true
     @State private var searchNearLocation = ""
-    @State private var useSearchNear = false
+    @State private var useSearchNear = true
     @State private var locationDetails: LocationPlaceDetails?
     
     // Budget tracking

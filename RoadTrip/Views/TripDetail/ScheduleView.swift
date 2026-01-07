@@ -427,14 +427,14 @@ struct DayScheduleSection: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Kinds of Activities Button
+                // Activity Types Button
                 Button {
                     showingTemplates = true
                 } label: {
                     HStack {
                         Image(systemName: "doc.on.doc.fill")
                             .font(.body)
-                        Text("Kinds")
+                        Text("Activity Types")
                             .fontWeight(.medium)
                     }
                     .foregroundStyle(.green)
@@ -444,22 +444,6 @@ struct DayScheduleSection: View {
                     .cornerRadius(10)
                 }
                 .buttonStyle(.plain)
-                
-                Button {} label: {
-                    HStack {
-                        Image(systemName: "bed.double.fill")
-                            .font(.body)
-                        Text("Hotels (Coming soon)")
-                            .fontWeight(.medium)
-                    }
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                }
-                .buttonStyle(.plain)
-                .disabled(true)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
