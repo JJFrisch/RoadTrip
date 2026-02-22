@@ -51,7 +51,7 @@ Non-goals (for now):
 | <img src="docs/images/iPhone_17_Pro_Max_budget.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_budget_days.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_map_city.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_pdf.png" width="400"> 
 
 ### Short demo GIF (recommended)
-![Demo](docs/images/demo.gif)
+![Demo](docs/images/demo_video.mov)
 
 What the demo should show (10–20 seconds):
 1) create a trip → 2) add activities with locations → 3) view map pins → 4) view route summary → 5) view timeline.
