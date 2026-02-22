@@ -53,8 +53,6 @@ Non-goals (for now):
 ### Short demo GIF (recommended)
 ![Demo](docs/images/demo.gif)
 
-What the demo should show (10–20 seconds):
-1) create a trip → 2) add activities with locations → 3) view map pins → 4) view route summary → 5) view timeline.
 
 ---
 
