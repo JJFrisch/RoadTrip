@@ -41,15 +41,13 @@ Non-goals (for now):
 
 ## Screenshots / Demo
 
-Add images to `docs/images/` and update these links.
-
-### Hero (repo banner)
-![RoadTrip hero](docs/images/hero.png)
-
 ### Core flows to showcase
 | Trip list | Trip details | Map view | Schedule view |
 |---|---|---|---|
-| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400">| ![Trip details](docs/images/screenshot-trip-detail.png) | ![Map](docs/images/screenshot-map.png) | ![Schedule](docs/images/screenshot-schedule.png) |
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
 
 ### Short demo GIF (recommended)
 ![Demo](docs/images/demo.gif)
