@@ -44,10 +44,7 @@ Non-goals (for now):
 ### Core flows to showcase
 | Trip list | Trip details | Map view | Schedule view |
 |---|---|---|---|
-| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
-| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
-| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
-| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> | <img src="docs/images/iPhone_17_Pro_Max_days.png" width="400"> 
 
 ### Short demo GIF (recommended)
 ![Demo](docs/images/demo.gif)
