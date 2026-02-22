@@ -49,7 +49,8 @@ Add images to `docs/images/` and update these links.
 ### Core flows to showcase
 | Trip list | Trip details | Map view | Schedule view |
 |---|---|---|---|
-| ![Trip list](docs/images/iPhone_17_Pro_Max_days.png) | ![Trip details](docs/images/screenshot-trip-detail.png) | ![Map](docs/images/screenshot-map.png) | ![Schedule](docs/images/screenshot-schedule.png) |
+| <img src="docs/images/iPhone_17_Pro_Max_days.png" width="100" height="100">
+![Trip list](docs/images/iPhone_17_Pro_Max_days.png) | ![Trip details](docs/images/screenshot-trip-detail.png) | ![Map](docs/images/screenshot-map.png) | ![Schedule](docs/images/screenshot-schedule.png) |
 
 ### Short demo GIF (recommended)
 ![Demo](docs/images/demo.gif)
