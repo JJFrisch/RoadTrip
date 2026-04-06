@@ -27,6 +27,7 @@ struct CarRentalBrowsingView: View {
     @State private var hasSearched = false
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingInlineStatus = false
     
     init(trip: Trip) {
         self.trip = trip
@@ -42,6 +43,29 @@ struct CarRentalBrowsingView: View {
             VStack(spacing: 0) {
                 // Network Status Banner
                 NetworkStatusBanner()
+
+                if showingInlineStatus {
+                    HStack(spacing: AppTheme.Spacing.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AppTheme.Colors.warning)
+                        Text(errorMessage)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .lineLimit(2)
+                        Spacer()
+                        Button("Dismiss") {
+                            withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                                showingInlineStatus = false
+                            }
+                        }
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.primary)
+                    }
+                    .padding(.horizontal, AppTheme.Spacing.md)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.warning.opacity(0.12))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 
                 // Search Header
                 ScrollView {
@@ -308,14 +332,6 @@ struct CarRentalBrowsingView: View {
             .sheet(item: $selectedCar) { car in
                 CarRentalDetailView(car: car, trip: trip, pickUpDate: pickUpDate, dropOffDate: dropOffDate)
             }
-            .alert("Search Error", isPresented: $showingError) {
-                Button("Retry") {
-                    performSearch()
-                }
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
         }
     }
     
@@ -361,6 +377,9 @@ struct CarRentalBrowsingView: View {
                 print("❌ Geocoding error: \(error.localizedDescription)")
                 errorMessage = "Unable to find one or both locations. Please check your spelling and try again."
                 showingError = true
+                withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                    showingInlineStatus = true
+                }
                 
                 // Fallback to default coordinates (San Francisco)
                 _ = await searchService.searchCarRentals(

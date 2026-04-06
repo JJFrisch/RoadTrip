@@ -19,6 +19,7 @@ struct CarRentalDetailView: View {
     @Environment(\.openURL) private var openURL
     
     @State private var showingSaveConfirmation = false
+    @State private var saveStatusMessage: String?
     
     var rentalDays: Int {
         Calendar.current.dateComponents([.day], from: pickUpDate, to: dropOffDate).day ?? 1
@@ -28,6 +29,20 @@ struct CarRentalDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if let saveStatusMessage {
+                        HStack(spacing: AppTheme.Spacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(AppTheme.Colors.success)
+                            Text(saveStatusMessage)
+                                .font(AppTheme.Typography.caption1)
+                                .foregroundStyle(AppTheme.Colors.primaryText)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppTheme.Spacing.md)
+                        .padding(.vertical, AppTheme.Spacing.sm)
+                        .background(AppTheme.Colors.success.opacity(0.12))
+                    }
+
                     // Car Image
                     if let imageURL = car.imageURL, let url = URL(string: imageURL) {
                         AsyncImage(url: url) { phase in
@@ -233,16 +248,9 @@ struct CarRentalDetailView: View {
                     Button {
                         saveCarRentalToTrip()
                     } label: {
-                        Label("Add to Trip", systemImage: "plus.circle.fill")
+                        Label("Add Rental", systemImage: "plus.circle.fill")
                     }
                 }
-            }
-            .alert("Car Rental Added", isPresented: $showingSaveConfirmation) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("\(car.carName) has been added to your trip.")
             }
         }
     }
@@ -269,6 +277,10 @@ struct CarRentalDetailView: View {
         firstDay.activities.append(rentalActivity)
         
         showingSaveConfirmation = true
+        saveStatusMessage = "Car rental added to your trip"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            dismiss()
+        }
     }
 }
 

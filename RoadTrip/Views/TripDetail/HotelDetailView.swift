@@ -18,6 +18,7 @@ struct HotelDetailView: View {
     @Environment(\.openURL) private var openURL
     
     @State private var showingSaveConfirmation = false
+    @State private var saveStatusMessage: String?
     @State private var selectedImageIndex = 0
     @State private var mapCoordinate: CLLocationCoordinate2D?
     
@@ -25,6 +26,20 @@ struct HotelDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if let saveStatusMessage {
+                        HStack(spacing: AppTheme.Spacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(AppTheme.Colors.success)
+                            Text(saveStatusMessage)
+                                .font(AppTheme.Typography.caption1)
+                                .foregroundStyle(AppTheme.Colors.primaryText)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppTheme.Spacing.md)
+                        .padding(.vertical, AppTheme.Spacing.sm)
+                        .background(AppTheme.Colors.success.opacity(0.12))
+                    }
+
                     imageCarousel
                     hotelDetailsSection
                 }
@@ -42,16 +57,9 @@ struct HotelDetailView: View {
                     Button {
                         saveHotelToDay()
                     } label: {
-                        Label("Add to Day", systemImage: "plus.circle.fill")
+                        Label("Add Hotel", systemImage: "plus.circle.fill")
                     }
                 }
-            }
-            .alert("Hotel Added", isPresented: $showingSaveConfirmation) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("\(hotel.name) has been added to your trip itinerary.")
             }
         }
         .onAppear {
@@ -348,6 +356,10 @@ struct HotelDetailView: View {
         day.activities.append(hotelActivity)
         
         showingSaveConfirmation = true
+        saveStatusMessage = "Hotel added to your itinerary"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            dismiss()
+        }
     }
     
     private func ratingColor(_ rating: Double) -> Color {

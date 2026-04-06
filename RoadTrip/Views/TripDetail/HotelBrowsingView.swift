@@ -32,6 +32,7 @@ struct HotelBrowsingView: View {
     @State private var hasSearched = false
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingInlineStatus = false
     @State private var showingGuestPicker = false
     
     private var userPreferences: HotelPreferences {
@@ -57,6 +58,29 @@ struct HotelBrowsingView: View {
             VStack(spacing: 0) {
                 // Network Status Banner
                 NetworkStatusBanner()
+
+                if showingInlineStatus {
+                    HStack(spacing: AppTheme.Spacing.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AppTheme.Colors.warning)
+                        Text(errorMessage)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .lineLimit(2)
+                        Spacer()
+                        Button("Dismiss") {
+                            withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                                showingInlineStatus = false
+                            }
+                        }
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.primary)
+                    }
+                    .padding(.horizontal, AppTheme.Spacing.md)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.warning.opacity(0.12))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 
                 // Compact Search Header
                 VStack(spacing: 12) {
@@ -428,14 +452,6 @@ struct HotelBrowsingView: View {
             .sheet(item: $selectedHotel) { hotel in
                 HotelDetailView(hotel: hotel, day: day)
             }
-            .alert("Search Error", isPresented: $showingError) {
-                Button("Retry") {
-                    performSearch()
-                }
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
         }
         .onAppear {
             syncChildrenAges()
@@ -588,6 +604,9 @@ struct HotelBrowsingView: View {
                 print("❌ Geocoding error: \(error.localizedDescription)")
                 errorMessage = "Unable to find location '\(searchLocation)'. Please try a different city name or check your spelling."
                 showingError = true
+                withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                    showingInlineStatus = true
+                }
                 
                 // Still search with location string, API will handle it
                 _ = await searchService.searchHotels(

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct TripDetailView: View {
     let trip: Trip
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab = 0
     @State private var showingEditSheet = false
     @State private var showingOfflineMapSheet = false
@@ -35,13 +36,13 @@ struct TripDetailView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .background(Color(red: 0.98, green: 0.97, blue: 0.96))
+            .background(AppTheme.Colors.background)
             
             // Custom Tab Bar at Bottom
             VStack(spacing: 0) {
                 Rectangle()
                     .frame(height: 1)
-                    .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                    .foregroundStyle(AppTheme.Colors.divider)
                 
                 HStack(spacing: 0) {
                     TabBarButton(
@@ -99,11 +100,12 @@ struct TripDetailView: View {
                         }
                     }
                 }
-                .padding(.vertical, 12)
-                .background(Color.white)
+                .padding(.vertical, AppTheme.Spacing.sm)
+                .padding(.horizontal, AppTheme.Spacing.xs)
+                .background(AppTheme.Colors.secondaryBackground)
             }
         }
-        .background(Color(red: 0.98, green: 0.97, blue: 0.96))
+        .background(AppTheme.Colors.background)
         .navigationTitle(trip.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -135,9 +137,17 @@ struct TripDetailView: View {
                     } label: {
                         Label("Offline Maps", systemImage: "arrow.down.circle")
                     }
+
+                    Button {
+                        showingCarRentalBrowser = true
+                    } label: {
+                        Label("Browse Car Rentals", systemImage: "car.fill")
+                    }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis.circle.fill")
+                        .foregroundStyle(AppTheme.Colors.primary)
                 }
+                .accessibilityLabel("Trip actions")
             }
         }
         .sheet(isPresented: $showingEditSheet) {
@@ -230,6 +240,7 @@ struct TabBarButton: View {
     let isSelected: Bool
     let accessibilityID: String
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var isHovered = false
     
@@ -240,8 +251,8 @@ struct TabBarButton: View {
                     .font(.system(size: 20))
                     .foregroundStyle(
                         isSelected
-                            ? Color(red: 0.29, green: 0.62, blue: 0.85)
-                            : Color.gray.opacity(0.5)
+                            ? AppTheme.Colors.primary
+                            : AppTheme.Colors.secondaryText.color(for: colorScheme).opacity(0.7)
                     )
                 
                 Text(title)
@@ -249,20 +260,20 @@ struct TabBarButton: View {
                     .fontWeight(isSelected ? .semibold : .regular)
                     .foregroundStyle(
                         isSelected
-                            ? Color(red: 0.29, green: 0.62, blue: 0.85)
-                            : Color.gray.opacity(0.5)
+                            ? AppTheme.Colors.primary
+                            : AppTheme.Colors.secondaryText.color(for: colorScheme).opacity(0.7)
                     )
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
             .background(
                 isSelected
-                    ? Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.08)
+                    ? AppTheme.Colors.primary.opacity(0.1)
                     : Color.clear
             )
-            .cornerRadius(8)
+            .cornerRadius(AppTheme.CornerRadius.medium)
             .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.15)) {
+                withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
                     isHovered = hovering
                 }
             }
