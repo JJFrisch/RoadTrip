@@ -199,6 +199,106 @@ struct SecondaryButtonStyle: ButtonStyle {
     }
 }
 
+    // MARK: - Destructive Button (Red, for delete/cancel actions)
+    struct DestructiveButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(AppTheme.Typography.headline)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(AppTheme.Spacing.md)
+                .background(AppTheme.Colors.danger.opacity(0.9))
+                .cornerRadius(AppTheme.CornerRadius.large)
+                .opacity(configuration.isPressed ? 0.8 : 1)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+        }
+    }
+
+    // MARK: - Tertiary Button (Text-only, for less important actions)
+    struct TertiaryButtonStyle: ButtonStyle {
+        var foregroundColor: Color = AppTheme.Colors.primary
+    
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(AppTheme.Typography.body)
+                .foregroundStyle(foregroundColor)
+                .padding(AppTheme.Spacing.sm)
+                .opacity(configuration.isPressed ? 0.6 : 1)
+        }
+    }
+
+    // MARK: - Enhanced Form Section (for custom form-like layouts)
+    struct EnhancedFormSection: ViewModifier {
+        let title: String?
+        let subtitle: String?
+        @Environment(\.colorScheme) private var colorScheme
+    
+        func body(content: Content) -> some View {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
+                if let title = title {
+                    Text(title)
+                        .font(AppTheme.Typography.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
+                        .textCase(.none)
+                }
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(AppTheme.Typography.caption2)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
+                }
+                content
+                    .padding(AppTheme.Spacing.md)
+                    .background(AppTheme.Colors.secondaryBackground)
+                    .cornerRadius(AppTheme.CornerRadius.large)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                            .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                    )
+            }
+            .padding(.horizontal, AppTheme.Spacing.md)
+        }
+    }
+
+    // MARK: - Styled Text Field (with label and helper text)
+    struct StyledTextFieldStyle: ViewModifier {
+        let label: String
+        let isValid: Bool
+        let errorMessage: String?
+        @Environment(\.colorScheme) private var colorScheme
+    
+        @FocusState private var isFocused: Bool
+    
+        func body(content: Content) -> some View {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                Text(label)
+                    .font(AppTheme.Typography.footnote)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
+            
+                content
+                    .font(AppTheme.Typography.body)
+                    .padding(AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.background)
+                    .cornerRadius(AppTheme.CornerRadius.medium)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                            .stroke(
+                                isValid || !isFocused ? AppTheme.Colors.divider : AppTheme.Colors.danger.opacity(0.5),
+                                lineWidth: isFocused ? 2 : 1
+                            )
+                    )
+                    .focused($isFocused)
+            
+                if let errorMessage = errorMessage, !isValid {
+                    Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        .font(AppTheme.Typography.caption2)
+                        .foregroundStyle(AppTheme.Colors.danger)
+                }
+            }
+        }
+    }
+
 extension View {
     func cardStyle() -> some View {
         modifier(CardStyle())
@@ -208,6 +308,14 @@ extension View {
         modifier(FormSectionStyle())
     }
     
+        func enhancedFormSection(title: String? = nil, subtitle: String? = nil) -> some View {
+            modifier(EnhancedFormSection(title: title, subtitle: subtitle))
+        }
+    
+        func styledTextField(label: String, isValid: Bool = true, errorMessage: String? = nil) -> some View {
+            modifier(StyledTextFieldStyle(label: label, isValid: isValid, errorMessage: errorMessage))
+        }
+    
     func primaryButton() -> some View {
         buttonStyle(PrimaryButtonStyle())
     }
@@ -215,4 +323,12 @@ extension View {
     func secondaryButton() -> some View {
         buttonStyle(SecondaryButtonStyle())
     }
+    
+        func destructiveButton() -> some View {
+            buttonStyle(DestructiveButtonStyle())
+        }
+    
+        func tertiaryButton(foregroundColor: Color = AppTheme.Colors.primary) -> some View {
+            buttonStyle(TertiaryButtonStyle(foregroundColor: foregroundColor))
+        }
 }

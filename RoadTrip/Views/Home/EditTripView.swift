@@ -1,4 +1,5 @@
 // Views/Home/EditTripView.swift
+// Refactored for UX Polish: Custom form sections, polished components, consistent design system
 import SwiftUI
 
 struct EditTripView: View {
@@ -12,6 +13,8 @@ struct EditTripView: View {
     @State private var endDate: Date = Date()
     @State private var coverImage: String = ""
     @State private var showingDaysWarning = false
+    
+    private let iconSuggestions = ["car.fill", "airplane", "bicycle", "figure.hiking", "tent.fill", "beach.umbrella.fill", "mountain.2.fill", "building.2.fill"]
     
     var isFormValid: Bool {
         !tripName.trimmingCharacters(in: .whitespaces).isEmpty && endDate >= startDate
@@ -41,126 +44,209 @@ struct EditTripView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Trip Details") {
-                    TextField("Trip Name", text: $tripName)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Description")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextEditor(text: $tripDescription)
-                            .frame(minHeight: 60)
-                    }
-                }
+            ZStack {
+                AppTheme.Colors.background.ignoresSafeArea()
                 
-                Section {
-                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                VStack(spacing: 0) {
+                    // Polished header
+                    ScreenHeader("Edit Trip", subtitle: "Update trip details")
                     
-                    // Days preview
-                    HStack {
-                        Label("Duration", systemImage: "calendar")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(newDayCount) day\(newDayCount == 1 ? "" : "s")")
-                            .fontWeight(.medium)
-                        if newDayCount > 1 {
-                            Text("(\(newDayCount - 1) night\(newDayCount - 1 == 1 ? "" : "s"))")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    
-                    if daysWillChange {
-                        HStack(spacing: 8) {
-                            Image(systemName: newDayCount > currentDayCount ? "plus.circle.fill" : "minus.circle.fill")
-                                .foregroundStyle(newDayCount > currentDayCount ? .green : .orange)
-                            
-                            if newDayCount > currentDayCount {
-                                Text("\(newDayCount - currentDayCount) day\(newDayCount - currentDayCount == 1 ? "" : "s") will be added")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            } else {
-                                Text("\(currentDayCount - newDayCount) day\(currentDayCount - newDayCount == 1 ? "" : "s") will be removed")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                        
-                        if newDayCount < currentDayCount {
-                            Text("Activities from removed days will be moved to the last day")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Dates")
-                } footer: {
-                    if endDate < startDate {
-                        Text("End date must be after or equal to start date")
-                            .foregroundStyle(.red)
-                    }
-                }
-                
-                Section("Appearance") {
-                    HStack {
-                        Text("Cover Icon")
-                        Spacer()
-                        TextField("SF Symbol name", text: $coverImage)
-                            .multilineTextAlignment(.trailing)
-                            .textInputAutocapitalization(.never)
-                    }
-                    
-                    if !coverImage.isEmpty {
-                        HStack {
-                            Spacer()
-                            Image(systemName: coverImage)
-                                .font(.system(size: 50))
-                                .foregroundStyle(.blue.gradient)
-                                .symbolRenderingMode(.hierarchical)
-                            Spacer()
-                        }
-                        .padding(.vertical, 8)
-                    }
-                    
-                    // Icon suggestions
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(["car.fill", "airplane", "bicycle", "figure.hiking", "tent.fill", "beach.umbrella.fill", "mountain.2.fill", "building.2.fill"], id: \.self) { icon in
-                                Button {
-                                    coverImage = icon
-                                } label: {
-                                    Image(systemName: icon)
-                                        .font(.title2)
-                                        .foregroundStyle(coverImage == icon ? .white : .blue)
-                                        .frame(width: 44, height: 44)
-                                        .background(coverImage == icon ? Color.blue : Color.blue.opacity(0.1))
-                                        .cornerRadius(10)
+                    // Form content
+                    ScrollView {
+                        VStack(spacing: AppTheme.Spacing.lg) {
+                            // Trip Details Section
+                            FormSection("Trip Details", subtitle: "Name and description of your trip") {
+                                VStack(spacing: AppTheme.Spacing.md) {
+                                    FormField(
+                                        label: "Trip Name",
+                                        placeholder: "e.g., Summer Road Trip",
+                                        text: $tripName,
+                                        isValid: !tripName.trimmingCharacters(in: .whitespaces).isEmpty
+                                    )
+                                    
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                        Text("Description (Optional)")
+                                            .font(AppTheme.Typography.footnote)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                        
+                                        TextEditor(text: $tripDescription)
+                                            .font(AppTheme.Typography.body)
+                                            .frame(minHeight: 80)
+                                            .padding(AppTheme.Spacing.sm)
+                                            .background(AppTheme.Colors.background)
+                                            .cornerRadius(AppTheme.CornerRadius.medium)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                                                    .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                                            )
+                                    }
                                 }
-                                .buttonStyle(.plain)
                             }
+                            
+                            // Dates Section
+                            FormSection("Trip Dates", subtitle: "Set your travel dates") {
+                                VStack(spacing: AppTheme.Spacing.md) {
+                                    // Start Date
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                        Text("Start Date")
+                                            .font(AppTheme.Typography.footnote)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                        
+                                        DatePicker("", selection: $startDate, displayedComponents: .date)
+                                            .datePickerStyle(.compact)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    
+                                    // End Date
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                        Text("End Date")
+                                            .font(AppTheme.Typography.footnote)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                        
+                                        DatePicker("", selection: $endDate, in: startDate..., displayedComponents: .date)
+                                            .datePickerStyle(.compact)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    
+                                    // Duration Summary
+                                    HStack(spacing: AppTheme.Spacing.md) {
+                                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                            Text("Duration")
+                                                .font(AppTheme.Typography.caption1)
+                                                .foregroundStyle(AppTheme.Colors.secondaryText)
+                                            Text("\(newDayCount) day\(newDayCount == 1 ? "" : "s")")
+                                                .font(AppTheme.Typography.headline)
+                                                .foregroundStyle(AppTheme.Colors.primaryText)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if newDayCount > 1 {
+                                            VStack(alignment: .trailing, spacing: AppTheme.Spacing.xs) {
+                                                Text("Nights")
+                                                    .font(AppTheme.Typography.caption1)
+                                                    .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                Text("\(newDayCount - 1)")
+                                                    .font(AppTheme.Typography.headline)
+                                                    .foregroundStyle(AppTheme.Colors.primary)
+                                            }
+                                        }
+                                    }
+                                    .padding(AppTheme.Spacing.md)
+                                    .background(AppTheme.Colors.background)
+                                    .cornerRadius(AppTheme.CornerRadius.medium)
+                                    
+                                    // Days Change Warning
+                                    if daysWillChange {
+                                        HStack(spacing: AppTheme.Spacing.md) {
+                                            Image(systemName: newDayCount > currentDayCount ? "plus.circle.fill" : "minus.circle.fill")
+                                                .font(.title3)
+                                                .foregroundStyle(newDayCount > currentDayCount ? .green : AppTheme.Colors.warning)
+                                            
+                                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                                if newDayCount > currentDayCount {
+                                                    Text("\(newDayCount - currentDayCount) day\(newDayCount - currentDayCount == 1 ? "" : "s") will be added")
+                                                        .font(AppTheme.Typography.callout)
+                                                        .foregroundStyle(.green)
+                                                } else {
+                                                    Text("\(currentDayCount - newDayCount) day\(currentDayCount - newDayCount == 1 ? "" : "s") will be removed")
+                                                        .font(AppTheme.Typography.callout)
+                                                        .foregroundStyle(AppTheme.Colors.warning)
+                                                    
+                                                    if removedDaysHaveData {
+                                                        Text("Activities will be moved to the last day")
+                                                            .font(AppTheme.Typography.caption2)
+                                                            .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                    }
+                                                }
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(AppTheme.Spacing.md)
+                                        .background(newDayCount > currentDayCount ? Color.green.opacity(0.1) : AppTheme.Colors.warning.opacity(0.1))
+                                        .cornerRadius(AppTheme.CornerRadius.medium)
+                                    }
+                                    
+                                    // Validation Error
+                                    if endDate < startDate {
+                                        Label("End date must be after start date", systemImage: "exclamationmark.circle.fill")
+                                            .font(AppTheme.Typography.callout)
+                                            .foregroundStyle(AppTheme.Colors.danger)
+                                    }
+                                }
+                            }
+                            
+                            // Appearance Section
+                            FormSection("Trip Icon", subtitle: "Choose a visual identifier") {
+                                VStack(spacing: AppTheme.Spacing.md) {
+                                    // Icon preview (if set)
+                                    if !coverImage.isEmpty {
+                                        HStack {
+                                            Spacer()
+                                            VStack(spacing: AppTheme.Spacing.sm) {
+                                                Image(systemName: coverImage)
+                                                    .font(.system(size: 44))
+                                                    .foregroundStyle(AppTheme.Colors.primary)
+                                                Text("Preview")
+                                                    .font(AppTheme.Typography.caption2)
+                                                    .foregroundStyle(AppTheme.Colors.secondaryText)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(.vertical, AppTheme.Spacing.md)
+                                    }
+                                    
+                                    // Icon suggestions grid
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                        Text("Suggested Icons")
+                                            .font(AppTheme.Typography.caption1)
+                                            .foregroundStyle(AppTheme.Colors.secondaryText)
+                                        
+                                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: AppTheme.Spacing.md) {
+                                            ForEach(iconSuggestions, id: \.self) { icon in
+                                                Button {
+                                                    withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                                                        coverImage = icon
+                                                    }
+                                                } label: {
+                                                    Image(systemName: icon)
+                                                        .font(.system(size: 22))
+                                                        .frame(height: 48)
+                                                        .frame(maxWidth: .infinity)
+                                                        .foregroundStyle(coverImage == icon ? .white : AppTheme.Colors.primary)
+                                                        .background(coverImage == icon ? AppTheme.Colors.primary : AppTheme.Colors.primary.opacity(0.1))
+                                                        .cornerRadius(AppTheme.CornerRadius.medium)
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Spacing for bottom content
+                            Spacer().frame(height: AppTheme.Spacing.md)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, AppTheme.Spacing.lg)
                     }
-                }
-            }
-            .navigationTitle("Edit Trip")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        if daysWillBeRemoved && removedDaysHaveData {
-                            showingDaysWarning = true
-                        } else {
-                            saveChanges()
-                        }
-                    }
-                    .disabled(!isFormValid)
-                    .fontWeight(.semibold)
+                    
+                    // Action buttons at bottom
+                    ActionButtonGroup(
+                        primaryTitle: "Save Changes",
+                        primaryAction: {
+                            if daysWillBeRemoved && removedDaysHaveData {
+                                showingDaysWarning = true
+                            } else {
+                                saveChanges()
+                            }
+                        },
+                        secondaryTitle: "Cancel",
+                        secondaryAction: { dismiss() }
+                    )
                 }
             }
             .onAppear {
@@ -170,14 +256,16 @@ struct EditTripView: View {
                 endDate = trip.endDate
                 coverImage = trip.coverImage ?? ""
             }
-            .alert("Adjust Trip Days?", isPresented: $showingDaysWarning) {
-                Button("Cancel", role: .cancel) { }
-                Button("Continue") {
-                    saveChanges()
-                }
-            } message: {
-                Text("Reducing the trip from \(currentDayCount) to \(newDayCount) days will move activities from removed days to Day \(newDayCount).")
-            }
+                .overlay(
+                    ConfirmationSheet(
+                        isPresented: $showingDaysWarning,
+                        title: "Adjust Trip Days?",
+                        message: "Reducing the trip from \(currentDayCount) to \(newDayCount) days will move activities from removed days to Day \(newDayCount).",
+                        actionTitle: "Continue",
+                        actionStyle: .primary,
+                        onConfirm: { saveChanges() }
+                    )
+                )
         }
     }
     
