@@ -665,6 +665,11 @@ struct DayScheduleSection: View {
 }
 
 struct CalendarTimelineView: View {
+    private struct AddTimeSelection: Identifiable {
+        let id = UUID()
+        let time: Date
+    }
+
     let activities: [Activity]
     let day: TripDay
     
@@ -673,7 +678,7 @@ struct CalendarTimelineView: View {
     @State private var selectedActivityForEdit: Activity?
     @State private var selectedActivityForFullEdit: Activity?
     @State private var draggedActivity: Activity?
-    @State private var showingAddAtTime: Date?
+    @State private var showingAddAtTime: AddTimeSelection?
     @State private var zoomScale: CGFloat = 1.0
     
     // Base hour height that can be zoomed
@@ -945,7 +950,7 @@ struct CalendarTimelineView: View {
                                             let calendar = Calendar.current
                                             if let tappedTime = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day.date),
                                                isTimeSlotFree(at: tappedTime) {
-                                                showingAddAtTime = tappedTime
+                                                showingAddAtTime = AddTimeSelection(time: tappedTime)
                                             }
                                         }
                                     
@@ -1087,8 +1092,8 @@ struct CalendarTimelineView: View {
         .sheet(item: $selectedActivityForFullEdit) { activity in
             EditActivityView(activity: activity, day: day)
         }
-        .sheet(item: $showingAddAtTime) { time in
-            AddActivityAtTimeSheet(day: day, suggestedTime: time)
+        .sheet(item: $showingAddAtTime) { selection in
+            AddActivityAtTimeSheet(day: day, suggestedTime: selection.time)
         }
     }
     
