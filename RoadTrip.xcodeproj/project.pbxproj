@@ -36,6 +36,8 @@
 				App/RoadTripApp.swift,
 				Assets.xcassets,
 				Config.swift,
+				Data/SwiftDataTripRepository.swift,
+				Data/TripRepository.swift,
 				Models/Activity.swift,
 				Models/ActivityComment.swift,
 				Models/ActivityTemplate.swift,
@@ -56,6 +58,11 @@
 				Services/RouteOptimizationService.swift,
 				Services/TripSharingService.swift,
 				Services/WeatherService.swift,
+				Shared/API/APIClient.swift,
+				Shared/API/APIEndpoint.swift,
+				Shared/API/TripAPIService.swift,
+				Shared/API/TripDTO.swift,
+				Shared/API/TripDTOMapper.swift,
 				Theme/AppTheme.swift,
 				Utilities/AccessibilityImprovements.swift,
 				Utilities/ActivityImporter.swift,
@@ -128,22 +135,9 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
+				Info.plist,
 			);
 			target = DB63BA082F0770D5001B1FDD /* RoadTripTests */;
-		};
-		DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Models/Activity.swift,
-				Models/ActivityComment.swift,
-				Models/ActivityTemplate.swift,
-				Models/Hotel.swift,
-				Utilities/NetworkMonitor.swift,
-				ViewModels/TripDetailViewModel.swift,
-				ViewModels/TripsViewModel.swift,
-				Views/TripDetail/TripDetailView.swift,
-			);
-			target = DB63BA122F0770D5001B1FDD /* RoadTripUITests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -163,7 +157,6 @@
 			exceptions = (
 				DB63BA452F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTrip" target */,
 				DB63BA462F07714E001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripTests" target */,
-				DB63BA6D2F0775BD001B1FDD /* Exceptions for "RoadTrip" folder in "RoadTripUITests" target */,
 			);
 			path = RoadTrip;
 			sourceTree = "<group>";

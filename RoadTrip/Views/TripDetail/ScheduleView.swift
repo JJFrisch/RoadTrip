@@ -26,6 +26,11 @@ struct ScheduleView: View {
     
     var body: some View {
         List {
+            ScheduleInsightStrip(trip: trip)
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { day in
                 DayScheduleSection(
                     day: day,
@@ -168,6 +173,159 @@ struct ScheduleView: View {
         } catch {
             print("Route calculation failed: \(error)")
         }
+    }
+}
+
+private struct ScheduleInsightStrip: View {
+    let trip: Trip
+
+    private var totalActivities: Int {
+        trip.days.reduce(0) { $0 + $1.activities.count }
+    }
+
+    private var completedActivities: Int {
+        trip.days.reduce(0) { partial, day in
+            partial + day.activities.filter { $0.isCompleted }.count
+        }
+    }
+
+    private var completionRate: Double {
+        guard totalActivities > 0 else { return 0 }
+        return Double(completedActivities) / Double(totalActivities)
+    }
+
+    private var totalDriveHours: Double {
+        trip.days.reduce(0) { $0 + $1.drivingTime }
+    }
+
+    private var dayLoads: [(day: Int, count: Int)] {
+        trip.days
+            .sorted(by: { $0.dayNumber < $1.dayNumber })
+            .map { day in
+                let count = day.activities.filter { $0.isCompleted }.count
+                return (day.dayNumber, count)
+            }
+    }
+
+    private var maxDayLoad: Int {
+        max(dayLoads.map(\.count).max() ?? 0, 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Schedule Pulse")
+                        .font(.headline)
+                    Text("Completion, drive load, and day intensity")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "waveform.path.ecg")
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+            }
+
+            HStack(spacing: 10) {
+                insightTile(
+                    title: "Completed",
+                    value: "\(completedActivities)/\(totalActivities)",
+                    tint: .green,
+                    systemImage: "checkmark.circle.fill"
+                )
+
+                insightTile(
+                    title: "Drive",
+                    value: String(format: "%.1f h", totalDriveHours),
+                    tint: .orange,
+                    systemImage: "car.fill"
+                )
+
+                insightTile(
+                    title: "Progress",
+                    value: "\(Int(completionRate * 100))%",
+                    tint: .blue,
+                    systemImage: "chart.bar.fill"
+                )
+            }
+
+            if !dayLoads.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Day Intensity")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(dayLoads, id: \.day) { load in
+                        HStack(spacing: 8) {
+                            Text("D\(load.day)")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .frame(width: 24, alignment: .leading)
+
+                            GeometryReader { geo in
+                                let width = max(8, geo.size.width * CGFloat(load.count) / CGFloat(maxDayLoad))
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .fill(Color.blue.opacity(0.12))
+
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.blue, Color.cyan],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: width)
+                                }
+                            }
+                            .frame(height: 10)
+
+                            Text("\(load.count)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20, alignment: .trailing)
+                        }
+                        .frame(height: 14)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color(.systemBackground), Color.blue.opacity(0.08)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func insightTile(title: String, value: String, tint: Color, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.caption)
+                .foregroundStyle(tint)
+
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.bold)
+
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(tint.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 

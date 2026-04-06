@@ -14,6 +14,11 @@ struct BudgetView: View {
             VStack(spacing: 16) {
                 // Budget Summary Card
                 budgetSummaryCard
+
+                // Budget Health + Runway
+                if trip.totalBudget != nil {
+                    budgetHealthCard
+                }
                 
                 // Budget Breakdown Chart
                 if trip.estimatedTotalCost > 0 {
@@ -32,6 +37,93 @@ struct BudgetView: View {
         .onAppear {
             loadWeather()
         }
+    }
+
+    // MARK: - Budget Health Card
+
+    private var budgetHealthCard: some View {
+        let totalBudget = max(trip.totalBudget ?? 0, 0)
+        let estimatedSpend = max(trip.estimatedTotalCost, 0)
+        let utilization = totalBudget > 0 ? min(estimatedSpend / totalBudget, 1) : 0
+        let remaining = max(totalBudget - estimatedSpend, 0)
+        let overBudgetAmount = max(estimatedSpend - totalBudget, 0)
+
+        return VStack(spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Budget Health")
+                        .font(.headline)
+                    Text(statusText(for: utilization, isOverBudget: overBudgetAmount > 0))
+                        .font(.caption)
+                        .foregroundStyle(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0))
+                }
+
+                Spacer()
+
+                Text("\(Int(utilization * 100))%")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundStyle(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.15))
+                    .clipShape(Capsule())
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: utilization)
+                    .tint(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0))
+
+                HStack {
+                    Text(String(format: "$%.2f spent", estimatedSpend))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Text(String(format: "$%.2f budget", totalBudget))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Remaining")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "$%.2f", remaining))
+                        .font(.headline)
+                        .foregroundStyle(.green)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(overBudgetAmount > 0 ? "Over Budget" : "Buffer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "$%.2f", overBudgetAmount > 0 ? overBudgetAmount : remaining))
+                        .font(.headline)
+                        .foregroundStyle(overBudgetAmount > 0 ? .red : .blue)
+                }
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color(.systemBackground), statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.08)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.2), lineWidth: 1)
+        )
     }
     
     // MARK: - Budget Summary Card
@@ -318,6 +410,32 @@ struct BudgetView: View {
         case "Attractions": return .blue
         default: return .gray
         }
+    }
+
+    private func statusText(for utilization: Double, isOverBudget: Bool) -> String {
+        if isOverBudget {
+            return "Over budget"
+        }
+        if utilization >= 0.9 {
+            return "Critical runway"
+        }
+        if utilization >= 0.7 {
+            return "Watch spending"
+        }
+        return "On track"
+    }
+
+    private func statusColor(for utilization: Double, isOverBudget: Bool) -> Color {
+        if isOverBudget {
+            return .red
+        }
+        if utilization >= 0.9 {
+            return .orange
+        }
+        if utilization >= 0.7 {
+            return .yellow
+        }
+        return .green
     }
 }
 

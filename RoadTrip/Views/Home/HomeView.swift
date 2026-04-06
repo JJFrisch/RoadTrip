@@ -5,8 +5,8 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     // AuthService disabled; account button shows generic icon
+    @StateObject private var tripsViewModel = TripsViewModel()
     @StateObject private var searchManager = TripSearchManager()
     @StateObject private var onboardingManager = OnboardingManager.shared
 
@@ -20,13 +20,13 @@ struct HomeView: View {
     @State private var showingFilters = false
 
     var filteredTrips: [Trip] {
-        searchManager.filterAndSort(Array(trips))
+        searchManager.filterAndSort(tripsViewModel.trips)
     }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                if trips.isEmpty {
+                if tripsViewModel.trips.isEmpty {
                     emptyStateView
                 } else {
                     tripListView
@@ -35,6 +35,8 @@ struct HomeView: View {
             .navigationTitle("My Trips")
             .searchable(text: $searchManager.searchText, prompt: "Search trips...")
             .onAppear {
+                tripsViewModel.configure(with: modelContext)
+                tripsViewModel.loadTrips()
                 if onboardingManager.shouldShowOnboarding {
                     showingOnboarding = true
                 }
@@ -68,7 +70,9 @@ struct HomeView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingNewTripSheet) {
+            .sheet(isPresented: $showingNewTripSheet, onDismiss: {
+                tripsViewModel.loadTrips()
+            }) {
                 NewTripView()
             }
             .sheet(isPresented: $showingAccount) {
@@ -238,7 +242,7 @@ struct HomeView: View {
     }
 
     private func deleteTrip(_ trip: Trip) {
-        modelContext.delete(trip)
+        tripsViewModel.deleteTrip(trip)
     }
 }
 
