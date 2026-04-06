@@ -11,11 +11,6 @@ import SwiftData
 import MapKit
 import CoreLocation
 
-// Extension to make Date Identifiable for sheet presentation
-extension Date: @retroactive Identifiable {
-    public var id: TimeInterval { timeIntervalSince1970 }
-}
-
 struct ScheduleView: View {
     let trip: Trip
     @State private var selectedDay: TripDay?
@@ -757,6 +752,31 @@ struct CalendarTimelineView: View {
         }
         return false
     }
+
+    private func handleDrop(
+        items: [String],
+        onto targetActivity: Activity,
+        allActivities: [Activity]
+    ) -> Bool {
+        guard let droppedIdString = items.first else {
+            return false
+        }
+
+        guard let droppedId = UUID(uuidString: droppedIdString) else {
+            return false
+        }
+
+        guard let droppedActivity = allActivities.first(where: { $0.id == droppedId }) else {
+            return false
+        }
+
+        guard droppedActivity.id != targetActivity.id else {
+            return false
+        }
+
+        droppedActivity.scheduledTime = targetActivity.scheduledTime
+        return true
+    }
     
     // Find free time slots
     private func findFreeSlots() -> [(start: Date, end: Date)] {
@@ -983,17 +1003,8 @@ struct CalendarTimelineView: View {
                                         .foregroundStyle(.white)
                                         .cornerRadius(8)
                                 }
-                                .dropDestination(for: String.self) { items, location in
-                                    guard let droppedIdString = items.first,
-                                          let droppedId = UUID(uuidString: droppedIdString),
-                                          let droppedActivity = activities.first(where: { $0.id == droppedId }),
-                                          droppedActivity.id != activity.id else {
-                                        return false
-                                    }
-                                    
-                                    // Update dragged activity's time to match drop location
-                                    droppedActivity.scheduledTime = activity.scheduledTime
-                                    return true
+                                .dropDestination(for: String.self) { items, _ in
+                                    handleDrop(items: items, onto: activity, allActivities: activities)
                                 }
                                 .gesture(
                                     LongPressGesture(minimumDuration: 0.5)

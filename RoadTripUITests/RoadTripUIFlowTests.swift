@@ -316,3 +316,15 @@ final class RoadTripUIFlowTests: XCTestCase {
         }
     }
 }
+
+private extension XCUIElement {
+    func selectAll() {
+        tap()
+        press(forDuration: 0.8)
+
+        let selectAllButton = XCUIApplication().menuItems["Select All"]
+        if selectAllButton.waitForExistence(timeout: 1) {
+            selectAllButton.tap()
+        }
+    }
+}

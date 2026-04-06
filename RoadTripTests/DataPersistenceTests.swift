@@ -50,7 +50,8 @@ final class DataPersistenceTests: XCTestCase {
         try modelContext.save()
         
         // Fetch and verify
-        let descriptor = FetchDescriptor<Trip>(predicate: #Predicate { $0.id == trip.id })
+        let tripId = trip.id
+        let descriptor = FetchDescriptor<Trip>(predicate: #Predicate { $0.id == tripId })
         let fetchedTrips = try modelContext.fetch(descriptor)
         
         XCTAssertEqual(fetchedTrips.first?.name, "Updated")
