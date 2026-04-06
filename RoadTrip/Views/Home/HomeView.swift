@@ -26,22 +26,53 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if tripsViewModel.trips.isEmpty {
-                    emptyStateView
-                } else {
-                    tripListView
-                }
-            }
-            .navigationTitle("My Trips")
-            .searchable(text: $searchManager.searchText, prompt: "Search trips...")
-            .onAppear {
-                tripsViewModel.configure(with: modelContext)
-                tripsViewModel.loadTrips()
-                Task {
-                    await tripsViewModel.syncTripsIfNeeded()
-                }
-                if onboardingManager.shouldShowOnboarding {
-                    showingOnboarding = true
+                Color(red: 0.98, green: 0.97, blue: 0.96)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Custom header
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("My Trips")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                
+                                Text("Plan your next adventure")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "airplane.departure")
+                                .font(.system(size: 24))
+                                .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                        }
+                    }
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.29, green: 0.62, blue: 0.85),
+                                Color(red: 0.20, green: 0.52, blue: 0.75)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    
+                    // Search and content
+                    ZStack {
+                        if tripsViewModel.trips.isEmpty {
+                            emptyStateView
+                        } else {
+                            tripListView
+                        }
+                    }
+                    .searchable(text: $searchManager.searchText, prompt: "Search trips...")
+                    .background(Color(red: 0.98, green: 0.97, blue: 0.96))
                 }
             }
             .toolbar {
@@ -51,6 +82,7 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "person.circle")
                             .font(.title3)
+                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                     }
                 }
 
@@ -61,6 +93,7 @@ struct HomeView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal.decrease.circle")
                                 .font(.title3)
+                                .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                                 .symbolVariant(searchManager.sortOption != .dateNewest ? .fill : .none)
                         }
 
@@ -69,8 +102,28 @@ struct HomeView: View {
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color(red: 0.29, green: 0.62, blue: 0.85),
+                                            Color(red: 1.0, green: 0.78, blue: 0.0)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                         }
                     }
+                }
+            }
+            .onAppear {
+                tripsViewModel.configure(with: modelContext)
+                tripsViewModel.loadTrips()
+                Task {
+                    await tripsViewModel.syncTripsIfNeeded()
+                }
+                if onboardingManager.shouldShowOnboarding {
+                    showingOnboarding = true
                 }
             }
             .sheet(isPresented: $showingNewTripSheet, onDismiss: {
@@ -123,7 +176,10 @@ struct HomeView: View {
                 ZStack {
                     Circle()
                         .fill(LinearGradient(
-                            colors: [.blue.opacity(0.2), .purple.opacity(0.2)],
+                            colors: [
+                                Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.15),
+                                Color(red: 1.0, green: 0.78, blue: 0.0).opacity(0.1)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
@@ -132,19 +188,22 @@ struct HomeView: View {
                     Image(systemName: "car.fill")
                         .font(.system(size: 60))
                         .foregroundStyle(LinearGradient(
-                            colors: [.blue, .purple],
+                            colors: [
+                                Color(red: 0.29, green: 0.62, blue: 0.85),
+                                Color(red: 1.0, green: 0.78, blue: 0.0)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
 
                     Image(systemName: "road.lanes")
                         .font(.system(size: 30))
-                        .foregroundStyle(.blue.opacity(0.5))
+                        .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.4))
                         .offset(x: 50, y: 50)
 
                     Image(systemName: "mappin.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
                         .offset(x: -60, y: -40)
                 }
                 .padding(.top, 40)
@@ -153,6 +212,7 @@ struct HomeView: View {
                     Text("No Trips Yet")
                         .font(.title)
                         .fontWeight(.bold)
+                        .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
 
                     Text("Start planning your next adventure!\nCreate a trip to organize your itinerary,\ntrack activities, and navigate with ease.")
                         .font(.body)
@@ -167,10 +227,18 @@ struct HomeView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.blue.opacity(0.1))
-                            .foregroundStyle(.blue)
+                            .background(LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.29, green: 0.62, blue: 0.85),
+                                    Color(red: 0.20, green: 0.52, blue: 0.75)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
+                    .buttonStyle(PlainButtonStyle())
 
                     Button {
                         showingTutorial = true
@@ -179,10 +247,15 @@ struct HomeView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.purple.opacity(0.1))
-                            .foregroundStyle(.purple)
+                            .background(Color(red: 1.0, green: 0.78, blue: 0.0).opacity(0.15))
+                            .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
                             .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color(red: 1.0, green: 0.78, blue: 0.0).opacity(0.3), lineWidth: 1)
+                            )
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 32)
 
@@ -190,6 +263,7 @@ struct HomeView: View {
                     Text("What you can do")
                         .font(.headline)
                         .foregroundStyle(.secondary)
+                        .padding(.horizontal)
 
                     FeatureRow(icon: "calendar.badge.clock", title: "Plan Activities", description: "Schedule attractions, meals, and hotels")
                     FeatureRow(icon: "map.fill", title: "Visualize Routes", description: "See your entire trip on an interactive map")
@@ -197,7 +271,9 @@ struct HomeView: View {
                     FeatureRow(icon: "bell.badge.fill", title: "Get Reminders", description: "Never miss an activity with notifications")
                 }
                 .padding()
-                .background(Color(.secondarySystemBackground))
+                .background(Color(red: 0.98, green: 0.97, blue: 0.96))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
 
@@ -259,13 +335,14 @@ struct FeatureRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                 .frame(width: 40)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -273,93 +350,139 @@ struct FeatureRow: View {
             
             Spacer()
         }
+        .padding(.horizontal)
     }
 }
 
 // Trip Card Component
 struct TripCardView: View {
     let trip: Trip
+    @State private var isHovered = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header with gradient background
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(trip.name)
                             .font(.title3)
                             .fontWeight(.bold)
+                            .foregroundStyle(.white)
                             .lineLimit(1)
                         
+                        Text("\(trip.numberOfNights) night\(trip.numberOfNights == 1 ? "" : "s")")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.9))
                     }
-                    
-                    Text("\(trip.numberOfNights) night\(trip.numberOfNights == 1 ? "" : "s")")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: trip.coverImage ?? "car.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(.blue.gradient)
-            }
-            
-            Divider()
-            
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Start")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(trip.startDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("End")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(trip.endDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                }
-            }
-            
-            if trip.totalDistance > 0 {
-                HStack(spacing: 8) {
-                    Image(systemName: "location.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                    
-                    Text(String(format: "%.0f miles", trip.totalDistance))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                     
                     Spacer()
                     
-                    Image(systemName: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                    
-                    Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: trip.coverImage ?? "car.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
                 }
-                .padding(.top, 4)
             }
+            .padding()
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 0.29, green: 0.62, blue: 0.85),
+                        Color(red: 0.20, green: 0.52, blue: 0.75)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             
-            // Show collaborators indicator
-            
+            // Content section
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Start")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        Text(trip.startDate.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("End")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        Text(trip.endDate.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    }
+                }
+                
+                Divider()
+                    .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                
+                if trip.totalDistance > 0 {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "location.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                                
+                                Text("Distance")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Text(String(format: "%.0f mi", trip.totalDistance))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "calendar")
+                                    .font(.caption)
+                                    .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                                
+                                Text("Days")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Text("\(trip.days.count)")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+            .padding()
         }
-        .padding()
-        .background(.ultraThinMaterial)
+        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+        .shadow(
+            color: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(isHovered ? 0.3 : 0.12),
+            radius: isHovered ? 12 : 8,
+            x: 0,
+            y: isHovered ? 8 : 4
+        )
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 

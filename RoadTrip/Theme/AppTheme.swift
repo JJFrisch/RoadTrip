@@ -4,7 +4,12 @@ import SwiftUI
 struct AppTheme {
     // MARK: - Colors
     struct Colors {
-        static let primary = Color.blue
+        // New color palette: Light blue, yellow, off-white
+        static let primary = Color(red: 0.29, green: 0.62, blue: 0.85)  // Light blue
+        static let primaryDark = Color(red: 0.20, green: 0.52, blue: 0.75)  // Darker blue for hover
+        static let accent = Color(red: 1.0, green: 0.78, blue: 0.0)  // Warm yellow
+        static let accentLight = Color(red: 1.0, green: 0.90, blue: 0.4)  // Light yellow
+        
         static let secondary = Color.gray
         static let success = Color.green
         static let warning = Color.orange
@@ -12,34 +17,61 @@ struct AppTheme {
         static let info = Color.cyan
         
         // Category colors
-        static let foodColor = Color.orange
-        static let attractionColor = Color.blue
-        static let hotelColor = Color.purple
+        static let foodColor = Color(red: 1.0, green: 0.78, blue: 0.0)  // Yellow for food
+        static let attractionColor = Color(red: 0.29, green: 0.62, blue: 0.85)  // Light blue for attractions
+        static let hotelColor = Color(red: 0.29, green: 0.62, blue: 0.85)  // Light blue for hotels
         static let defaultColor = Color.gray
         
-        // Semantic colors
-        static let background = Color(.systemBackground)
-        static let secondaryBackground = Color(.secondarySystemBackground)
-        static let divider = Color(.separator)
+        // Semantic colors - Off-white backgrounds
+        static let background = Color(red: 0.98, green: 0.97, blue: 0.96)  // Off-white
+        static let secondaryBackground = Color.white  // White for cards
+        static let divider = Color.gray.opacity(0.2)
         
         // MARK: - Dark Mode Optimized Colors
         
         // Map marker colors - adaptive for dark mode
-        static let mapMarkerStart = AdaptiveColor(light: .green, dark: Color(red: 0.4, green: 0.9, blue: 0.5))
-        static let mapMarkerEnd = AdaptiveColor(light: .red, dark: Color(red: 1.0, green: 0.4, blue: 0.4))
-        static let mapMarkerHotel = AdaptiveColor(light: .purple, dark: Color(red: 0.7, green: 0.5, blue: 1.0))
-        static let mapRoute = AdaptiveColor(light: Color.blue, dark: Color(red: 0.4, green: 0.7, blue: 1.0))
+        static let mapMarkerStart = AdaptiveColor(
+            light: Color.green,
+            dark: Color(red: 0.4, green: 0.9, blue: 0.5)
+        )
+        static let mapMarkerEnd = AdaptiveColor(
+            light: Color.red,
+            dark: Color(red: 1.0, green: 0.4, blue: 0.4)
+        )
+        static let mapMarkerHotel = AdaptiveColor(
+            light: Color(red: 0.29, green: 0.62, blue: 0.85),
+            dark: Color(red: 0.4, green: 0.7, blue: 1.0)
+        )
+        static let mapRoute = AdaptiveColor(
+            light: Color(red: 0.29, green: 0.62, blue: 0.85),
+            dark: Color(red: 0.4, green: 0.7, blue: 1.0)
+        )
         
-        // Gradient colors - adaptive
-        static let gradientStart = AdaptiveColor(light: Color.blue.opacity(0.6), dark: Color.blue.opacity(0.4))
-        static let gradientEnd = AdaptiveColor(light: Color.purple.opacity(0.4), dark: Color.purple.opacity(0.3))
+        // Gradient colors - light blue to yellow
+        static let gradientStart = AdaptiveColor(
+            light: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.8),
+            dark: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.6)
+        )
+        static let gradientEnd = AdaptiveColor(
+            light: Color(red: 1.0, green: 0.78, blue: 0.0).opacity(0.6),
+            dark: Color(red: 1.0, green: 0.78, blue: 0.0).opacity(0.4)
+        )
         
         // Card background
-        static let cardBackground = AdaptiveColor(light: Color.white, dark: Color(.secondarySystemBackground))
+        static let cardBackground = AdaptiveColor(
+            light: Color.white,
+            dark: Color(red: 0.15, green: 0.15, blue: 0.15)
+        )
         
         // Text colors
-        static let primaryText = AdaptiveColor(light: Color.primary, dark: Color.white)
-        static let secondaryText = AdaptiveColor(light: Color.secondary, dark: Color(.systemGray))
+        static let primaryText = AdaptiveColor(
+            light: Color(red: 0.2, green: 0.2, blue: 0.2),
+            dark: Color.white
+        )
+        static let secondaryText = AdaptiveColor(
+            light: Color.gray,
+            dark: Color(.systemGray)
+        )
     }
     
     // Helper for adaptive colors
@@ -134,10 +166,20 @@ struct PrimaryButtonStyle: ButtonStyle {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(AppTheme.Spacing.md)
-            .background(AppTheme.Colors.primary)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        AppTheme.Colors.primary,
+                        AppTheme.Colors.primaryDark
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .cornerRadius(AppTheme.CornerRadius.large)
-            .opacity(configuration.isPressed ? 0.8 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .brightness(configuration.isPressed ? -0.1 : 0)
     }
 }
 
@@ -152,7 +194,8 @@ struct SecondaryButtonStyle: ButtonStyle {
             .cornerRadius(AppTheme.CornerRadius.large)
             .border(AppTheme.Colors.primary.opacity(0.3), width: 1)
             .opacity(configuration.isPressed ? 0.7 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
     }
 }
 

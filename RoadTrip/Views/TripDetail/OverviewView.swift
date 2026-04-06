@@ -100,15 +100,19 @@ struct OverviewView: View {
     
     private func dayRowCard(_ day: TripDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Header
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Day \(day.dayNumber)")
-                        .font(.title3)
-                        .fontWeight(.bold)
-
-                    Text(day.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text("Day \(day.dayNumber)")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        
+                        Text(day.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer()
@@ -117,21 +121,23 @@ struct OverviewView: View {
                     deleteDay(day)
                 } label: {
                     Image(systemName: "trash.circle.fill")
-                        .foregroundStyle(.red.opacity(0.6))
+                        .foregroundStyle(Color.red.opacity(0.6))
                         .font(.title3)
                 }
+                .buttonStyle(.plain)
             }
             
             Divider()
+                .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: 12) {
                 Button {
                     editingDay = day
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 12) {
                         Image(systemName: "location.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                            .font(.title3)
+                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("From")
@@ -142,13 +148,14 @@ struct OverviewView: View {
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
+                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                         }
                         
                         Spacer()
                         
-                        Image(systemName: "pencil.circle.fill")
+                        Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundStyle(.blue.opacity(0.6))
+                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.6))
                     }
                 }
                 .buttonStyle(.plain)
@@ -156,10 +163,10 @@ struct OverviewView: View {
                 Button {
                     editingDay = day
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 12) {
                         Image(systemName: "mappin.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.red)
+                            .font(.title3)
+                            .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("To")
@@ -170,13 +177,14 @@ struct OverviewView: View {
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
+                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                         }
                         
                         Spacer()
                         
-                        Image(systemName: "pencil.circle.fill")
+                        Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundStyle(.blue.opacity(0.6))
+                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.6))
                     }
                 }
                 .buttonStyle(.plain)
@@ -184,17 +192,25 @@ struct OverviewView: View {
             
             if day.distance > 0 || day.drivingTime > 0 {
                 Divider()
+                    .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
                 
                 HStack(spacing: 16) {
                     if day.distance > 0 {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Distance")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "road.lanes")
+                                    .font(.caption)
+                                    .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                                
+                                Text("Distance")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             
                             Text(String(format: "%.0f mi", day.distance))
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
+                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                         }
                         
                         Spacer()
@@ -202,9 +218,15 @@ struct OverviewView: View {
                     
                     if day.drivingTime > 0 {
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text("Driving Time")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "car.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                                
+                                Text("Driving Time")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             
                             let hours = Int(day.drivingTime)
                             let minutes = Int((day.drivingTime - Double(hours)) * 60)
@@ -213,26 +235,27 @@ struct OverviewView: View {
                                 Text("\(hours)h \(minutes)m")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
+                                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                             } else {
                                 Text("\(minutes)m")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
+                                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                             }
                         }
                     }
                 }
             }
-            
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(Color.white)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                .stroke(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.15), lineWidth: 1)
         )
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-        .padding(.bottom, 12)
+        .shadow(color: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.1), radius: 4, y: 2)
+        .padding(.bottom, 8)
         .contentShape(Rectangle())
         .contextMenu {
             Button {
@@ -277,18 +300,50 @@ struct OverviewView: View {
     }
     
     private var emptyDaysView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 20) {
+            Spacer()
+            
             Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 50))
-                .foregroundStyle(.secondary)
-            Text("No days added yet")
-                .foregroundStyle(.secondary)
-            Button("Add First Day") {
-                showingAddDay = true
+                .font(.system(size: 60))
+                .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.4))
+            
+            VStack(spacing: 8) {
+                Text("No Days Yet")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                
+                Text("Add your first day to start planning")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderedProminent)
+            
+            Button {
+                showingAddDay = true
+            } label: {
+                Label("Add First Day", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.29, green: 0.62, blue: 0.85),
+                                Color(red: 0.20, green: 0.52, blue: 0.75)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .foregroundStyle(.white)
+                    .cornerRadius(12)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.98, green: 0.97, blue: 0.96))
     }
     
     private var summaryCardView: some View {
@@ -297,6 +352,7 @@ struct OverviewView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Trip Summary")
                         .font(.headline)
+                        .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
                     Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -310,75 +366,92 @@ struct OverviewView: View {
                 
                 Spacer()
                 
-                Image(systemName: "map.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.blue.gradient)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        showingMap = true
-                    }
+                Button {
+                    showingMap = true
+                } label: {
+                    Image(systemName: "map.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.29, green: 0.62, blue: 0.85),
+                                    Color(red: 1.0, green: 0.78, blue: 0.0)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .buttonStyle(.plain)
             }
             
             Divider()
+                .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
             
             summaryStatsView
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .shadow(color: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.1), radius: 4, y: 2)
         .padding()
     }
     
     private var summaryStatsView: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Total Distance")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
                 HStack(spacing: 4) {
                     Image(systemName: "road.lanes")
                         .font(.caption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                     
-                    Text(String(format: "%.0f mi", trip.totalDistance))
-                        .font(.headline)
+                    Text("Distance")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                
+                Text(String(format: "%.0f mi", trip.totalDistance))
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
             }
             
             Spacer()
             
             VStack(alignment: .center, spacing: 4) {
-                Text("Drive Time")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
                 HStack(spacing: 4) {
                     Image(systemName: "car.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
                     
-                    Text(formatDrivingTime(trip.totalDrivingTime))
-                        .font(.headline)
+                    Text("Drive Time")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                
+                Text(formatDrivingTime(trip.totalDrivingTime))
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
             }
             
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
-                Text("Budget")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
                 HStack(spacing: 4) {
                     Image(systemName: "dollarsign.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
                     
-                    Text(String(format: "$%.0f", trip.estimatedTotalCost))
-                        .font(.headline)
+                    Text("Budget")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                
+                Text(String(format: "$%.0f", trip.estimatedTotalCost))
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
             }
         }
     }

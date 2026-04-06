@@ -35,59 +35,70 @@ struct TripDetailView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .background(Color(red: 0.98, green: 0.97, blue: 0.96))
             
             // Custom Tab Bar at Bottom
-            HStack(spacing: 0) {
-                TabBarButton(
-                    icon: "list.bullet.clipboard",
-                    title: "Overview",
-                    isSelected: selectedTab == 0
-                ) {
-                    selectedTab = 0
-                }
-                
-                TabBarButton(
-                    icon: "dollarsign.circle.fill",
-                    title: "Budget",
-                    isSelected: selectedTab == 1
-                ) {
-                    selectedTab = 1
-                }
-                
-                TabBarButton(
-                    icon: "star.fill",
-                    title: "Activities",
-                    isSelected: selectedTab == 2
-                ) {
-                    selectedTab = 2
-                }
-                
-                TabBarButton(
-                    icon: "calendar",
-                    title: "Schedule",
-                    isSelected: selectedTab == 3
-                ) {
-                    selectedTab = 3
-                }
-                
-                TabBarButton(
-                    icon: "map.fill",
-                    title: "Map",
-                    isSelected: selectedTab == 4
-                ) {
-                    selectedTab = 4
-                }
-            }
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial)
-            .overlay(
+            VStack(spacing: 0) {
                 Rectangle()
-                    .frame(height: 0.5)
-                    .foregroundStyle(Color.gray.opacity(0.3)),
-                alignment: .top
-            )
+                    .frame(height: 1)
+                    .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                
+                HStack(spacing: 0) {
+                    TabBarButton(
+                        icon: "list.bullet.clipboard",
+                        title: "Overview",
+                        isSelected: selectedTab == 0
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 0
+                        }
+                    }
+                    
+                    TabBarButton(
+                        icon: "dollarsign.circle.fill",
+                        title: "Budget",
+                        isSelected: selectedTab == 1
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 1
+                        }
+                    }
+                    
+                    TabBarButton(
+                        icon: "star.fill",
+                        title: "Activities",
+                        isSelected: selectedTab == 2
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 2
+                        }
+                    }
+                    
+                    TabBarButton(
+                        icon: "calendar",
+                        title: "Schedule",
+                        isSelected: selectedTab == 3
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 3
+                        }
+                    }
+                    
+                    TabBarButton(
+                        icon: "map.fill",
+                        title: "Map",
+                        isSelected: selectedTab == 4
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 4
+                        }
+                    }
+                }
+                .padding(.vertical, 12)
+                .background(Color.white)
+            }
         }
-        .background(Color(.systemBackground))
+        .background(Color(red: 0.98, green: 0.97, blue: 0.96))
         .navigationTitle(trip.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -214,20 +225,44 @@ struct TabBarButton: View {
     let isSelected: Bool
     let action: () -> Void
     
+    @State private var isHovered = false
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundStyle(isSelected ? .blue : .secondary)
+                    .foregroundStyle(
+                        isSelected
+                            ? Color(red: 0.29, green: 0.62, blue: 0.85)
+                            : Color.gray.opacity(0.5)
+                    )
                 
                 Text(title)
                     .font(.caption2)
-                    .foregroundStyle(isSelected ? .blue : .secondary)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .foregroundStyle(
+                        isSelected
+                            ? Color(red: 0.29, green: 0.62, blue: 0.85)
+                            : Color.gray.opacity(0.5)
+                    )
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
+            .background(
+                isSelected
+                    ? Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.08)
+                    : Color.clear
+            )
+            .cornerRadius(8)
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isHovered = hovering
+                }
+            }
+            .scaleEffect(isHovered ? 1.05 : 1.0)
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, 4)
     }
 }
