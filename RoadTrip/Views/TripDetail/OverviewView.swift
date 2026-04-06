@@ -5,6 +5,7 @@ import MapKit
 
 struct OverviewView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     let trip: Trip
     @State private var showingAddDay = false
     @State private var editingDay: TripDay?
@@ -21,12 +22,12 @@ struct OverviewView: View {
                 emptyDaysView
             } else {
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: AppTheme.Spacing.sm) {
                         // Summary Card
                         summaryCardView
 
                         OverviewMiniMapView(trip: trip)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppTheme.Spacing.md)
                         
                         // Days List
                         VStack(spacing: 0) {
@@ -34,18 +35,20 @@ struct OverviewView: View {
                                 dayRowCard(day)
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppTheme.Spacing.md)
+                        .padding(.bottom, AppTheme.Spacing.md)
                     }
                 }
             }
         }
+        .background(AppTheme.Colors.background)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingAddDay = true
                 } label: {
-                    Image(systemName: "plus.circle")
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(AppTheme.Colors.primary)
                 }
             }
         }
@@ -103,15 +106,15 @@ struct OverviewView: View {
     }
     
     private func dayRowCard(_ day: TripDay) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             // Header
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
+            HStack(alignment: .top, spacing: AppTheme.Spacing.sm) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                    HStack(spacing: AppTheme.Spacing.xs) {
                         Text("Day \(day.dayNumber)")
-                            .font(.title3)
+                            .font(AppTheme.Typography.title3)
                             .fontWeight(.bold)
-                            .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         
                         Text(day.date.formatted(date: .abbreviated, time: .omitted))
                             .font(.subheadline)
@@ -125,23 +128,23 @@ struct OverviewView: View {
                     deleteDay(day)
                 } label: {
                     Image(systemName: "trash.circle.fill")
-                        .foregroundStyle(Color.red.opacity(0.6))
+                        .foregroundStyle(AppTheme.Colors.danger.opacity(0.75))
                         .font(.title3)
                 }
                 .buttonStyle(.plain)
             }
             
             Divider()
-                .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                .overlay(AppTheme.Colors.divider)
             
-            VStack(spacing: 12) {
+            VStack(spacing: AppTheme.Spacing.sm) {
                 Button {
                     editingDay = day
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.sm) {
                         Image(systemName: "location.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                            .foregroundStyle(AppTheme.Colors.primary)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("From")
@@ -152,14 +155,14 @@ struct OverviewView: View {
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
-                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         }
                         
                         Spacer()
                         
                         Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.6))
+                            .foregroundStyle(AppTheme.Colors.primary.opacity(0.6))
                     }
                 }
                 .buttonStyle(.plain)
@@ -167,10 +170,10 @@ struct OverviewView: View {
                 Button {
                     editingDay = day
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.sm) {
                         Image(systemName: "mappin.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                            .foregroundStyle(AppTheme.Colors.accent)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("To")
@@ -181,14 +184,14 @@ struct OverviewView: View {
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(1)
-                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         }
                         
                         Spacer()
                         
                         Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.6))
+                            .foregroundStyle(AppTheme.Colors.primary.opacity(0.6))
                     }
                 }
                 .buttonStyle(.plain)
@@ -196,15 +199,15 @@ struct OverviewView: View {
             
             if day.distance > 0 || day.drivingTime > 0 {
                 Divider()
-                    .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                    .overlay(AppTheme.Colors.divider)
                 
-                HStack(spacing: 16) {
+                HStack(spacing: AppTheme.Spacing.md) {
                     if day.distance > 0 {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
+                            HStack(spacing: AppTheme.Spacing.xxs) {
                                 Image(systemName: "road.lanes")
                                     .font(.caption)
-                                    .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                                    .foregroundStyle(AppTheme.Colors.primary)
                                 
                                 Text("Distance")
                                     .font(.caption)
@@ -214,18 +217,18 @@ struct OverviewView: View {
                             Text(String(format: "%.0f mi", day.distance))
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         }
                         
                         Spacer()
                     }
                     
                     if day.drivingTime > 0 {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            HStack(spacing: 4) {
+                        VStack(alignment: .trailing, spacing: AppTheme.Spacing.xxs) {
+                            HStack(spacing: AppTheme.Spacing.xxs) {
                                 Image(systemName: "car.fill")
                                     .font(.caption)
-                                    .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                                    .foregroundStyle(AppTheme.Colors.accent)
                                 
                                 Text("Driving Time")
                                     .font(.caption)
@@ -239,27 +242,27 @@ struct OverviewView: View {
                                 Text("\(hours)h \(minutes)m")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             } else {
                                 Text("\(minutes)m")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             }
                         }
                     }
                 }
             }
         }
-        .padding()
-        .background(Color.white)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.15), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
         )
-        .cornerRadius(12)
-        .shadow(color: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.1), radius: 4, y: 2)
-        .padding(.bottom, 8)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
+        .padding(.bottom, AppTheme.Spacing.xs)
         .contentShape(Rectangle())
         .contextMenu {
             Button {
@@ -304,18 +307,18 @@ struct OverviewView: View {
     }
     
     private var emptyDaysView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.lg) {
             Spacer()
             
             Image(systemName: "calendar.badge.plus")
                 .font(.system(size: 60))
-                .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.4))
+                .foregroundStyle(AppTheme.Colors.primary.opacity(0.4))
             
-            VStack(spacing: 8) {
+            VStack(spacing: AppTheme.Spacing.xs) {
                 Text("No Days Yet")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                 
                 Text("Add your first day to start planning")
                     .font(.body)
@@ -331,32 +334,32 @@ struct OverviewView: View {
                     .background(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color(red: 0.29, green: 0.62, blue: 0.85),
-                                Color(red: 0.20, green: 0.52, blue: 0.75)
+                                AppTheme.Colors.primary,
+                                AppTheme.Colors.primaryDark
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .foregroundStyle(.white)
-                    .cornerRadius(12)
+                    .cornerRadius(AppTheme.CornerRadius.large)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal)
+            .padding(.horizontal, AppTheme.Spacing.md)
             
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.98, green: 0.97, blue: 0.96))
+        .background(AppTheme.Colors.background)
     }
     
     private var summaryCardView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppTheme.Spacing.sm) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                     Text("Trip Summary")
                         .font(.headline)
-                        .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                     Text("\(trip.days.count) day\(trip.days.count == 1 ? "" : "s") planned")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -378,8 +381,8 @@ struct OverviewView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 0.29, green: 0.62, blue: 0.85),
-                                    Color(red: 1.0, green: 0.78, blue: 0.0)
+                                    AppTheme.Colors.primary,
+                                    AppTheme.Colors.accent
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -390,24 +393,25 @@ struct OverviewView: View {
             }
             
             Divider()
-                .overlay(Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.2))
+                .overlay(AppTheme.Colors.divider)
             
             summaryStatsView
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color(red: 0.29, green: 0.62, blue: 0.85).opacity(0.1), radius: 4, y: 2)
-        .padding()
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
+        .padding(.horizontal, AppTheme.Spacing.md)
+        .padding(.top, AppTheme.Spacing.md)
     }
     
     private var summaryStatsView: some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
+        HStack(spacing: AppTheme.Spacing.md) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                HStack(spacing: AppTheme.Spacing.xxs) {
                     Image(systemName: "road.lanes")
                         .font(.caption)
-                        .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                        .foregroundStyle(AppTheme.Colors.primary)
                     
                     Text("Distance")
                         .font(.caption)
@@ -417,16 +421,16 @@ struct OverviewView: View {
                 Text(String(format: "%.0f mi", trip.totalDistance))
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
             }
             
             Spacer()
             
-            VStack(alignment: .center, spacing: 4) {
-                HStack(spacing: 4) {
+            VStack(alignment: .center, spacing: AppTheme.Spacing.xs) {
+                HStack(spacing: AppTheme.Spacing.xxs) {
                     Image(systemName: "car.fill")
                         .font(.caption)
-                        .foregroundStyle(Color(red: 1.0, green: 0.78, blue: 0.0))
+                        .foregroundStyle(AppTheme.Colors.accent)
                     
                     Text("Drive Time")
                         .font(.caption)
@@ -436,16 +440,16 @@ struct OverviewView: View {
                 Text(formatDrivingTime(trip.totalDrivingTime))
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
             }
             
             Spacer()
             
-            VStack(alignment: .trailing, spacing: 4) {
-                HStack(spacing: 4) {
+            VStack(alignment: .trailing, spacing: AppTheme.Spacing.xs) {
+                HStack(spacing: AppTheme.Spacing.xxs) {
                     Image(systemName: "dollarsign.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(Color(red: 0.29, green: 0.62, blue: 0.85))
+                        .foregroundStyle(AppTheme.Colors.primary)
                     
                     Text("Budget")
                         .font(.caption)
@@ -455,7 +459,7 @@ struct OverviewView: View {
                 Text(String(format: "$%.0f", trip.estimatedTotalCost))
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
             }
         }
     }

@@ -22,7 +22,7 @@ struct ScheduleView: View {
     var body: some View {
         List {
             ScheduleInsightStrip(trip: trip)
-                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                .listRowInsets(EdgeInsets(top: AppTheme.Spacing.sm, leading: AppTheme.Spacing.md, bottom: AppTheme.Spacing.sm, trailing: AppTheme.Spacing.md))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
 
@@ -43,7 +43,7 @@ struct ScheduleView: View {
                         selectedDay = day
                     }
                 )
-                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: AppTheme.Spacing.sm, leading: AppTheme.Spacing.md, bottom: AppTheme.Spacing.sm, trailing: AppTheme.Spacing.md))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                     // MARK: - Day Swipe Actions
@@ -67,7 +67,7 @@ struct ScheduleView: View {
             }
         }
         .listStyle(.plain)
-        .background(Color(.systemGroupedBackground))
+        .background(AppTheme.Colors.background)
         .refreshable {
             await refreshDrivingTimes()
         }
@@ -173,6 +173,7 @@ struct ScheduleView: View {
 
 private struct ScheduleInsightStrip: View {
     let trip: Trip
+    @Environment(\.colorScheme) private var colorScheme
 
     private var totalActivities: Int {
         trip.days.reduce(0) { $0 + $1.activities.count }
@@ -207,19 +208,19 @@ private struct ScheduleInsightStrip: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Schedule Pulse")
-                        .font(.headline)
+                        .font(AppTheme.Typography.headline)
                     Text("Completion, drive load, and day intensity")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                 }
                 Spacer()
                 Image(systemName: "waveform.path.ecg")
                     .font(.title3)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(AppTheme.Colors.primary)
             }
 
             HStack(spacing: 10) {
@@ -249,7 +250,7 @@ private struct ScheduleInsightStrip: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Day Intensity")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
 
                     ForEach(dayLoads, id: \.day) { load in
                         HStack(spacing: 8) {
@@ -262,12 +263,12 @@ private struct ScheduleInsightStrip: View {
                                 let width = max(8, geo.size.width * CGFloat(load.count) / CGFloat(maxDayLoad))
                                 ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 5)
-                                        .fill(Color.blue.opacity(0.12))
+                                        .fill(AppTheme.Colors.primary.opacity(0.12))
 
                                     RoundedRectangle(cornerRadius: 5)
                                         .fill(
                                             LinearGradient(
-                                                colors: [Color.blue, Color.cyan],
+                                                colors: [AppTheme.Colors.primary, AppTheme.Colors.accent],
                                                 startPoint: .leading,
                                                 endPoint: .trailing
                                             )
@@ -279,7 +280,7 @@ private struct ScheduleInsightStrip: View {
 
                             Text("\(load.count)")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 .frame(width: 20, alignment: .trailing)
                         }
                         .frame(height: 14)
@@ -287,18 +288,18 @@ private struct ScheduleInsightStrip: View {
                 }
             }
         }
-        .padding()
+        .padding(AppTheme.Spacing.md)
         .background(
             LinearGradient(
-                colors: [Color(.systemBackground), Color.blue.opacity(0.08)],
+                colors: [AppTheme.Colors.secondaryBackground, AppTheme.Colors.primary.opacity(0.08)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
         )
     }
 
@@ -318,9 +319,9 @@ private struct ScheduleInsightStrip: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
+        .padding(AppTheme.Spacing.xs)
         .background(tint.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium))
     }
 }
 
@@ -561,7 +562,7 @@ struct DayScheduleSection: View {
             }
             
             // Action Buttons Row
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.sm) {
                 // Add Activity Button
                 Button {
                     showingAddActivity = true
@@ -574,9 +575,9 @@ struct DayScheduleSection: View {
                     }
                     .foregroundStyle(.blue)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.primary.opacity(0.12))
+                    .cornerRadius(AppTheme.CornerRadius.medium)
                 }
                 .buttonStyle(.plain)
                 
@@ -590,16 +591,16 @@ struct DayScheduleSection: View {
                         Text("Activity Types")
                             .fontWeight(.medium)
                     }
-                    .foregroundStyle(.green)
+                    .foregroundStyle(AppTheme.Colors.accent)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.green.opacity(0.1))
-                    .cornerRadius(10)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.accent.opacity(0.12))
+                    .cornerRadius(AppTheme.CornerRadius.medium)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.horizontal, AppTheme.Spacing.md)
+            .padding(.bottom, AppTheme.Spacing.xs)
             
             // Undo/Redo buttons
             if undoManager.canUndo || undoManager.canRedo {
@@ -628,16 +629,16 @@ struct DayScheduleSection: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppTheme.Spacing.md)
+                .padding(.bottom, AppTheme.Spacing.md)
             } else {
                 Spacer()
-                    .frame(height: 8)
+                    .frame(height: AppTheme.Spacing.xs)
             }
         }
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .background(AppTheme.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.extraLarge))
+        .shadow(color: AppTheme.Shadows.medium.color, radius: AppTheme.Shadows.medium.radius, x: AppTheme.Shadows.medium.x, y: AppTheme.Shadows.medium.y)
         .sheet(isPresented: $showingAddActivity) {
             AddActivityFromScheduleView(day: day)
         }

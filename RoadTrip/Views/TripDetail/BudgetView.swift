@@ -11,6 +11,7 @@ struct BudgetView: View {
     }
 
     let trip: Trip
+    @Environment(\.colorScheme) private var colorScheme
     @State private var weatherData: [UUID: WeatherData] = [:]
     @State private var isLoadingWeather = false
     
@@ -18,7 +19,7 @@ struct BudgetView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: AppTheme.Spacing.md) {
                 // Budget Summary Card
                 budgetSummaryCard
 
@@ -43,9 +44,9 @@ struct BudgetView: View {
                 // Per-Day Budget Breakdown
                 perDayBreakdown
             }
-            .padding()
+            .padding(AppTheme.Spacing.md)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppTheme.Colors.background)
         .onAppear {
             loadWeather()
         }
@@ -89,21 +90,21 @@ struct BudgetView: View {
     }
 
     private var budgetTrendForecastCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             HStack {
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                     Text("Spend Trend + Forecast")
-                        .font(.headline)
+                        .font(AppTheme.Typography.headline)
                     Text("Daily spend compared to projected trajectory")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                 }
 
                 Spacer()
 
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.title3)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(AppTheme.Colors.primary)
             }
 
             Chart(dailyTrendPoints) { point in
@@ -131,11 +132,11 @@ struct BudgetView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Projected Total")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                     Text(String(format: "$%.2f", projectedTripTotal))
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .font(AppTheme.Typography.headline)
+                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                 }
 
                 Spacer()
@@ -143,19 +144,19 @@ struct BudgetView: View {
                 if let delta = forecastDeltaToBudget {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(delta > 0 ? "Projected Overrun" : "Projected Buffer")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         Text(String(format: "$%.2f", abs(delta)))
-                            .font(.headline)
+                            .font(AppTheme.Typography.headline)
                             .foregroundStyle(delta > 0 ? .red : .green)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
 
     // MARK: - Budget Health Card
@@ -167,11 +168,11 @@ struct BudgetView: View {
         let remaining = max(totalBudget - estimatedSpend, 0)
         let overBudgetAmount = max(estimatedSpend - totalBudget, 0)
 
-        return VStack(spacing: 14) {
+        return VStack(spacing: AppTheme.Spacing.sm) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Budget Health")
-                        .font(.headline)
+                        .font(AppTheme.Typography.headline)
                     Text(statusText(for: utilization, isOverBudget: overBudgetAmount > 0))
                         .font(.caption)
                         .foregroundStyle(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0))
@@ -230,17 +231,17 @@ struct BudgetView: View {
                 }
             }
         }
-        .padding()
+        .padding(AppTheme.Spacing.md)
         .background(
             LinearGradient(
-                colors: [Color(.systemBackground), statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.08)],
+                colors: [AppTheme.Colors.secondaryBackground, statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.08)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.CornerRadius.large)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
                 .stroke(statusColor(for: utilization, isOverBudget: overBudgetAmount > 0).opacity(0.2), lineWidth: 1)
         )
     }
@@ -248,7 +249,7 @@ struct BudgetView: View {
     // MARK: - Budget Summary Card
     
     private var budgetSummaryCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppTheme.Spacing.md) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Trip Budget")
@@ -262,7 +263,7 @@ struct BudgetView: View {
                 
                 Image(systemName: "dollarsign.circle.fill")
                     .font(.title)
-                    .foregroundStyle(.green.gradient)
+                    .foregroundStyle(AppTheme.Colors.primary.gradient)
             }
             
             Divider()
@@ -315,16 +316,16 @@ struct BudgetView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
     
     // MARK: - Budget Chart Card
     
     private var budgetChartCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             Text("Budget Breakdown")
                 .font(.headline)
             
@@ -359,16 +360,16 @@ struct BudgetView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
     
     // MARK: - Weather Section
     
     private var weatherSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             HStack {
                 Text("Weather Forecast")
                     .font(.headline)
@@ -412,16 +413,16 @@ struct BudgetView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
     
     // MARK: - Per Day Breakdown
     
     private var perDayBreakdown: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
             Text("Daily Costs")
                 .font(.headline)
             
@@ -488,14 +489,14 @@ struct BudgetView: View {
                     }
                 }
                 .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
+                .background(AppTheme.Colors.background)
+                .cornerRadius(AppTheme.CornerRadius.medium)
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .padding(AppTheme.Spacing.md)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
     
     // MARK: - Helpers
