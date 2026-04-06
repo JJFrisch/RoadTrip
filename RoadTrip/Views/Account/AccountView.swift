@@ -124,6 +124,33 @@ struct SignInView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
+                if showingError {
+                    HStack(spacing: AppTheme.Spacing.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AppTheme.Colors.warning)
+                        Text(errorMessage)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .lineLimit(2)
+                        Spacer()
+                        Button("Dismiss") {
+                            withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                                showingError = false
+                                errorMessage = ""
+                            }
+                        }
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.primary)
+                    }
+                    .padding(.horizontal, AppTheme.Spacing.md)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.warning.opacity(0.12))
+                    .cornerRadius(AppTheme.CornerRadius.medium)
+                    .padding(.horizontal, AppTheme.Spacing.md)
+                    .padding(.top, AppTheme.Spacing.sm)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 Image(systemName: "person.crop.circle.badge.exclamationmark")
                     .font(.system(size: 60))
                     .foregroundStyle(.orange)
@@ -144,11 +171,6 @@ struct SignInView: View {
             .padding()
             .navigationTitle("Sign In")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("Error", isPresented: $showingError) {
-                Button("OK") { }
-            } message: {
-                Text(errorMessage)
-            }
         }
     }
 }

@@ -32,6 +32,29 @@ struct ActivityImportSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if let errorMessage {
+                    HStack(spacing: AppTheme.Spacing.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AppTheme.Colors.warning)
+                        Text(errorMessage)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .lineLimit(3)
+                        Spacer()
+                        Button("Dismiss") {
+                            withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
+                                self.errorMessage = nil
+                            }
+                        }
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.primary)
+                    }
+                    .padding(.horizontal, AppTheme.Spacing.md)
+                    .padding(.vertical, AppTheme.Spacing.sm)
+                    .background(AppTheme.Colors.warning.opacity(0.12))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 // Mode Picker
                 Picker("Import Mode", selection: $importMode) {
                     ForEach(ImportMode.allCases, id: \.self) { mode in
@@ -63,13 +86,6 @@ struct ActivityImportSheet: View {
                         addSelectedActivities()
                     }
                     .disabled(selectedPlaces.isEmpty)
-                }
-            }
-            .alert("Import Error", isPresented: .constant(errorMessage != nil)) {
-                Button("OK") { errorMessage = nil }
-            } message: {
-                if let error = errorMessage {
-                    Text(error)
                 }
             }
         }

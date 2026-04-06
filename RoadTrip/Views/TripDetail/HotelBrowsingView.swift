@@ -385,7 +385,7 @@ struct HotelBrowsingView: View {
                 GuestPickerSheet(adults: $adults, children: $children, childrenAges: $childrenAges, rooms: $rooms)
             }
             .confirmationDialog(
-                "Set as Night's Hotel?",
+                "Add Hotel to Day \(day.dayNumber)?",
                 isPresented: Binding(
                     get: { hotelToSet != nil },
                     set: { isPresented in
@@ -396,7 +396,7 @@ struct HotelBrowsingView: View {
                 ),
                 titleVisibility: .visible
             ) {
-                Button("Set as Night's Hotel") {
+                Button("Add Hotel to Itinerary") {
                     guard let selected = hotelToSet else { return }
 
                     Task {
@@ -436,17 +436,19 @@ struct HotelBrowsingView: View {
                     }
                 }
 
-                Button("View Details") {
+                Button("Review Hotel Details") {
                     selectedHotel = hotelToSet
                     hotelToSet = nil
                 }
 
-                Button("Cancel", role: .cancel) {
+                Button("Not Now", role: .cancel) {
                     hotelToSet = nil
                 }
             } message: {
                 if let selected = hotelToSet {
-                    Text(selected.name)
+                    Text(day.hotel == nil
+                         ? "Add \(selected.name) as your hotel for Day \(day.dayNumber)."
+                         : "Replace the current Day \(day.dayNumber) hotel with \(selected.name).")
                 }
             }
             .sheet(item: $selectedHotel) { hotel in

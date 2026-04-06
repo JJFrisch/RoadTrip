@@ -200,13 +200,13 @@ struct OfflineMapDownloadSheet: View {
                 calculateTripRegion()
                 updateEstimate()
             }
-            .confirmationDialog("Download Offline Map", isPresented: $showingDownloadConfirm) {
-                Button("Download (\(estimatedSize))") {
+            .confirmationDialog("Download Offline Maps?", isPresented: $showingDownloadConfirm) {
+                Button("Download \(estimatedSize)") {
                     downloadTripRegion()
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("Not Now", role: .cancel) {}
             } message: {
-                Text("This will download map data for your entire trip. Make sure you have a good internet connection.")
+                Text("RoadTrip will save map data for your full route (about \(estimatedSize)) so it is available without service.")
             }
         }
     }

@@ -74,7 +74,7 @@ struct ScheduleView: View {
         .sheet(item: $selectedDay) { day in
             DayDetailScheduleView(day: day)
         }
-        .confirmationDialog("Copy Day Activities", isPresented: $showingCopyOptions, presenting: dayToCopy) { day in
+        .confirmationDialog("Copy Activities to Another Day", isPresented: $showingCopyOptions, presenting: dayToCopy) { day in
             ForEach(trip.days.sorted(by: { $0.dayNumber < $1.dayNumber })) { targetDay in
                 if targetDay.id != day.id {
                     Button("Copy to Day \(targetDay.dayNumber)") {
@@ -82,9 +82,9 @@ struct ScheduleView: View {
                     }
                 }
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Not Now", role: .cancel) { }
         } message: { day in
-            Text("Copy activities from Day \(day.dayNumber) to another day")
+            Text("Choose a destination day. Activities from Day \(day.dayNumber) will be copied, not moved.")
         }
     }
     
