@@ -16,9 +16,27 @@ final class TripsViewModel: ObservableObject {
 	@Published var error: AppError?
 
 	private var repository: TripRepository?
+	private var syncCoordinator: TripSyncCoordinator?
 
 	func configure(with modelContext: ModelContext) {
-		repository = SwiftDataTripRepository(modelContext: modelContext)
+		let localRepository = SwiftDataTripRepository(modelContext: modelContext)
+		repository = localRepository
+
+		let tokenStore = AuthTokenStore.shared
+		let apiClient = URLSessionAPIClient(
+			baseURL: APIEnvironment.development.baseURL,
+			tokenProvider: tokenStore,
+			tokenRefresher: tokenStore,
+			maxRetryAttempts: Config.maxRetryAttempts,
+			retryBaseDelay: Config.retryDelay
+		)
+		let tripService = DefaultTripAPIService(client: apiClient)
+		let remoteRepository = DefaultRemoteTripRepository(service: tripService)
+		syncCoordinator = TripSyncCoordinator(
+			modelContext: modelContext,
+			localRepository: localRepository,
+			remoteRepository: remoteRepository
+		)
 	}
 
 	func loadTrips() {
@@ -52,6 +70,10 @@ final class TripsViewModel: ObservableObject {
 				tripDescription: tripDescription,
 				totalBudget: totalBudget
 			)
+			syncCoordinator?.enqueueCreateTrip(trip)
+			Task {
+				await syncCoordinator?.flushQueue()
+			}
 			loadTrips()
 			return trip
 		} catch {
@@ -62,9 +84,13 @@ final class TripsViewModel: ObservableObject {
 
 	func deleteTrip(_ trip: Trip) {
 		guard let repository else { return }
+		syncCoordinator?.enqueueDeleteTrip(id: trip.id)
 
 		do {
 			try repository.deleteTrip(trip)
+			Task {
+				await syncCoordinator?.flushQueue()
+			}
 			loadTrips()
 		} catch {
 			self.error = .apiError("Failed to delete trip: \(error.localizedDescription)")
@@ -76,9 +102,26 @@ final class TripsViewModel: ObservableObject {
 
 		do {
 			try repository.save()
+			for trip in trips {
+				syncCoordinator?.enqueueUpdateTrip(trip)
+			}
+			Task {
+				await syncCoordinator?.flushQueue()
+			}
 			loadTrips()
 		} catch {
 			self.error = .apiError("Failed to save trip changes: \(error.localizedDescription)")
+		}
+	}
+
+	func syncTripsIfNeeded() async {
+		guard let syncCoordinator else { return }
+
+		do {
+			_ = try await syncCoordinator.syncFromRemote()
+			loadTrips()
+		} catch {
+			self.error = .apiError("Remote sync failed: \(error.localizedDescription)")
 		}
 	}
 }

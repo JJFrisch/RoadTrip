@@ -37,6 +37,9 @@ struct HomeView: View {
             .onAppear {
                 tripsViewModel.configure(with: modelContext)
                 tripsViewModel.loadTrips()
+                Task {
+                    await tripsViewModel.syncTripsIfNeeded()
+                }
                 if onboardingManager.shouldShowOnboarding {
                     showingOnboarding = true
                 }
