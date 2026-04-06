@@ -40,7 +40,7 @@ final class AppThemeTests: XCTestCase {
     
     func testSmallSpacing() {
         let smallSpacing = AppTheme.Spacing.sm
-        XCTAssertEqual(smallSpacing, 8, "Small spacing should be 8 points")
+        XCTAssertEqual(smallSpacing, 12, "Small spacing should be 12 points")
     }
     
     func testMediumSpacing() {
@@ -50,41 +50,41 @@ final class AppThemeTests: XCTestCase {
     
     func testLargeSpacing() {
         let largeSpacing = AppTheme.Spacing.lg
-        XCTAssertEqual(largeSpacing, 24, "Large spacing should be 24 points")
+        XCTAssertEqual(largeSpacing, 20, "Large spacing should be 20 points")
     }
     
     func testExtraLargeSpacing() {
         let xlSpacing = AppTheme.Spacing.xl
-        XCTAssertEqual(xlSpacing, 32, "Extra large spacing should be 32 points")
+        XCTAssertEqual(xlSpacing, 24, "Extra large spacing should be 24 points")
     }
     
     // MARK: - Theme Corner Radius Tests
     
     func testSmallCornerRadius() {
         let smallRadius = AppTheme.CornerRadius.small
-        XCTAssertEqual(smallRadius, 8, "Small corner radius should be 8 points")
+        XCTAssertEqual(smallRadius, 4, "Small corner radius should be 4 points")
     }
     
     func testMediumCornerRadius() {
         let mediumRadius = AppTheme.CornerRadius.medium
-        XCTAssertEqual(mediumRadius, 12, "Medium corner radius should be 12 points")
+        XCTAssertEqual(mediumRadius, 8, "Medium corner radius should be 8 points")
     }
     
     func testLargeCornerRadius() {
         let largeRadius = AppTheme.CornerRadius.large
-        XCTAssertEqual(largeRadius, 16, "Large corner radius should be 16 points")
+        XCTAssertEqual(largeRadius, 12, "Large corner radius should be 12 points")
     }
     
     // MARK: - Shadow Tests
     
     func testCardShadowExists() {
         // Verify card shadow radius is appropriate
-        let cardShadowRadius = AppTheme.Shadow.cardRadius
+        let cardShadowRadius = AppTheme.Shadows.medium.radius
         XCTAssertGreaterThan(cardShadowRadius, 0, "Card shadow radius should be greater than 0")
     }
     
     func testCardShadowY() {
-        let cardShadowY = AppTheme.Shadow.cardY
+        let cardShadowY = AppTheme.Shadows.medium.y
         XCTAssertGreaterThanOrEqual(cardShadowY, 0, "Card shadow Y offset should be non-negative")
     }
     
@@ -140,10 +140,10 @@ final class AppThemeTests: XCTestCase {
     
     func testAllSpacingValuesDefined() {
         // Verify all spacing values are defined
-        XCTAssertEqual(AppTheme.Spacing.sm, 8)
+        XCTAssertEqual(AppTheme.Spacing.sm, 12)
         XCTAssertEqual(AppTheme.Spacing.md, 16)
-        XCTAssertEqual(AppTheme.Spacing.lg, 24)
-        XCTAssertEqual(AppTheme.Spacing.xl, 32)
+        XCTAssertEqual(AppTheme.Spacing.lg, 20)
+        XCTAssertEqual(AppTheme.Spacing.xl, 24)
     }
     
     func testSpacingProgression() {

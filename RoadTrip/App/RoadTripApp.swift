@@ -33,7 +33,8 @@ struct RoadTripperApp: App {
             isStoredInMemoryOnly: Self.uiTestsEnabled
         )
 
-        if Self.uiTestsResetData, let storeURL = modelConfiguration.url {
+        if Self.uiTestsResetData {
+            let storeURL = modelConfiguration.url
             try? FileManager.default.removeItem(at: storeURL)
             try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-shm"))
             try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-wal"))

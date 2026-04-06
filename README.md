@@ -70,3 +70,9 @@ Non-goals (for now):
 git clone https://github.com/JJFrisch/RoadTrip.git
 cd RoadTrip
 open RoadTrip.xcodeproj
+
+## Beta Distribution (TestFlight)
+
+- TestFlight setup and upload guide: `docs/release/TestFlight-Setup.md`
+- App Store export options for CLI builds: `docs/release/ExportOptions-AppStore.plist`
+- Upload script: `scripts/testflight_beta_upload.sh`
