@@ -12,6 +12,7 @@ import CoreLocation
 struct CarRentalBrowsingView: View {
     let trip: Trip
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @StateObject private var searchService = CarRentalSearchService.shared
     @State private var pickUpLocation: String
@@ -69,76 +70,84 @@ struct CarRentalBrowsingView: View {
                 
                 // Search Header
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         // Pick-up Location
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                             Text("Pick-up Location")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             HStack {
                                 Image(systemName: "location.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(AppTheme.Colors.success)
                                 TextField("Pick-up location", text: $pickUpLocation)
                                     .textFieldStyle(.plain)
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .padding(AppTheme.Spacing.md)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.large)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                                    .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                            )
                         }
                         
                         // Drop-off Location
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                             Text("Drop-off Location")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             HStack {
                                 Image(systemName: "location.circle.fill")
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(AppTheme.Colors.danger)
                                 TextField("Drop-off location", text: $dropOffLocation)
                                     .textFieldStyle(.plain)
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .padding(AppTheme.Spacing.md)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.large)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                                    .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                            )
                         }
                         
                         // Dates
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: AppTheme.Spacing.sm) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                                 Text("Pick-up")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption1)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 DatePicker("", selection: $pickUpDate, displayedComponents: .date)
                                     .labelsHidden()
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .padding(AppTheme.Spacing.md)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.large)
                             
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                                 Text("Drop-off")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption1)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 DatePicker("", selection: $dropOffDate, displayedComponents: .date)
                                     .labelsHidden()
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .padding(AppTheme.Spacing.md)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.large)
                         }
                         
                         // Driver Age & Search
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppTheme.Spacing.sm) {
                             HStack {
                                 Image(systemName: "person.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(AppTheme.Colors.primary)
                                 Stepper("Age: \(driverAge)", value: $driverAge, in: 18...99)
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .padding(AppTheme.Spacing.md)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.large)
                             
                             Button {
                                 performSearch()
@@ -150,14 +159,15 @@ struct CarRentalBrowsingView: View {
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .cornerRadius(12)
+                                .padding(AppTheme.Spacing.md)
+                                .background(AppTheme.Colors.primary)
+                                .cornerRadius(AppTheme.CornerRadius.large)
                             }
+                            .accessibilityLabel("Search rental cars")
                         }
                         
                         // Filter & Sort
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppTheme.Spacing.sm) {
                             Button {
                                 showingFilters = true
                             } label: {
@@ -166,17 +176,18 @@ struct CarRentalBrowsingView: View {
                                     Text("Filters")
                                     if hasActiveFilters {
                                         Circle()
-                                            .fill(Color.red)
+                                            .fill(AppTheme.Colors.danger)
                                             .frame(width: 8, height: 8)
                                     }
                                 }
-                                .font(.subheadline)
-                                .foregroundStyle(.blue)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.blue.opacity(0.1))
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.primary)
+                                .padding(.horizontal, AppTheme.Spacing.md)
+                                .padding(.vertical, AppTheme.Spacing.xs)
+                                .background(AppTheme.Colors.primary.opacity(0.12))
                                 .cornerRadius(20)
                             }
+                            .accessibilityLabel("Open car rental filters")
                             
                             Spacer()
                             
@@ -191,63 +202,64 @@ struct CarRentalBrowsingView: View {
                                     Image(systemName: "arrow.up.arrow.down")
                                     Text("Sort")
                                 }
-                                .font(.subheadline)
-                                .foregroundStyle(.purple)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.purple.opacity(0.1))
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.accent)
+                                .padding(.horizontal, AppTheme.Spacing.md)
+                                .padding(.vertical, AppTheme.Spacing.xs)
+                                .background(AppTheme.Colors.accent.opacity(0.16))
                                 .cornerRadius(20)
                             }
+                            .accessibilityLabel("Sort car rental results")
                         }
                     }
-                    .padding()
+                    .padding(AppTheme.Spacing.md)
                 }
                 .frame(maxHeight: 400)
-                .background(Color(.systemBackground))
+                .background(AppTheme.Colors.secondaryBackground)
                 
                 Divider()
                 
                 // Results
                 if searchService.isSearching {
-                    VStack(spacing: 20) {
+                    VStack(spacing: AppTheme.Spacing.lg) {
                         Spacer()
                         ProgressView()
                             .scaleEffect(1.5)
                         Text("Searching for cars...")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.headline)
+                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         Spacer()
                     }
                 } else if !hasSearched {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "car.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(AppTheme.Colors.primary)
                         Text("Search for Rental Cars")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text("Enter your pick-up and drop-off details to find available cars")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         Spacer()
                     }
                 } else if searchService.searchResults.isEmpty {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 60))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         Text("No Cars Found")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text("Try adjusting your filters or search criteria")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         
                         // Retry Button
                         Button {
@@ -259,30 +271,30 @@ struct CarRentalBrowsingView: View {
                             }
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.blue)
-                            .cornerRadius(10)
+                            .padding(.horizontal, AppTheme.Spacing.xl)
+                            .padding(.vertical, AppTheme.Spacing.sm)
+                            .background(AppTheme.Colors.primary)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, AppTheme.Spacing.xs)
                         
                         Spacer()
                     }
                 } else if let apiError = searchService.errorMessage {
                     // API Error State
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(AppTheme.Colors.warning)
                         Text("Search Error")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text(apiError)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         
                         // Retry Button
                         Button {
@@ -295,17 +307,17 @@ struct CarRentalBrowsingView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
                             .frame(width: 200)
-                            .padding(.vertical, 12)
-                            .background(Color.blue)
-                            .cornerRadius(10)
+                            .padding(.vertical, AppTheme.Spacing.sm)
+                            .background(AppTheme.Colors.primary)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, AppTheme.Spacing.xs)
                         
                         Spacer()
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 16) {
+                        LazyVStack(spacing: AppTheme.Spacing.md) {
                             ForEach(searchService.searchResults) { car in
                                 CarResultCard(car: car)
                                     .onTapGesture {
@@ -404,6 +416,7 @@ struct CarRentalBrowsingView: View {
 // MARK: - Car Result Card
 struct CarResultCard: View {
     let car: CarRentalSearchResult
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -414,7 +427,7 @@ struct CarResultCard: View {
                         switch phase {
                         case .empty:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                                 .overlay {
                                     ProgressView()
                                 }
@@ -424,29 +437,29 @@ struct CarResultCard: View {
                                 .aspectRatio(contentMode: .fill)
                         case .failure:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                                 .overlay {
                                     Image(systemName: "car.fill")
                                         .font(.largeTitle)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 }
                         @unknown default:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                         }
                     }
                 } else {
                     Rectangle()
-                        .fill(Color(.systemGray5))
+                        .fill(AppTheme.Colors.background)
                         .overlay {
                             Image(systemName: "car.fill")
                                 .font(.largeTitle)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         }
                 }
             }
             .frame(height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 12, corners: [.topLeft, .topRight]))
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large, corners: [.topLeft, .topRight]))
             
             // Car Info
             VStack(alignment: .leading, spacing: 12) {
@@ -454,8 +467,8 @@ struct CarResultCard: View {
                     Text(car.carName)
                         .font(.headline)
                     Text("\(car.company) • \(car.carType)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.Typography.subheadline)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                 }
                 
                 // Features
@@ -470,23 +483,23 @@ struct CarResultCard: View {
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                 
                 // Price
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text("$\(Int(car.totalPrice))")
-                                .font(.title2)
+                                .font(AppTheme.Typography.title2)
                                 .fontWeight(.bold)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(AppTheme.Colors.success)
                             Text("total")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(AppTheme.Typography.caption1)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         }
                         Text("$\(Int(car.pricePerDay))/day")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                     }
                     
                     Spacer()
@@ -496,18 +509,22 @@ struct CarResultCard: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .cornerRadius(8)
+                            .padding(.horizontal, AppTheme.Spacing.md)
+                            .padding(.vertical, AppTheme.Spacing.xs)
+                            .background(AppTheme.Colors.primary)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding()
         }
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .background(AppTheme.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
+        )
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AccountView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     // AuthService is disabled in this build; keep a flag for UI flow
     @State private var accountsEnabled = false
 
@@ -11,78 +12,98 @@ struct AccountView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                if accountsEnabled {
-                    // Simplified logged-in placeholder (accounts disabled in this build)
-                    Section {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Signed In")
-                                .font(.headline)
-                            Text("Account features are disabled in this build.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 8)
-                    }
+            VStack(spacing: 0) {
+                ScreenHeader(
+                    "Account",
+                    subtitle: "Manage sign in and support",
+                    icon: "person.crop.circle"
+                )
 
-                    Section("Support") {
-                        NavigationLink {
-                            ErrorLogView()
-                        } label: {
-                            Label("Error Log", systemImage: "exclamationmark.triangle")
-                        }
+                ScrollView {
+                    VStack(spacing: AppTheme.Spacing.lg) {
+                        if accountsEnabled {
+                            FormSection("Status") {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                    Text("Signed In")
+                                        .font(AppTheme.Typography.headline)
+                                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
+                                    Text("Account features are disabled in this build.")
+                                        .font(AppTheme.Typography.caption1)
+                                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
 
-                        NavigationLink {
-                            QuickTutorialView()
-                        } label: {
-                            Label("Tutorial", systemImage: "book.fill")
+                            FormSection("Support") {
+                                VStack(spacing: AppTheme.Spacing.sm) {
+                                    NavigationLink {
+                                        ErrorLogView()
+                                    } label: {
+                                        accountRow("Error Log", systemImage: "exclamationmark.triangle")
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Divider()
+                                        .overlay(AppTheme.Colors.divider)
+
+                                    NavigationLink {
+                                        QuickTutorialView()
+                                    } label: {
+                                        accountRow("Tutorial", systemImage: "book.fill")
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+
+                            FormSection {
+                                Button(role: .destructive) {
+                                    // No-op: sign out not available
+                                } label: {
+                                    Text("Sign Out")
+                                }
+                                .buttonStyle(DestructiveButtonStyle())
+                            }
+                        } else {
+                            FormSection("Accounts") {
+                                VStack(spacing: AppTheme.Spacing.md) {
+                                    Image(systemName: "person.crop.circle.badge.plus")
+                                        .font(.system(size: 56, weight: .semibold))
+                                        .foregroundStyle(AppTheme.Colors.primary)
+
+                                    Text("Sign in to RoadTrip")
+                                        .font(AppTheme.Typography.title2)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
+
+                                    Text("Sync your trips across devices and collaborate with friends and family.")
+                                        .font(AppTheme.Typography.subheadline)
+                                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
+                                        .multilineTextAlignment(.center)
+
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
+                                        FeatureBullet(icon: "icloud", text: "Sync itineraries")
+                                        FeatureBullet(icon: "person.2.fill", text: "Share trip plans")
+                                        FeatureBullet(icon: "lock.shield.fill", text: "Secure account recovery")
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.top, AppTheme.Spacing.xs)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppTheme.Spacing.xs)
+                            }
+
+                            ActionButtonGroup(
+                                primaryTitle: "Sign In",
+                                primaryAction: { showingSignIn = true },
+                                secondaryTitle: "Create Account",
+                                secondaryAction: { showingSignUp = true }
+                            )
                         }
                     }
-
-                    Section {
-                        Button(role: .destructive) {
-                            // No-op: sign out not available
-                        } label: {
-                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
-                    }
-
-                } else {
-                    // Not logged in state
-                    Section {
-                        VStack(spacing: 16) {
-                            Image(systemName: "person.crop.circle.badge.plus")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.blue)
-                            
-                            Text("Sign in to RoadTrip")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            
-                            Text("Sync your trips across devices and collaborate with friends and family.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                    }
-                    
-                    Section {
-                        Button {
-                            showingSignIn = true
-                        } label: {
-                            HStack { Spacer(); Text("Sign In"); Spacer() }
-                        }
-
-                        Button {
-                            showingSignUp = true
-                        } label: {
-                            HStack { Spacer(); Text("Create Account"); Spacer() }
-                        }
-                    }
+                    .padding(.vertical, AppTheme.Spacing.lg)
                 }
             }
+            .background(AppTheme.Colors.background.ignoresSafeArea())
             .navigationTitle("Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -98,19 +119,41 @@ struct AccountView: View {
             }
         }
     }
+
+    private func accountRow(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: AppTheme.Spacing.sm) {
+            Image(systemName: systemImage)
+                .foregroundStyle(AppTheme.Colors.primary)
+                .frame(width: 20)
+
+            Text(title)
+                .font(AppTheme.Typography.body)
+                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(AppTheme.Typography.caption1)
+                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, AppTheme.Spacing.xxs)
+    }
 }
 
 struct FeatureBullet: View {
     let icon: String
     let text: String
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Spacing.sm) {
             Image(systemName: icon)
-                .foregroundStyle(.blue)
+                .foregroundStyle(AppTheme.Colors.primary)
                 .frame(width: 24)
             Text(text)
-                .font(.subheadline)
+                .font(AppTheme.Typography.subheadline)
+                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
         }
     }
 }
@@ -118,6 +161,7 @@ struct FeatureBullet: View {
 // MARK: - Sign In View (disabled)
 struct SignInView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showingError = false
     @State private var errorMessage = ""
 
@@ -153,7 +197,7 @@ struct SignInView: View {
 
                 Image(systemName: "person.crop.circle.badge.exclamationmark")
                     .font(.system(size: 60))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppTheme.Colors.warning)
 
                 Text("Accounts Disabled")
                     .font(.title2)
@@ -161,7 +205,7 @@ struct SignInView: View {
 
                 Text("This build has account features disabled. All core app features work offline without signing in.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding()
 
@@ -178,13 +222,14 @@ struct SignInView: View {
 // MARK: - Sign Up View (disabled)
 struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 Image(systemName: "person.badge.plus.fill")
                     .font(.system(size: 60))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(AppTheme.Colors.primary)
 
                 Text("Accounts Disabled")
                     .font(.title2)
@@ -192,7 +237,7 @@ struct SignUpView: View {
 
                 Text("Account creation is disabled in this build. Use the app offline without an account.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding()
 

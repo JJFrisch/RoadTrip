@@ -13,6 +13,7 @@ struct HotelBrowsingView: View {
     let day: TripDay
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @StateObject private var searchService = HotelSearchService.shared
     @Query private var preferences: [HotelPreferences]
@@ -83,54 +84,60 @@ struct HotelBrowsingView: View {
                 }
                 
                 // Compact Search Header
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.sm) {
                     // Location Search
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.sm) {
                         HStack {
                             Image(systemName: "mappin.circle.fill")
-                                .foregroundStyle(.red)
+                                .foregroundStyle(AppTheme.Colors.danger)
                             TextField("Where are you staying?", text: $searchLocation)
                                 .textFieldStyle(.plain)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .padding(.horizontal, AppTheme.Spacing.md)
+                        .padding(.vertical, AppTheme.Spacing.sm)
+                        .background(AppTheme.Colors.background)
+                        .cornerRadius(AppTheme.CornerRadius.large)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                                .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                        )
                         
                         // Search Button
                         Button {
                             performSearch()
                         } label: {
                             Image(systemName: "magnifyingglass")
-                                .font(.headline)
+                                .font(AppTheme.Typography.headline)
                                 .foregroundStyle(.white)
                                 .frame(width: 48, height: 48)
-                                .background(Color.blue)
-                                .cornerRadius(12)
+                                .background(AppTheme.Colors.primary)
+                                .cornerRadius(AppTheme.CornerRadius.large)
                         }
+                        .accessibilityLabel("Search hotels")
                     }
                     
                     // Dates Row
-                    HStack(spacing: 10) {
+                    HStack(spacing: AppTheme.Spacing.xs) {
                         // Check-in
                         HStack {
                             Image(systemName: "calendar")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(AppTheme.Colors.primary)
                                 .frame(width: 20)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                                 Text("Check-in")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption2)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 Text(checkInDate.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.subheadline)
+                                    .font(AppTheme.Typography.subheadline)
                                     .fontWeight(.medium)
+                                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             }
                             Spacer()
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
+                        .padding(.horizontal, AppTheme.Spacing.sm)
+                        .padding(.vertical, AppTheme.Spacing.xs)
+                        .background(AppTheme.Colors.background)
+                        .cornerRadius(AppTheme.CornerRadius.medium)
                         .overlay {
                             DatePicker("", selection: $checkInDate, displayedComponents: .date)
                                 .labelsHidden()
@@ -144,22 +151,23 @@ struct HotelBrowsingView: View {
                         // Check-out
                         HStack {
                             Image(systemName: "calendar")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(AppTheme.Colors.warning)
                                 .frame(width: 20)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                                 Text("Check-out")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption2)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 Text(checkOutDate.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.subheadline)
+                                    .font(AppTheme.Typography.subheadline)
                                     .fontWeight(.medium)
+                                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             }
                             Spacer()
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
+                        .padding(.horizontal, AppTheme.Spacing.sm)
+                        .padding(.vertical, AppTheme.Spacing.xs)
+                        .background(AppTheme.Colors.background)
+                        .cornerRadius(AppTheme.CornerRadius.medium)
                         .overlay {
                             DatePicker("", selection: $checkOutDate, displayedComponents: .date)
                                 .labelsHidden()
@@ -168,27 +176,32 @@ struct HotelBrowsingView: View {
                     }
                     
                     // Guests & Filters Row
-                    HStack(spacing: 10) {
+                    HStack(spacing: AppTheme.Spacing.xs) {
                         // Guests Summary Button
                         Button {
                             showingGuestPicker = true
                         } label: {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Spacing.xs) {
                                 Image(systemName: "person.2.fill")
-                                    .foregroundStyle(.purple)
+                                    .foregroundStyle(AppTheme.Colors.accent)
                                 Text(guestsSummary)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.primary)
+                                    .font(AppTheme.Typography.subheadline)
+                                    .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                                 Image(systemName: "chevron.down")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption1)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(10)
+                            .padding(.horizontal, AppTheme.Spacing.sm)
+                            .padding(.vertical, AppTheme.Spacing.xs)
+                            .background(AppTheme.Colors.background)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                                    .stroke(AppTheme.Colors.divider, lineWidth: 1)
+                            )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Guest and room options")
                         
                         Spacer()
                         
@@ -200,17 +213,18 @@ struct HotelBrowsingView: View {
                                 Image(systemName: "slider.horizontal.3")
                                 if hasActiveFilters {
                                     Circle()
-                                        .fill(Color.red)
+                                        .fill(AppTheme.Colors.danger)
                                         .frame(width: 6, height: 6)
                                 }
                             }
-                            .font(.subheadline)
-                            .foregroundStyle(.blue)
-                            .padding(10)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(10)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.primary)
+                            .padding(AppTheme.Spacing.xs)
+                            .background(AppTheme.Colors.primary.opacity(0.12))
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Open hotel filters")
                         
                         Menu {
                             Picker("Sort By", selection: $filters.sortBy) {
@@ -221,64 +235,65 @@ struct HotelBrowsingView: View {
                             }
                         } label: {
                             Image(systemName: "arrow.up.arrow.down")
-                                .font(.subheadline)
-                                .foregroundStyle(.purple)
-                                .padding(10)
-                                .background(Color.purple.opacity(0.1))
-                                .cornerRadius(10)
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.accent)
+                                .padding(AppTheme.Spacing.xs)
+                                .background(AppTheme.Colors.accent.opacity(0.16))
+                                .cornerRadius(AppTheme.CornerRadius.medium)
                         }
+                        .accessibilityLabel("Sort hotel results")
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color(.systemBackground))
+                .padding(.horizontal, AppTheme.Spacing.md)
+                .padding(.vertical, AppTheme.Spacing.sm)
+                .background(AppTheme.Colors.secondaryBackground)
                 
                 Divider()
                 
                 // Results
                 if searchService.isSearching {
-                    VStack(spacing: 20) {
+                    VStack(spacing: AppTheme.Spacing.lg) {
                         Spacer()
                         ProgressView()
                             .scaleEffect(1.5)
                         Text("Searching hotels...")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.headline)
+                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                         Text("Checking \(userPreferences.enabledSources.count) booking site\(userPreferences.enabledSources.count == 1 ? "" : "s")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.caption1)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         Spacer()
                     }
                 } else if !hasSearched {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "bed.double.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(AppTheme.Colors.primary)
                         Text("Search for Hotels")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text("Enter your destination and dates to find the best hotels")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         Spacer()
                     }
                 } else if searchService.searchResults.isEmpty {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 60))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         Text("No Hotels Found")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text("Try adjusting your filters or search criteria")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         
                         // Retry Button
                         Button {
@@ -290,32 +305,32 @@ struct HotelBrowsingView: View {
                             }
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.blue)
-                            .cornerRadius(10)
+                            .padding(.horizontal, AppTheme.Spacing.xl)
+                            .padding(.vertical, AppTheme.Spacing.sm)
+                            .background(AppTheme.Colors.primary)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, AppTheme.Spacing.xs)
                         
                         Spacer()
                     }
                 } else if let apiError = searchService.errorMessage {
                     // API Error State
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.md) {
                         Spacer()
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(AppTheme.Colors.warning)
                         Text("Search Error")
-                            .font(.title2)
+                            .font(AppTheme.Typography.title2)
                             .fontWeight(.semibold)
                         Text(apiError)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.Typography.subheadline)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, AppTheme.Spacing.xxl)
                         
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Spacing.sm) {
                             // Retry Button
                             Button {
                                 performSearch()
@@ -327,9 +342,9 @@ struct HotelBrowsingView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
                                 .frame(width: 200)
-                                .padding(.vertical, 12)
-                                .background(Color.blue)
-                                .cornerRadius(10)
+                                .padding(.vertical, AppTheme.Spacing.sm)
+                                .background(AppTheme.Colors.primary)
+                                .cornerRadius(AppTheme.CornerRadius.medium)
                             }
                             
                             // Use Mock Data Button
@@ -341,20 +356,20 @@ struct HotelBrowsingView: View {
                                     Text("Use Sample Data")
                                 }
                                 .fontWeight(.medium)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(AppTheme.Colors.primary)
                                 .frame(width: 200)
-                                .padding(.vertical, 12)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(10)
+                                .padding(.vertical, AppTheme.Spacing.sm)
+                                .background(AppTheme.Colors.primary.opacity(0.12))
+                                .cornerRadius(AppTheme.CornerRadius.medium)
                             }
                         }
-                        .padding(.top, 8)
+                        .padding(.top, AppTheme.Spacing.xs)
                         
                         Spacer()
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 16) {
+                        LazyVStack(spacing: AppTheme.Spacing.md) {
                             ForEach(searchService.searchResults) { hotel in
                                 HotelResultCard(hotel: hotel)
                                     .onTapGesture {
@@ -630,6 +645,7 @@ struct HotelBrowsingView: View {
 // MARK: - Hotel Result Card
 struct HotelResultCard: View {
     let hotel: HotelSearchResult
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -640,7 +656,7 @@ struct HotelResultCard: View {
                         switch phase {
                         case .empty:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                                 .overlay {
                                     ProgressView()
                                 }
@@ -650,24 +666,24 @@ struct HotelResultCard: View {
                                 .aspectRatio(contentMode: .fill)
                         case .failure:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                                 .overlay {
                                     Image(systemName: "photo")
                                         .font(.largeTitle)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 }
                         @unknown default:
                             Rectangle()
-                                .fill(Color(.systemGray5))
+                                .fill(AppTheme.Colors.background)
                         }
                     }
                 } else {
                     Rectangle()
-                        .fill(Color(.systemGray5))
+                        .fill(AppTheme.Colors.background)
                         .overlay {
                             Image(systemName: "photo")
                                 .font(.largeTitle)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         }
                 }
                 
@@ -683,7 +699,7 @@ struct HotelResultCard: View {
                     .padding(8)
             }
             .frame(height: 180)
-            .clipShape(RoundedRectangle(cornerRadius: 12, corners: [.topLeft, .topRight]))
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large, corners: [.topLeft, .topRight]))
             
             // Hotel Info
             VStack(alignment: .leading, spacing: 12) {
@@ -694,11 +710,11 @@ struct HotelResultCard: View {
                     
                     HStack(spacing: 4) {
                         if let stars = hotel.starRating {
-                            HStack(spacing: 2) {
+                            HStack(spacing: AppTheme.Spacing.xxs) {
                                 ForEach(0..<stars, id: \.self) { _ in
                                     Image(systemName: "star.fill")
-                                        .font(.caption)
-                                        .foregroundStyle(.yellow)
+                                        .font(AppTheme.Typography.caption1)
+                                        .foregroundStyle(AppTheme.Colors.accent)
                                 }
                             }
                         }
@@ -706,41 +722,41 @@ struct HotelResultCard: View {
                         if let rating = hotel.rating {
                             HStack(spacing: 4) {
                                 Text(String(format: "%.1f", rating))
-                                    .font(.subheadline)
+                                    .font(AppTheme.Typography.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(AppTheme.Colors.primary)
                                 
                                 if let reviewCount = hotel.reviewCount {
                                     Text("(\(reviewCount) reviews)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .font(AppTheme.Typography.caption1)
+                                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                 }
                             }
                         }
                     }
                     
                     Text("\(hotel.address), \(hotel.city)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.Typography.caption1)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         .lineLimit(1)
                 }
                 
                 // Amenities
                 if !hotel.amenities.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: AppTheme.Spacing.xs) {
                             ForEach(hotel.amenities.prefix(4), id: \.self) { amenity in
                                 Text(amenity)
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
+                                    .font(AppTheme.Typography.caption2)
+                                    .padding(.horizontal, AppTheme.Spacing.xs)
                                     .padding(.vertical, 3)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(4)
+                                    .background(AppTheme.Colors.background)
+                                    .cornerRadius(AppTheme.CornerRadius.small)
                             }
                             if hotel.amenities.count > 4 {
                                 Text("+\(hotel.amenities.count - 4)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption2)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             }
                         }
                     }
@@ -752,17 +768,17 @@ struct HotelResultCard: View {
                         if let price = hotel.pricePerNight {
                             HStack(alignment: .firstTextBaseline, spacing: 4) {
                                 Text("$\(Int(price))")
-                                    .font(.title2)
+                                    .font(AppTheme.Typography.title2)
                                     .fontWeight(.bold)
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(AppTheme.Colors.success)
                                 Text("/night")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppTheme.Typography.caption1)
+                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                             }
                         } else {
                             Text("Price on request")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(AppTheme.Typography.subheadline)
+                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                         }
                     }
                     
@@ -775,19 +791,23 @@ struct HotelResultCard: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .cornerRadius(8)
+                            .padding(.horizontal, AppTheme.Spacing.md)
+                            .padding(.vertical, AppTheme.Spacing.xs)
+                            .background(AppTheme.Colors.primary)
+                            .cornerRadius(AppTheme.CornerRadius.medium)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding()
         }
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .background(AppTheme.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
+        )
+        .shadow(color: AppTheme.Shadows.small.color, radius: AppTheme.Shadows.small.radius, x: AppTheme.Shadows.small.x, y: AppTheme.Shadows.small.y)
     }
     
     private func sourceColor(_ source: HotelSearchResult.BookingSource) -> Color {

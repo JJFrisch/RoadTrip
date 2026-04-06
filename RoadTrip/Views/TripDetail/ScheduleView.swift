@@ -573,7 +573,7 @@ struct DayScheduleSection: View {
                         Text("Add Activity")
                             .fontWeight(.medium)
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(AppTheme.Colors.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppTheme.Spacing.sm)
                     .background(AppTheme.Colors.primary.opacity(0.12))
@@ -680,6 +680,7 @@ struct CalendarTimelineView: View {
     @State private var selectedActivityForFullEdit: Activity?
     @State private var draggedActivity: Activity?
     @State private var showingAddAtTime: AddTimeSelection?
+    @Environment(\.colorScheme) private var colorScheme
     @State private var zoomScale: CGFloat = 1.0
     
     // Base hour height that can be zoomed
@@ -907,11 +908,12 @@ struct CalendarTimelineView: View {
                 } label: {
                     Image(systemName: "minus.magnifyingglass")
                         .font(.caption)
-                        .padding(6)
-                        .background(Color(.systemGray5))
-                        .cornerRadius(6)
+                        .padding(AppTheme.Spacing.xs)
+                        .background(AppTheme.Colors.background)
+                        .cornerRadius(AppTheme.CornerRadius.small)
                 }
                 .disabled(zoomScale <= minZoom)
+                .accessibilityLabel("Zoom out timeline")
                 
                 Text("\(Int(zoomScale * 100))%")
                     .font(.caption)
@@ -925,11 +927,12 @@ struct CalendarTimelineView: View {
                 } label: {
                     Image(systemName: "plus.magnifyingglass")
                         .font(.caption)
-                        .padding(6)
-                        .background(Color(.systemGray5))
-                        .cornerRadius(6)
+                        .padding(AppTheme.Spacing.xs)
+                        .background(AppTheme.Colors.background)
+                        .cornerRadius(AppTheme.CornerRadius.small)
                 }
                 .disabled(zoomScale >= maxZoom)
+                .accessibilityLabel("Zoom in timeline")
                 
                 Spacer()
                 
@@ -978,7 +981,7 @@ struct CalendarTimelineView: View {
                                     
                                     // Hour line overlay
                                     Rectangle()
-                                        .fill(Color.gray.opacity(0.2))
+                                        .fill(AppTheme.Colors.divider)
                                         .frame(height: 1)
                                         .allowsHitTesting(false)
                                 }
@@ -1334,13 +1337,13 @@ struct EnhancedActivityBlock: View {
                     if hasConflict {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(AppTheme.Colors.danger)
                     }
 
                     if !hasConflict && isCompleted {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(AppTheme.Colors.success)
                     }
                     
                     Spacer()
@@ -1384,7 +1387,7 @@ struct EnhancedActivityBlock: View {
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
-                            .background(Color(.systemGray6))
+                            .background(AppTheme.Colors.background)
                             .cornerRadius(6)
                     }
 
@@ -1408,10 +1411,10 @@ struct EnhancedActivityBlock: View {
                     HStack(spacing: 6) {
                         Image(systemName: "car.fill")
                             .font(.caption2)
-                            .foregroundStyle(hasConflict ? .red : .secondary)
+                            .foregroundStyle(hasConflict ? AppTheme.Colors.danger : .secondary)
                         Text("Next drive \(formatDuration(travelTimeToNext / 3600.0))")
                             .font(.caption2)
-                            .foregroundStyle(hasConflict ? .red : .secondary)
+                            .foregroundStyle(hasConflict ? AppTheme.Colors.danger : .secondary)
                         Spacer()
                     }
                 }
@@ -1423,7 +1426,7 @@ struct EnhancedActivityBlock: View {
             LinearGradient(
                 colors: [
                     statusColor.opacity(hasConflict ? 0.20 : 0.11),
-                    Color(.systemBackground)
+                    AppTheme.Colors.secondaryBackground
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -1472,6 +1475,7 @@ struct TravelTimeIndicator: View {
     let arrivalTime: Date?
     let hourHeight: CGFloat
     var hasDrivingConflict: Bool = false
+    @Environment(\.colorScheme) private var colorScheme
     
     private var driveHeightInHours: Double {
         travelTime / 3600.0 // Convert seconds to hours
@@ -1481,13 +1485,13 @@ struct TravelTimeIndicator: View {
         HStack(spacing: 6) {
             Image(systemName: hasDrivingConflict ? "exclamationmark.triangle.fill" : "car.fill")
                 .font(.caption2)
-                .foregroundStyle(hasDrivingConflict ? .red : .secondary)
+                .foregroundStyle(hasDrivingConflict ? AppTheme.Colors.danger : AppTheme.Colors.secondaryText.color(for: colorScheme))
             VStack(alignment: .leading, spacing: 2) {
                 if hasDrivingConflict {
                     Text("Driving Conflict")
                         .font(.caption2)
                         .fontWeight(.bold)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppTheme.Colors.danger)
                 } else {
                     Text(formatTravelTime(travelTime))
                         .font(.caption2)
@@ -1496,15 +1500,19 @@ struct TravelTimeIndicator: View {
                 if let arrival = arrivalTime {
                     Text(hasDrivingConflict ? "Overlaps next activity" : "Arrive: \(arrival.formatted(date: .omitted, time: .shortened))")
                         .font(.caption2)
-                        .foregroundStyle(hasDrivingConflict ? .red : .secondary)
+                        .foregroundStyle(hasDrivingConflict ? AppTheme.Colors.danger : AppTheme.Colors.secondaryText.color(for: colorScheme))
                 }
             }
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .background(AppTheme.Colors.background)
+        .cornerRadius(AppTheme.CornerRadius.large)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.large)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
+        )
         .frame(height: max(30, CGFloat(driveHeightInHours) * hourHeight))
     }
     
@@ -1656,6 +1664,7 @@ struct QuickTimeEditSheet: View {
 
 struct TimelineItemView: View {
     let activity: Activity
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -1691,6 +1700,7 @@ struct TimelineItemView: View {
                     Text(activity.name)
                         .font(.subheadline)
                         .fontWeight(.semibold)
+                        .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                     
                     Spacer()
                     
@@ -1711,7 +1721,7 @@ struct TimelineItemView: View {
                     
                     Text(activity.location)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                 }
                 
                 if let duration = activity.duration {
@@ -1722,16 +1732,20 @@ struct TimelineItemView: View {
                         
                         Text("\(Int(duration * 60)) minutes")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                     }
                 }
             }
             
             Spacer()
         }
-        .padding(12)
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
+        .padding(AppTheme.Spacing.sm)
+        .background(AppTheme.Colors.secondaryBackground)
+        .cornerRadius(AppTheme.CornerRadius.medium)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                .stroke(AppTheme.Colors.divider, lineWidth: 1)
+        )
     }
     
     private var categoryColor: Color {
@@ -2002,7 +2016,7 @@ struct DaySummaryStatsView: View {
             }
         }
         .padding(12)
-        .background(Color(.systemGray6))
+        .background(AppTheme.Colors.background)
         .cornerRadius(10)
     }
     
@@ -2071,8 +2085,8 @@ struct FreeTimeGapChip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color.green.opacity(0.1))
-        .foregroundStyle(.green)
+        .background(AppTheme.Colors.success.opacity(0.12))
+        .foregroundStyle(AppTheme.Colors.success)
         .cornerRadius(12)
     }
     
@@ -2122,7 +2136,7 @@ struct AddActivityAtTimeSheet: View {
                 Section {
                     HStack {
                         Image(systemName: "clock.fill")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(AppTheme.Colors.primary)
                         Text("Adding activity at \(suggestedTime.formatted(date: .omitted, time: .shortened))")
                             .font(.subheadline)
                     }

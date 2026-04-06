@@ -49,7 +49,9 @@ struct OverviewView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(AppTheme.Colors.primary)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
+                .accessibilityLabel("Add day")
             }
         }
         .sheet(isPresented: $showingAddDay) {
@@ -130,8 +132,10 @@ struct OverviewView: View {
                     Image(systemName: "trash.circle.fill")
                         .foregroundStyle(AppTheme.Colors.danger.opacity(0.75))
                         .font(.title3)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Delete day \(day.dayNumber)")
             }
             
             Divider()
