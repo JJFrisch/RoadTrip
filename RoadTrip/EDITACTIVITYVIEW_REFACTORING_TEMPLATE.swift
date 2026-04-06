@@ -89,7 +89,7 @@
                          Label("Searches near: \(day.startLocation.isEmpty ? "No location set" : day.startLocation)",
                                systemImage: "location.circle")
                              .font(AppTheme.Typography.callout)
-                             .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                         .foregroundStyle(.secondary)
                      }
                  }
              }
@@ -108,7 +108,7 @@
                          Text("Category")
                              .font(AppTheme.Typography.footnote)
                              .fontWeight(.semibold)
-                             .foregroundStyle(AppTheme.Colors.primaryText)
+                             .foregroundStyle(.primary)
                          
                          Picker("", selection: $category) {
                              ForEach(categories, id: \.self) { cat in
