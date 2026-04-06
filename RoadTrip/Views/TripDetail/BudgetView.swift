@@ -3,6 +3,13 @@ import SwiftUI
 import Charts
 
 struct BudgetView: View {
+    private struct DailyTrendPoint: Identifiable {
+        let id = UUID()
+        let dayLabel: String
+        let actual: Double
+        let forecast: Double
+    }
+
     let trip: Trip
     @State private var weatherData: [UUID: WeatherData] = [:]
     @State private var isLoadingWeather = false
@@ -24,6 +31,11 @@ struct BudgetView: View {
                 if trip.estimatedTotalCost > 0 {
                     budgetChartCard
                 }
+
+                // Budget Trend Forecast
+                if !dailyTrendPoints.isEmpty {
+                    budgetTrendForecastCard
+                }
                 
                 // Weather Forecast Section
                 weatherSection
@@ -37,6 +49,113 @@ struct BudgetView: View {
         .onAppear {
             loadWeather()
         }
+    }
+
+    // MARK: - Budget Trend Forecast
+
+    private var dailyTrendPoints: [DailyTrendPoint] {
+        let sortedDays = trip.days.sorted { $0.dayNumber < $1.dayNumber }
+        guard !sortedDays.isEmpty else { return [] }
+
+        var points: [DailyTrendPoint] = []
+        var runningTotal = 0.0
+
+        for (index, day) in sortedDays.enumerated() {
+            let lodgingCost = day.hotel?.pricePerNight ?? 0
+            let actual = day.activities.reduce(0) { $0 + ($1.estimatedCost ?? 0) } + lodgingCost
+            runningTotal += actual
+
+            let rollingAverage = runningTotal / Double(index + 1)
+            points.append(
+                DailyTrendPoint(
+                    dayLabel: "D\(day.dayNumber)",
+                    actual: actual,
+                    forecast: rollingAverage
+                )
+            )
+        }
+
+        return points
+    }
+
+    private var projectedTripTotal: Double {
+        guard let lastForecast = dailyTrendPoints.last?.forecast else { return 0 }
+        return lastForecast * Double(max(trip.days.count, 1))
+    }
+
+    private var forecastDeltaToBudget: Double? {
+        guard let budget = trip.totalBudget else { return nil }
+        return projectedTripTotal - budget
+    }
+
+    private var budgetTrendForecastCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Spend Trend + Forecast")
+                        .font(.headline)
+                    Text("Daily spend compared to projected trajectory")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+            }
+
+            Chart(dailyTrendPoints) { point in
+                BarMark(
+                    x: .value("Day", point.dayLabel),
+                    y: .value("Actual", point.actual)
+                )
+                .foregroundStyle(Color.blue.opacity(0.35))
+
+                LineMark(
+                    x: .value("Day", point.dayLabel),
+                    y: .value("Forecast", point.forecast)
+                )
+                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 4]))
+                .foregroundStyle(Color.orange)
+
+                PointMark(
+                    x: .value("Day", point.dayLabel),
+                    y: .value("Forecast", point.forecast)
+                )
+                .foregroundStyle(Color.orange)
+            }
+            .frame(height: 210)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Projected Total")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "$%.2f", projectedTripTotal))
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                }
+
+                Spacer()
+
+                if let delta = forecastDeltaToBudget {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(delta > 0 ? "Projected Overrun" : "Projected Buffer")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "$%.2f", abs(delta)))
+                            .font(.headline)
+                            .foregroundStyle(delta > 0 ? .red : .green)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
     }
 
     // MARK: - Budget Health Card

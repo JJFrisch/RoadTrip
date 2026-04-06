@@ -1256,30 +1256,52 @@ struct EnhancedActivityBlock: View {
     let hourHeight: CGFloat
     let onQuickEdit: () -> Void
     let onTap: () -> Void
+
+    private var isCompleted: Bool {
+        activity.isCompleted
+    }
+
+    private var statusColor: Color {
+        if hasConflict {
+            return .red
+        }
+        return isCompleted ? .green : categoryColor
+    }
+
+    private var statusTitle: String {
+        if hasConflict {
+            return "Conflict"
+        }
+        return isCompleted ? "On Track" : "Planned"
+    }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Color indicator - red if conflict
+        HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 4)
-                .fill(hasConflict ? Color.red : categoryColor)
+                .fill(statusColor)
                 .frame(width: 4)
             
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(startTime.formatted(date: .omitted, time: .shortened))
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundStyle(hasConflict ? .red : categoryColor)
+                        .foregroundStyle(statusColor)
                     
                     if hasConflict {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption)
                             .foregroundStyle(.red)
                     }
+
+                    if !hasConflict && isCompleted {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
                     
                     Spacer()
                     
-                    // Quick edit button
                     Button {
                         onQuickEdit()
                     } label: {
@@ -1289,13 +1311,13 @@ struct EnhancedActivityBlock: View {
                     }
                     .buttonStyle(.plain)
                     
-                    Text(activity.category)
+                    Text(statusTitle)
                         .font(.caption2)
                         .fontWeight(.semibold)
-                        .foregroundStyle(hasConflict ? .red : categoryColor)
+                        .foregroundStyle(statusColor)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background((hasConflict ? Color.red : categoryColor).opacity(0.15))
+                        .background(statusColor.opacity(0.15))
                         .cornerRadius(4)
                 }
                 
@@ -1303,6 +1325,32 @@ struct EnhancedActivityBlock: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(2)
+
+                HStack(spacing: 6) {
+                    Label(activity.category, systemImage: "tag.fill")
+                        .font(.caption2)
+                        .foregroundStyle(categoryColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(categoryColor.opacity(0.14))
+                        .cornerRadius(6)
+
+                    if let cost = activity.estimatedCost, cost > 0 {
+                        Label(String(format: "$%.0f", cost), systemImage: "creditcard.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(6)
+                    }
+
+                    Spacer()
+
+                    Label("\(formatDuration(duration))", systemImage: "clock.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 
                 HStack(spacing: 8) {
                     Label(activity.location, systemImage: "mappin.circle.fill")
@@ -1311,23 +1359,43 @@ struct EnhancedActivityBlock: View {
                         .lineLimit(1)
                     
                     Spacer()
-                    
-                    Label("\(formatDuration(duration))", systemImage: "clock.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                }
+
+                if let travelTimeToNext {
+                    HStack(spacing: 6) {
+                        Image(systemName: "car.fill")
+                            .font(.caption2)
+                            .foregroundStyle(hasConflict ? .red : .secondary)
+                        Text("Next drive \(formatDuration(travelTimeToNext / 3600.0))")
+                            .font(.caption2)
+                            .foregroundStyle(hasConflict ? .red : .secondary)
+                        Spacer()
+                    }
                 }
             }
             .padding(12)
         }
-        .frame(height: max(40, CGFloat(duration.isNaN || duration.isInfinite || duration < 0 ? 1.0 : duration) * hourHeight))
-        .background(hasConflict ? Color.red.opacity(0.1) : categoryColor.opacity(0.1))
+        .frame(height: max(44, CGFloat(duration.isNaN || duration.isInfinite || duration < 0 ? 1.0 : duration) * hourHeight))
+        .background(
+            LinearGradient(
+                colors: [
+                    statusColor.opacity(hasConflict ? 0.20 : 0.11),
+                    Color(.systemBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(hasConflict ? Color.red.opacity(0.5) : categoryColor.opacity(0.3), lineWidth: hasConflict ? 2 : 1)
+                .stroke(statusColor.opacity(0.35), lineWidth: hasConflict ? 2 : 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: (hasConflict ? Color.red : categoryColor).opacity(0.2), radius: 4, y: 2)
+        .shadow(color: statusColor.opacity(0.18), radius: 5, y: 2)
         .contentShape(Rectangle())
+        .onTapGesture {
+            onTap()
+        }
     }
     
     private var categoryColor: Color {
