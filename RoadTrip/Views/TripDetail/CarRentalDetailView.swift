@@ -17,6 +17,7 @@ struct CarRentalDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var showingSaveConfirmation = false
     @State private var saveStatusMessage: String?
@@ -35,7 +36,7 @@ struct CarRentalDetailView: View {
                                 .foregroundStyle(AppTheme.Colors.success)
                             Text(saveStatusMessage)
                                 .font(AppTheme.Typography.caption1)
-                                .foregroundStyle(AppTheme.Colors.primaryText)
+                                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             Spacer()
                         }
                         .padding(.horizontal, AppTheme.Spacing.md)

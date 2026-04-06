@@ -66,7 +66,7 @@ struct HotelBrowsingView: View {
                             .foregroundStyle(AppTheme.Colors.warning)
                         Text(errorMessage)
                             .font(AppTheme.Typography.caption1)
-                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             .lineLimit(2)
                         Spacer()
                         Button("Dismiss") {

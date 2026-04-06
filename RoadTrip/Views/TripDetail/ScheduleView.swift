@@ -530,7 +530,7 @@ struct DayScheduleSection: View {
                     VStack(spacing: 12) {
                         Image(systemName: "calendar.badge.clock")
                             .font(.system(size: 40))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppTheme.Colors.warning.opacity(0.7))
                         
                         Text("No activities in schedule")
                             .font(.headline)

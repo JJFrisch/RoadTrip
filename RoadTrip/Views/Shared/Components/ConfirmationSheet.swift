@@ -20,16 +20,36 @@ struct ConfirmationSheet: View {
     let title: String
     let message: String?
     let actionTitle: String
-    let cancelTitle: String = "Cancel"
+    let cancelTitle: String
     let actionStyle: ActionStyle
     let onConfirm: () -> Void
-    let onCancel: (() -> Void)? = nil
+    let onCancel: (() -> Void)?
     @Environment(\.colorScheme) private var colorScheme
     
     enum ActionStyle {
         case primary
         case destructive
         case secondary
+    }
+
+    init(
+        isPresented: Binding<Bool>,
+        title: String,
+        message: String? = nil,
+        actionTitle: String,
+        cancelTitle: String = "Cancel",
+        actionStyle: ActionStyle = .primary,
+        onConfirm: @escaping () -> Void,
+        onCancel: (() -> Void)? = nil
+    ) {
+        self._isPresented = isPresented
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.cancelTitle = cancelTitle
+        self.actionStyle = actionStyle
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
     }
     
     var body: some View {

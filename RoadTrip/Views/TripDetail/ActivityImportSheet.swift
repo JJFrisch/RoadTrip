@@ -12,6 +12,7 @@ import MapKit
 struct ActivityImportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     let day: TripDay
     @StateObject private var viewModel = TripDetailViewModel()
@@ -38,7 +39,7 @@ struct ActivityImportSheet: View {
                             .foregroundStyle(AppTheme.Colors.warning)
                         Text(errorMessage)
                             .font(AppTheme.Typography.caption1)
-                            .foregroundStyle(AppTheme.Colors.primaryText)
+                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                             .lineLimit(3)
                         Spacer()
                         Button("Dismiss") {
