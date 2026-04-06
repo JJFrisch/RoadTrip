@@ -5,6 +5,7 @@ import SwiftUI
 struct EditTripView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     let trip: Trip
     
     @State private var tripName: String = ""
@@ -68,7 +69,7 @@ struct EditTripView: View {
                                         Text("Description (Optional)")
                                             .font(AppTheme.Typography.footnote)
                                             .fontWeight(.semibold)
-                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                                         
                                         TextEditor(text: $tripDescription)
                                             .font(AppTheme.Typography.body)
@@ -92,7 +93,7 @@ struct EditTripView: View {
                                         Text("Start Date")
                                             .font(AppTheme.Typography.footnote)
                                             .fontWeight(.semibold)
-                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                                         
                                         DatePicker("", selection: $startDate, displayedComponents: .date)
                                             .datePickerStyle(.compact)
@@ -104,7 +105,7 @@ struct EditTripView: View {
                                         Text("End Date")
                                             .font(AppTheme.Typography.footnote)
                                             .fontWeight(.semibold)
-                                            .foregroundStyle(AppTheme.Colors.primaryText)
+                                            .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                                         
                                         DatePicker("", selection: $endDate, in: startDate..., displayedComponents: .date)
                                             .datePickerStyle(.compact)
@@ -116,10 +117,10 @@ struct EditTripView: View {
                                         VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                                             Text("Duration")
                                                 .font(AppTheme.Typography.caption1)
-                                                .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                             Text("\(newDayCount) day\(newDayCount == 1 ? "" : "s")")
                                                 .font(AppTheme.Typography.headline)
-                                                .foregroundStyle(AppTheme.Colors.primaryText)
+                                                .foregroundStyle(AppTheme.Colors.primaryText.color(for: colorScheme))
                                         }
                                         
                                         Spacer()
@@ -128,7 +129,7 @@ struct EditTripView: View {
                                             VStack(alignment: .trailing, spacing: AppTheme.Spacing.xs) {
                                                 Text("Nights")
                                                     .font(AppTheme.Typography.caption1)
-                                                    .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                                 Text("\(newDayCount - 1)")
                                                     .font(AppTheme.Typography.headline)
                                                     .foregroundStyle(AppTheme.Colors.primary)
@@ -159,7 +160,7 @@ struct EditTripView: View {
                                                     if removedDaysHaveData {
                                                         Text("Activities will be moved to the last day")
                                                             .font(AppTheme.Typography.caption2)
-                                                            .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                                     }
                                                 }
                                             }
@@ -193,7 +194,7 @@ struct EditTripView: View {
                                                     .foregroundStyle(AppTheme.Colors.primary)
                                                 Text("Preview")
                                                     .font(AppTheme.Typography.caption2)
-                                                    .foregroundStyle(AppTheme.Colors.secondaryText)
+                                                    .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                             }
                                             Spacer()
                                         }
@@ -204,7 +205,7 @@ struct EditTripView: View {
                                     VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                                         Text("Suggested Icons")
                                             .font(AppTheme.Typography.caption1)
-                                            .foregroundStyle(AppTheme.Colors.secondaryText)
+                                            .foregroundStyle(AppTheme.Colors.secondaryText.color(for: colorScheme))
                                         
                                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: AppTheme.Spacing.md) {
                                             ForEach(iconSuggestions, id: \.self) { icon in
