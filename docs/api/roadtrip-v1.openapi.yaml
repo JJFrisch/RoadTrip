@@ -1,0 +1,431 @@
+openapi: 3.1.0
+info:
+  title: RoadTrip API
+  version: 1.0.0
+  description: >-
+    Initial cross-platform contract for iOS and web parity flows.
+servers:
+  - url: https://api.roadtrip.example.com/v1
+security:
+  - bearerAuth: []
+paths:
+  /trips:
+    get:
+      summary: List trips for current user
+      operationId: listTrips
+      responses:
+        "200":
+          description: Trip list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trips:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Trip"
+    post:
+      summary: Create a trip
+      operationId: createTrip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+  /trips/{tripId}:
+    parameters:
+      - $ref: "#/components/parameters/TripId"
+    get:
+      summary: Fetch trip details
+      operationId: getTrip
+      responses:
+        "200":
+          description: Trip details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    patch:
+      summary: Update top-level trip fields
+      operationId: updateTrip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTripRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    delete:
+      summary: Delete trip
+      operationId: deleteTrip
+      responses:
+        "204":
+          description: Deleted
+  /trips/{tripId}/days:
+    parameters:
+      - $ref: "#/components/parameters/TripId"
+    post:
+      summary: Add a day to a trip
+      operationId: createTripDay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripDayRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripDay"
+  /trips/{tripId}/days/{dayId}/activities:
+    parameters:
+      - $ref: "#/components/parameters/TripId"
+      - $ref: "#/components/parameters/DayId"
+    post:
+      summary: Add activity to day
+      operationId: createActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActivityRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+  /trips/{tripId}/days/{dayId}/activities/reorder:
+    parameters:
+      - $ref: "#/components/parameters/TripId"
+      - $ref: "#/components/parameters/DayId"
+    post:
+      summary: Reorder activities within a day
+      operationId: reorderActivities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activityIds]
+              properties:
+                activityIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Updated ordering
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DayId:
+      name: dayId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    SyncMetadata:
+      type: object
+      required: [version, updatedAt]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+    Trip:
+      type: object
+      required: [id, name, startDate, endDate, createdAt, days, sync]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tripDescription:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        coverImage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        totalBudget:
+          type: number
+          nullable: true
+        spentAmount:
+          type: number
+        budgetCategories:
+          type: object
+          additionalProperties:
+            type: number
+        ownerId:
+          type: string
+          nullable: true
+        ownerEmail:
+          type: string
+          nullable: true
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/TripDay"
+        sync:
+          $ref: "#/components/schemas/SyncMetadata"
+    TripDay:
+      type: object
+      required: [id, dayNumber, date, startLocation, endLocation, distance, drivingTime, activities, sync]
+      properties:
+        id:
+          type: string
+          format: uuid
+        dayNumber:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date-time
+        startLocation:
+          type: string
+        endLocation:
+          type: string
+        distance:
+          type: number
+        drivingTime:
+          type: number
+        hotelName:
+          type: string
+          nullable: true
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Activity"
+        sync:
+          $ref: "#/components/schemas/SyncMetadata"
+    Activity:
+      type: object
+      required: [id, name, location, category, isCompleted, order, photos, photoThumbnails, openingHours, spansDays, sync]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        location:
+          type: string
+        scheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: number
+          nullable: true
+        category:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        isCompleted:
+          type: boolean
+        order:
+          type: integer
+        checkInTime:
+          type: string
+          format: date-time
+          nullable: true
+        checkOutTime:
+          type: string
+          format: date-time
+          nullable: true
+        hotelConfirmation:
+          type: string
+          nullable: true
+        hotelPhoneNumber:
+          type: string
+          nullable: true
+        hotelWebsite:
+          type: string
+          nullable: true
+        estimatedCost:
+          type: number
+          nullable: true
+        costCategory:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        placeId:
+          type: string
+          nullable: true
+        sourceType:
+          type: string
+          nullable: true
+        importedAt:
+          type: string
+          format: date-time
+          nullable: true
+        rating:
+          type: number
+          nullable: true
+        photoURL:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        phoneNumber:
+          type: string
+          nullable: true
+        openingHours:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+            format: byte
+        photoThumbnails:
+          type: array
+          items:
+            type: string
+            format: byte
+        isMultiDay:
+          type: boolean
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        spansDays:
+          type: integer
+          minimum: 1
+        actualStartTime:
+          type: string
+          format: date-time
+          nullable: true
+        actualEndTime:
+          type: string
+          format: date-time
+          nullable: true
+        sync:
+          $ref: "#/components/schemas/SyncMetadata"
+    CreateTripRequest:
+      type: object
+      required: [name, startDate, endDate]
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        tripDescription:
+          type: string
+          nullable: true
+        totalBudget:
+          type: number
+          nullable: true
+    UpdateTripRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tripDescription:
+          type: string
+          nullable: true
+        totalBudget:
+          type: number
+          nullable: true
+        coverImage:
+          type: string
+          nullable: true
+    CreateTripDayRequest:
+      type: object
+      required: [dayNumber, date]
+      properties:
+        dayNumber:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date-time
+        startLocation:
+          type: string
+        endLocation:
+          type: string
+    CreateActivityRequest:
+      type: object
+      required: [name, location, category]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        category:
+          type: string
+        scheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+        duration:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true

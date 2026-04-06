@@ -17,6 +17,38 @@ final class TripDetailViewModel: ObservableObject {
 
     private let importer = ActivityImporter.shared
 
+    private func makeActivity(
+        from place: ActivityImporter.ImportedPlace,
+        hostHint: String,
+        order: Int
+    ) -> Activity {
+        let activity = Activity(name: place.name, location: place.address ?? "", category: place.category ?? "Attraction")
+        activity.duration = place.typicalDurationHours
+        activity.order = order
+        activity.isCompleted = true
+
+        if let coord = place.coordinate {
+            activity.latitude = coord.latitude
+            activity.longitude = coord.longitude
+        }
+
+        activity.placeId = place.placeId
+        activity.sourceType = hostHint
+        activity.importedAt = Date()
+        activity.rating = place.rating
+        activity.photoURL = place.photoURL
+        activity.website = place.website
+        activity.phoneNumber = place.phoneNumber
+
+        if (activity.notes == nil || activity.notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true),
+           let blurb = place.blurb,
+           !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            activity.notes = blurb
+        }
+
+        return activity
+    }
+
     func importActivities(from url: URL, into day: TripDay, modelContext: ModelContext) async throws -> [Activity] {
         isImporting = true
         defer { isImporting = false }
@@ -50,28 +82,8 @@ final class TripDetailViewModel: ObservableObject {
 
         var created: [Activity] = []
         for (index, place) in imported.enumerated() {
-            let activity = Activity(name: place.name, location: place.address ?? "", category: place.category ?? "Attraction")
-            activity.duration = place.typicalDurationHours
-            activity.order = day.activities.count + index
-            activity.isCompleted = true
-            
-            // Enhanced fields
-            if let coord = place.coordinate {
-                activity.latitude = coord.latitude
-                activity.longitude = coord.longitude
-            }
-            activity.placeId = place.placeId
-            activity.sourceType = url.host?.contains("google") == true ? "google" : "tripadvisor"
-            activity.importedAt = Date()
-            activity.rating = place.rating
-            activity.photoURL = place.photoURL
-            activity.website = place.website
-            activity.phoneNumber = place.phoneNumber
-            if (activity.notes == nil || activity.notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true),
-               let blurb = place.blurb,
-               !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                activity.notes = blurb
-            }
+            let source = url.host?.contains("google") == true ? "google" : "tripadvisor"
+            let activity = makeActivity(from: place, hostHint: source, order: day.activities.count + index)
 
             modelContext.insert(activity)
             day.activities.append(activity)
@@ -93,28 +105,7 @@ final class TripDetailViewModel: ObservableObject {
         
         var created: [Activity] = []
         for (index, place) in imported.enumerated() {
-            let activity = Activity(name: place.name, location: place.address ?? "", category: place.category ?? "Attraction")
-            activity.duration = place.typicalDurationHours
-            activity.order = day.activities.count + index
-            activity.isCompleted = true
-            
-            // Enhanced fields
-            if let coord = place.coordinate {
-                activity.latitude = coord.latitude
-                activity.longitude = coord.longitude
-            }
-            activity.placeId = place.placeId
-            activity.sourceType = "google"
-            activity.importedAt = Date()
-            activity.rating = place.rating
-            activity.photoURL = place.photoURL
-            activity.website = place.website
-            activity.phoneNumber = place.phoneNumber
-            if (activity.notes == nil || activity.notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true),
-               let blurb = place.blurb,
-               !blurb.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                activity.notes = blurb
-            }
+            let activity = makeActivity(from: place, hostHint: "google", order: day.activities.count + index)
             
             modelContext.insert(activity)
             day.activities.append(activity)
