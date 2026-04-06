@@ -47,7 +47,8 @@ struct TripDetailView: View {
                     TabBarButton(
                         icon: "list.bullet.clipboard",
                         title: "Overview",
-                        isSelected: selectedTab == 0
+                        isSelected: selectedTab == 0,
+                        accessibilityID: "tripDetail.tab.overview"
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 0
@@ -57,7 +58,8 @@ struct TripDetailView: View {
                     TabBarButton(
                         icon: "dollarsign.circle.fill",
                         title: "Budget",
-                        isSelected: selectedTab == 1
+                        isSelected: selectedTab == 1,
+                        accessibilityID: "tripDetail.tab.budget"
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 1
@@ -67,7 +69,8 @@ struct TripDetailView: View {
                     TabBarButton(
                         icon: "star.fill",
                         title: "Activities",
-                        isSelected: selectedTab == 2
+                        isSelected: selectedTab == 2,
+                        accessibilityID: "tripDetail.tab.activities"
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 2
@@ -77,7 +80,8 @@ struct TripDetailView: View {
                     TabBarButton(
                         icon: "calendar",
                         title: "Schedule",
-                        isSelected: selectedTab == 3
+                        isSelected: selectedTab == 3,
+                        accessibilityID: "tripDetail.tab.schedule"
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 3
@@ -87,7 +91,8 @@ struct TripDetailView: View {
                     TabBarButton(
                         icon: "map.fill",
                         title: "Map",
-                        isSelected: selectedTab == 4
+                        isSelected: selectedTab == 4,
+                        accessibilityID: "tripDetail.tab.map"
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = 4
@@ -223,6 +228,7 @@ struct TabBarButton: View {
     let icon: String
     let title: String
     let isSelected: Bool
+    let accessibilityID: String
     let action: () -> Void
     
     @State private var isHovered = false
@@ -264,5 +270,6 @@ struct TabBarButton: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 4)
+        .accessibilityIdentifier(accessibilityID)
     }
 }

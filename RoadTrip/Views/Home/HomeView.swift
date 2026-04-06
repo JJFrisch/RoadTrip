@@ -38,6 +38,7 @@ struct HomeView: View {
                                     .font(.title)
                                     .fontWeight(.bold)
                                     .foregroundStyle(.white)
+                                    .accessibilityIdentifier("home.title")
                                 
                                 Text("Plan your next adventure")
                                     .font(.caption)
@@ -113,6 +114,7 @@ struct HomeView: View {
                                     )
                                 )
                         }
+                        .accessibilityIdentifier("home.addTripButton")
                     }
                 }
             }
@@ -239,6 +241,7 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .accessibilityIdentifier("home.exploreSampleTripButton")
 
                     Button {
                         showingTutorial = true
@@ -297,6 +300,7 @@ struct HomeView: View {
                     NavigationLink(destination: TripDetailView(trip: trip)) {
                         TripCardView(trip: trip)
                     }
+                    .accessibilityIdentifier("home.tripCard.\(trip.id.uuidString)")
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button {
@@ -510,6 +514,7 @@ struct NewTripView: View {
             Form {
                 Section("Trip Details") {
                     TextField("Trip Name", text: $tripName)
+                        .accessibilityIdentifier("newTrip.nameField")
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Description")
@@ -592,6 +597,7 @@ struct NewTripView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("newTrip.cancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
@@ -599,6 +605,7 @@ struct NewTripView: View {
                     }
                     .disabled(!isFormValid)
                     .fontWeight(.semibold)
+                    .accessibilityIdentifier("newTrip.createButton")
                 }
             }
         }

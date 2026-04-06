@@ -11,6 +11,9 @@ import SwiftData
 
 @main
 struct RoadTripperApp: App {
+    private static let uiTestsEnabled = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+    private static let uiTestsResetData = ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-data")
+    private static let uiTestsSkipOnboarding = ProcessInfo.processInfo.arguments.contains("-ui-testing-skip-onboarding")
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -19,11 +22,22 @@ struct RoadTripperApp: App {
             Activity.self,
             ActivityTemplate.self
         ])
+
+        if Self.uiTestsSkipOnboarding {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(OnboardingManager.currentVersion, forKey: "onboardingVersion")
+        }
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: Self.uiTestsEnabled
         )
+
+        if Self.uiTestsResetData, let storeURL = modelConfiguration.url {
+            try? FileManager.default.removeItem(at: storeURL)
+            try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-shm"))
+            try? FileManager.default.removeItem(at: storeURL.deletingLastPathComponent().appendingPathComponent("default.store-wal"))
+        }
         
         do {
             return try ModelContainer(
