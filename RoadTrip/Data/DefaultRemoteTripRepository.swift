@@ -10,6 +10,7 @@ import Foundation
 @MainActor
 protocol RemoteTripRepository {
     func listTrips() async throws -> [TripDTO]
+    func getTrip(id: UUID) async throws -> TripDTO
     func createTrip(from trip: Trip) async throws -> TripDTO
     func updateTrip(from trip: Trip) async throws -> TripDTO
     func deleteTrip(id: UUID) async throws
@@ -25,6 +26,10 @@ final class DefaultRemoteTripRepository: RemoteTripRepository {
 
     func listTrips() async throws -> [TripDTO] {
         try await service.listTrips()
+    }
+
+    func getTrip(id: UUID) async throws -> TripDTO {
+        try await service.getTrip(id: id)
     }
 
     func createTrip(from trip: Trip) async throws -> TripDTO {

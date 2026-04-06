@@ -686,6 +686,27 @@ struct CalendarTimelineView: View {
     private let timeColumnWidth: CGFloat = 60
     private let minZoom: CGFloat = 0.5
     private let maxZoom: CGFloat = 2.0
+
+    private var scheduledActivities: [Activity] {
+        activities
+            .filter { $0.scheduledTime != nil && $0.duration != nil }
+            .sorted {
+                guard let a = $0.scheduledTime, let b = $1.scheduledTime else { return false }
+                return a < b
+            }
+    }
+
+    // Virtualization: only render blocks near the visible hour window.
+    private var visibleScheduledActivities: [Activity] {
+        let lower = timeRange.start - 1
+        let upper = timeRange.end + 1
+        let calendar = Calendar.current
+        return scheduledActivities.filter { activity in
+            guard let time = activity.scheduledTime else { return false }
+            let hour = calendar.component(.hour, from: time)
+            return hour >= lower && hour <= upper
+        }
+    }
     
     // Check if this day is today
     private var isToday: Bool {
@@ -981,95 +1002,12 @@ struct CalendarTimelineView: View {
                         .allowsHitTesting(false)
                     }
                     
-                    // Activity blocks with drag reordering
-                    ForEach(Array(activities.enumerated()), id: \.element.id) { index, activity in
-                        if let startTime = activity.scheduledTime,
-                           let duration = activity.duration {
-                            VStack(spacing: 0) {
-                                EnhancedActivityBlock(
-                                    activity: activity,
-                                    startTime: startTime,
-                                    duration: duration,
-                                    hasConflict: hasConflict(activity),
-                                    travelTimeToNext: travelTimes[activity.id],
-                                    hourHeight: hourHeight,
-                                    onQuickEdit: {
-                                        selectedActivityForEdit = activity
-                                    },
-                                    onTap: {
-                                        selectedActivityForFullEdit = activity
-                                    }
-                                )
-                                .draggable(activity.id.uuidString) {
-                                    // Drag preview
-                                    Text(activity.name)
-                                        .padding(8)
-                                        .background(categoryColor(for: activity).opacity(0.8))
-                                        .foregroundStyle(.white)
-                                        .cornerRadius(8)
-                                }
-                                .dropDestination(for: String.self) { items, _ in
-                                    handleDrop(items: items, onto: activity, allActivities: activities)
-                                }
-                                .gesture(
-                                    LongPressGesture(minimumDuration: 0.5)
-                                        .sequenced(before: DragGesture())
-                                        .onEnded { value in
-                                            switch value {
-                                            case .second(true, let drag):
-                                                if let drag = drag {
-                                                    // Calculate new time based on drag offset
-                                                    let hourOffset = drag.translation.height / hourHeight
-                                                    if let currentTime = activity.scheduledTime {
-                                                        var newTime = currentTime.addingTimeInterval(hourOffset * 3600)
-                                                        
-                                                        // Snap to nearest 15-minute interval
-                                                        let calendar = Calendar.current
-                                                        let components = calendar.dateComponents([.hour, .minute], from: newTime)
-                                                        if let minute = components.minute {
-                                                            let snappedMinute = (minute / 15) * 15
-                                                            newTime = calendar.date(bySettingHour: components.hour ?? 0, minute: snappedMinute, second: 0, of: newTime) ?? newTime
-                                                        }
-                                                        
-                                                        activity.scheduledTime = newTime
-                                                    }
-                                                }
-                                            default:
-                                                break
-                                            }
-                                        }
-                                )
-                                
-                                // Travel time indicator - only show if next activity is checked
-                                if index < activities.count - 1 {
-                                    let nextActivity = activities[index + 1]
-                                    if nextActivity.isCompleted, let travelTime = travelTimes[activity.id] {
-                                        let arrivalTime: Date? = {
-                                            guard let activityEnd = activity.scheduledTime,
-                                                  let duration = activity.duration else { return nil }
-                                            return activityEnd.addingTimeInterval(duration * 3600 + travelTime)
-                                        }()
-                                        
-                                        // Check if drive extends into next activity (conflict)
-                                        let hasDrivingConflict: Bool = {
-                                            guard let activityEnd = activity.scheduledTime,
-                                                  let duration = activity.duration,
-                                                  let nextStart = nextActivity.scheduledTime else { return false }
-                                            let driveEnd = activityEnd.addingTimeInterval(duration * 3600 + travelTime)
-                                            return driveEnd > nextStart
-                                        }()
-                                        
-                                        TravelTimeIndicator(
-                                            travelTime: travelTime,
-                                            arrivalTime: arrivalTime,
-                                            hourHeight: hourHeight,
-                                            hasDrivingConflict: hasDrivingConflict
-                                        )
-                                    }
-                                }
-                            }
-                            .offset(y: calculateOffset(for: startTime))
-                            .padding(.leading, timeColumnWidth + 16)
+                    // Activity blocks with drag reordering (virtualized by visible time window)
+                    ForEach(visibleScheduledActivities, id: \.id) { activity in
+                        if let startTime = activity.scheduledTime {
+                            activityTimelineEntry(for: activity)
+                                .offset(y: calculateOffset(for: startTime))
+                                .padding(.leading, timeColumnWidth + 16)
                         }
                     }
                 }
@@ -1131,6 +1069,110 @@ struct CalendarTimelineView: View {
         case "Hotel": return .purple
         default: return .gray
         }
+    }
+
+    @ViewBuilder
+    private func activityTimelineEntry(for activity: Activity) -> some View {
+        if let startTime = activity.scheduledTime,
+           let duration = activity.duration {
+            let nextActivity = nextScheduledActivity(after: activity)
+
+            VStack(spacing: 0) {
+                EnhancedActivityBlock(
+                    activity: activity,
+                    startTime: startTime,
+                    duration: duration,
+                    hasConflict: hasConflict(activity),
+                    travelTimeToNext: travelTimes[activity.id],
+                    hourHeight: hourHeight,
+                    onQuickEdit: {
+                        selectedActivityForEdit = activity
+                    },
+                    onTap: {
+                        selectedActivityForFullEdit = activity
+                    }
+                )
+                .draggable(activity.id.uuidString) {
+                    Text(activity.name)
+                        .padding(8)
+                        .background(categoryColor(for: activity).opacity(0.8))
+                        .foregroundStyle(.white)
+                        .cornerRadius(8)
+                }
+                .dropDestination(for: String.self) { items, _ in
+                    handleDrop(items: items, onto: activity, allActivities: activities)
+                }
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .sequenced(before: DragGesture())
+                        .onEnded { value in
+                            switch value {
+                            case .second(true, let drag):
+                                if let drag {
+                                    applyDragTimeChange(for: activity, drag: drag)
+                                }
+                            default:
+                                break
+                            }
+                        }
+                )
+
+                if let nextActivity,
+                   nextActivity.isCompleted,
+                   let travelTime = travelTimes[activity.id] {
+                    let arrivalTime = activityEndTime(for: activity)?.addingTimeInterval(travelTime)
+                    let hasDrivingConflict = drivingConflictExists(for: activity, nextActivity: nextActivity, travelTime: travelTime)
+
+                    TravelTimeIndicator(
+                        travelTime: travelTime,
+                        arrivalTime: arrivalTime,
+                        hourHeight: hourHeight,
+                        hasDrivingConflict: hasDrivingConflict
+                    )
+                }
+            }
+        }
+    }
+
+    private func nextScheduledActivity(after activity: Activity) -> Activity? {
+        guard let index = scheduledActivities.firstIndex(where: { $0.id == activity.id }),
+              index + 1 < scheduledActivities.count else {
+            return nil
+        }
+        return scheduledActivities[index + 1]
+    }
+
+    private func activityEndTime(for activity: Activity) -> Date? {
+        guard let start = activity.scheduledTime,
+              let duration = activity.duration else {
+            return nil
+        }
+        return start.addingTimeInterval(duration * 3600)
+    }
+
+    private func drivingConflictExists(for activity: Activity, nextActivity: Activity, travelTime: TimeInterval) -> Bool {
+        guard let end = activityEndTime(for: activity),
+              let nextStart = nextActivity.scheduledTime else {
+            return false
+        }
+        return end.addingTimeInterval(travelTime) > nextStart
+    }
+
+    private func applyDragTimeChange(for activity: Activity, drag: DragGesture.Value) {
+        let hourOffset = drag.translation.height / hourHeight
+        guard let currentTime = activity.scheduledTime else {
+            return
+        }
+
+        var newTime = currentTime.addingTimeInterval(hourOffset * 3600)
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: newTime)
+        if let minute = components.minute {
+            let snappedMinute = (minute / 15) * 15
+            newTime = calendar.date(bySettingHour: components.hour ?? 0, minute: snappedMinute, second: 0, of: newTime) ?? newTime
+        }
+
+        activity.scheduledTime = newTime
     }
     
     private func formatHour(_ hour: Int) -> String {
