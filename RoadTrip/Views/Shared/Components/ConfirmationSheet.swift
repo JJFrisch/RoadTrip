@@ -20,6 +20,7 @@ struct ConfirmationSheet: View {
     let title: String
     let message: String?
     let actionTitle: String
+    let cancelTitle: String = "Cancel"
     let actionStyle: ActionStyle
     let onConfirm: () -> Void
     let onCancel: (() -> Void)? = nil
@@ -72,7 +73,7 @@ struct ConfirmationSheet: View {
                             onCancel?()
                             dismiss()
                         }) {
-                            Text("Cancel")
+                            Text(cancelTitle)
                         }
                         .secondaryButton()
                     }
@@ -98,7 +99,7 @@ struct ConfirmationSheet: View {
     }
     
     private func dismiss() {
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(.easeInOut(duration: AppTheme.Animation.fast)) {
             isPresented = false
         }
     }

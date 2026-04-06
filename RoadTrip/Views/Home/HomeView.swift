@@ -140,21 +140,45 @@ struct HomeView: View {
             .sheet(item: $tripToEdit) { trip in
                 EditTripView(trip: trip)
             }
-            .alert("Delete Trip", isPresented: .constant(tripToDelete != nil), presenting: tripToDelete) { trip in
-                Button(role: .destructive) {
-                    deleteTrip(trip)
-                    tripToDelete = nil
-                } label: {
-                    Text("Delete")
+            .overlay {
+                if let trip = tripToDelete {
+                    ConfirmationSheet(
+                        isPresented: Binding(
+                            get: { tripToDelete != nil },
+                            set: { isPresented in
+                                if !isPresented {
+                                    tripToDelete = nil
+                                }
+                            }
+                        ),
+                        title: "Delete \(trip.name)?",
+                        message: "This will permanently remove the trip and all associated days and activities.",
+                        actionTitle: "Delete Trip",
+                        cancelTitle: "Keep Trip",
+                        actionStyle: .destructive,
+                        onConfirm: {
+                            deleteTrip(trip)
+                            tripToDelete = nil
+                        },
+                        onCancel: {
+                            tripToDelete = nil
+                        }
+                    )
                 }
             }
-            .alert("Create Sample Trip", isPresented: $showingSampleTripAlert) {
-                Button("Create") {
-                    createComprehensiveSampleTrip(modelContext: modelContext)
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("This will create a sample California Coast road trip to help you explore the app's features.")
+            .overlay {
+                ConfirmationSheet(
+                    isPresented: $showingSampleTripAlert,
+                    title: "Create Sample Trip?",
+                    message: "Add a sample California Coast itinerary so you can explore planning, scheduling, maps, and budgeting features.",
+                    actionTitle: "Create Sample Trip",
+                    cancelTitle: "Not Now",
+                    actionStyle: .primary,
+                    onConfirm: {
+                        createComprehensiveSampleTrip(modelContext: modelContext)
+                    },
+                    onCancel: nil
+                )
             }
             .sheet(isPresented: $showingOnboarding) {
                 OnboardingView {

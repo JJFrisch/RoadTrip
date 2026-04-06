@@ -67,19 +67,23 @@ struct OverviewView: View {
             let allActivities = trip.days.flatMap { $0.activities }
             ActivitiesMapView(activities: allActivities)
         }
-        .alert("Delete Day", isPresented: $showingDeleteConfirmation, presenting: dayToDelete) { day in
-            Button(role: .destructive) {
-                confirmDeleteDay()
-            } label: {
-                Text("Delete")
-            }
-            Button(role: .cancel) {
-                dayToDelete = nil
-            } label: {
-                Text("Cancel")
-            }
-        } message: { day in
-            Text("This will delete Day \(day.dayNumber) and all its activities. Remaining days will be renumbered.")
+        .overlay {
+            ConfirmationSheet(
+                isPresented: $showingDeleteConfirmation,
+                title: dayToDelete.map { "Delete Day \($0.dayNumber)?" } ?? "Delete Day?",
+                message: dayToDelete.map { "This will permanently remove Day \($0.dayNumber) and all its activities. Remaining days will be renumbered automatically." },
+                actionTitle: "Delete Day",
+                cancelTitle: "Keep Day",
+                actionStyle: .destructive,
+                onConfirm: {
+                    confirmDeleteDay()
+                    showingDeleteConfirmation = false
+                },
+                onCancel: {
+                    dayToDelete = nil
+                    showingDeleteConfirmation = false
+                }
+            )
         }
     }
     
@@ -482,6 +486,7 @@ struct OverviewView: View {
         
         try? modelContext.save()
         self.dayToDelete = nil
+        self.showingDeleteConfirmation = false
     }
 }
 

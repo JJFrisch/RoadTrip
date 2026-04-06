@@ -222,20 +222,31 @@ struct ActivitiesView: View {
             let day = trip.days.first(where: { $0.activities.contains(where: { $0.id == activity.id }) }) ?? trip.days.first!
             EditActivityView(activity: activity, day: day)
         }
-        .alert("Delete Activity", isPresented: .constant(activityToDelete != nil), presenting: activityToDelete) { activity in
-            Button(role: .destructive) {
-                deleteActivity(activity)
-                activityToDelete = nil
-            } label: {
-                Text("Delete")
+        .overlay {
+            if let activity = activityToDelete {
+                ConfirmationSheet(
+                    isPresented: Binding(
+                        get: { activityToDelete != nil },
+                        set: { isPresented in
+                            if !isPresented {
+                                activityToDelete = nil
+                            }
+                        }
+                    ),
+                    title: "Delete \(activity.name)?",
+                    message: "This activity will be permanently removed from your trip plan.",
+                    actionTitle: "Delete Activity",
+                    cancelTitle: "Keep Activity",
+                    actionStyle: .destructive,
+                    onConfirm: {
+                        deleteActivity(activity)
+                        activityToDelete = nil
+                    },
+                    onCancel: {
+                        activityToDelete = nil
+                    }
+                )
             }
-            Button(role: .cancel) {
-                activityToDelete = nil
-            } label: {
-                Text("Cancel")
-            }
-        } message: { activity in
-            Text("Are you sure you want to delete \"\(activity.name)\"?")
         }
     }
     
